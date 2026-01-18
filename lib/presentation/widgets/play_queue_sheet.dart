@@ -100,13 +100,13 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                     },
                     tooltip: '定位到当前播放',
                   ),
-                TextButton.icon(
-                  onPressed: () {
-                    // TODO: 清空队列
-                  },
-                  icon: const Icon(Icons.clear_all),
-                  label: const Text('清空'),
-                ),
+                // TextButton.icon(
+                //   onPressed: () {
+                //     // TODO: 清空队列
+                //   },
+                //   icon: const Icon(Icons.clear_all),
+                //   label: const Text('清空'),
+                // ),
               ],
             ),
           ),
@@ -193,14 +193,14 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                   padding: EdgeInsets.only(right: 8),
                   child: Icon(Icons.volume_up, size: 20, color: AppColors.primary),
                 ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                iconSize: 20,
-                onPressed: () {
-                  // TODO: 从队列移除
-                },
-                tooltip: '移除',
-              ),
+              // IconButton(
+              //   icon: const Icon(Icons.close),
+              //   iconSize: 20,
+              //   onPressed: () {
+              //     // TODO: 从队列移除
+              //   },
+              //   tooltip: '移除',
+              // ),
             ],
           ),
           onTap: () {

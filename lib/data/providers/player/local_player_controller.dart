@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
 import 'package:mi_music/data/cache/music_cache.dart';
@@ -186,7 +185,7 @@ class LocalPlayerControllerImpl implements IPlayerController {
 
       // 1. 初始竞态检查：如果当前状态已被用户操作改变（例如用户刚进App就切了歌），直接放弃恢复
       if (_currentState != null && _currentState!.currentSong != savedSong) {
-        debugPrint('恢复中断：检测到新的播放状态');
+        _logger.w('恢复中断：检测到新的播放状态');
         return;
       }
 
@@ -246,7 +245,7 @@ class LocalPlayerControllerImpl implements IPlayerController {
 
         // 5. 二次竞态检查：异步操作期间，用户可能切歌了
         if (_disposed || (_currentState != null && _currentState!.currentSong != correctSong)) {
-          debugPrint('恢复中断：异步加载期间检测到新的播放状态');
+          _logger.w('恢复中断：异步加载期间检测到新的播放状态');
           return;
         }
 
@@ -367,8 +366,18 @@ class LocalPlayerControllerImpl implements IPlayerController {
       title = current.currentSong;
     }
 
+    // 修复：明确保留 loopMode 和 shuffleMode，不从 player 读取（避免恢复时被默认值覆盖）
     _updateState(
-      current.copyWith(isPlaying: playing, position: pos, duration: dur, currentSong: title, currentIndex: idx),
+      current.copyWith(
+        isPlaying: playing,
+        position: pos,
+        duration: dur,
+        currentSong: title,
+        currentIndex: idx,
+        // 明确保留 loopMode 和 shuffleMode
+        loopMode: current.loopMode,
+        shuffleMode: current.shuffleMode,
+      ),
     );
   }
 
@@ -536,8 +545,10 @@ class LocalPlayerControllerImpl implements IPlayerController {
       final isPlaying = _handler?.player.playing ?? _currentState!.isPlaying;
       final position = _handler?.player.position ?? _currentState!.position;
       final duration = _handler?.player.duration ?? _currentState!.duration;
-      final loopMode = _handler?.player.loopMode ?? _currentState!.loopMode;
-      final shuffleMode = _handler?.player.shuffleModeEnabled ?? _currentState!.shuffleMode;
+      // 修复：优先使用 _currentState 中的 loopMode 和 shuffleMode，而不是从 player 读取
+      // 因为 player 的值可能在恢复过程中被重置为默认值，导致覆盖恢复的状态
+      final loopMode = _currentState!.loopMode;
+      final shuffleMode = _currentState!.shuffleMode;
 
       // 修复：歌曲信息从 PlayerState 获取（唯一真实数据源）
       // 如果播放器有当前索引，且我们有播放列表，从列表获取（最可靠）

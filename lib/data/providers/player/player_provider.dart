@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
@@ -71,8 +70,7 @@ Future<MyAudioHandler> audioHandler(Ref ref) async {
       },
     );
   } catch (e, st) {
-    _logger.e('audioHandler init failed: $e');
-    debugPrintStack(stackTrace: st);
+    _logger.e('audioHandler init failed: $e stackTrace: $st');
     rethrow;
   }
 }
@@ -88,6 +86,8 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   int _lastPersistedPositionSeconds = -1;
   bool? _lastPersistedIsPlaying;
   String? _lastPersistedSong;
+  LoopMode? _lastPersistedLoopMode;
+  bool? _lastPersistedShuffleMode;
 
   // 生命周期/竞态控制
   bool _disposeHookRegistered = false;
@@ -254,12 +254,26 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
     // 如果有恢复的状态，使用它；否则从控制器获取当前状态
     if (restoredState != null) {
+      // 初始化跟踪变量，避免恢复后的第一次状态更新被误判为变化
+      _lastPersistedSong = restoredState.currentSong;
+      _lastPersistedIsPlaying = restoredState.isPlaying;
+      _lastPersistedLoopMode = restoredState.loopMode;
+      _lastPersistedShuffleMode = restoredState.shuffleMode;
+      _lastPersistedPositionSeconds = restoredState.position.inSeconds;
       return restoredState;
     }
 
     // 从控制器获取当前状态
     final currentState = await _playerController?.getState();
-    return currentState?.copyWith(currentDevice: currentDevice) ?? PlayerState(currentDevice: currentDevice);
+    final finalState =
+        currentState?.copyWith(currentDevice: currentDevice) ?? PlayerState(currentDevice: currentDevice);
+    // 初始化跟踪变量
+    _lastPersistedSong = finalState.currentSong;
+    _lastPersistedIsPlaying = finalState.isPlaying;
+    _lastPersistedLoopMode = finalState.loopMode;
+    _lastPersistedShuffleMode = finalState.shuffleMode;
+    _lastPersistedPositionSeconds = finalState.position.inSeconds;
+    return finalState;
   }
 
   Future<void> _initializePlayerController(Device currentDevice, {PlayerState? initialState}) async {
@@ -350,6 +364,24 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
             currentDevice: currentDevice,
           );
         }
+        // 如果缓存中没有状态（首次使用），返回一个空的本地设备状态
+        // 这确保设备切换时状态能正确更新
+        _logger.i("缓存中没有状态，返回空的本地设备状态");
+        return PlayerState(currentDevice: currentDevice);
+      }
+      // 本地模式且控制器已经是本地控制器，尝试从控制器获取状态
+      else if (isLocalMode && _playerController is LocalPlayerControllerImpl) {
+        try {
+          final localState = await _playerController?.getState();
+          if (localState != null) {
+            return localState.copyWith(currentDevice: currentDevice);
+          }
+        } catch (e) {
+          _logger.w('从本地控制器获取状态失败: $e');
+        }
+        // 如果无法从控制器获取状态，返回一个空的本地设备状态
+        _logger.i("无法从本地控制器获取状态，返回空的本地设备状态");
+        return PlayerState(currentDevice: currentDevice);
       }
       // 远程模式:设备did不是web设备,则从API获取真实状态
       else if (did != null && did.isNotEmpty && did != BaseConstants.webDevice) {
@@ -488,13 +520,37 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     // 5. 同步最终状态
     try {
       final realState = await _getDeviceRealState(newDevice);
-      if (switchGen == _switchGen && realState != null) {
-        state = AsyncData(realState);
-      } else if (initialState != null && switchGen == _switchGen) {
-        state = AsyncData(initialState);
+      if (switchGen == _switchGen) {
+        final finalState =
+            realState ??
+            initialState ??
+            // 如果两者都是 null（首次使用），创建一个新的空状态，确保设备信息正确更新
+            // 这解决了首次从远程切换到本地时，状态不更新的问题
+            (() {
+              _logger.i('首次切换到设备 ${newDevice.did}，创建新的空状态');
+              return PlayerState(currentDevice: newDevice);
+            })();
+        state = AsyncData(finalState);
+        // 初始化跟踪变量，避免恢复后的第一次状态更新被误判为变化
+        _lastPersistedSong = finalState.currentSong;
+        _lastPersistedIsPlaying = finalState.isPlaying;
+        _lastPersistedLoopMode = finalState.loopMode;
+        _lastPersistedShuffleMode = finalState.shuffleMode;
+        _lastPersistedPositionSeconds = finalState.position.inSeconds;
       }
     } catch (e) {
       _logger.e('同步状态失败: $e');
+      // 即使出错，也要确保设备信息更新
+      if (switchGen == _switchGen) {
+        final emptyState = PlayerState(currentDevice: newDevice);
+        state = AsyncData(emptyState);
+        // 初始化跟踪变量
+        _lastPersistedSong = emptyState.currentSong;
+        _lastPersistedIsPlaying = emptyState.isPlaying;
+        _lastPersistedLoopMode = emptyState.loopMode;
+        _lastPersistedShuffleMode = emptyState.shuffleMode;
+        _lastPersistedPositionSeconds = emptyState.position.inSeconds;
+      }
     }
 
     // 5. 同步播放内容（如果配置了同步）
@@ -668,37 +724,52 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     // 仅本地设备需要持久化
     if (s.currentDevice?.type != DeviceType.local) return;
 
-    // 降噪：只有关键字段变化或每 >=5s 才落盘
     final posSec = s.position.inSeconds;
     final songChanged = _lastPersistedSong != s.currentSong;
     final playingChanged = _lastPersistedIsPlaying != s.isPlaying;
-    final shouldPersist =
-        songChanged ||
-        playingChanged ||
-        (_lastPersistedPositionSeconds < 0) ||
-        ((posSec - _lastPersistedPositionSeconds).abs() >= 5);
+    final loopModeChanged = _lastPersistedLoopMode != s.loopMode;
+    final shuffleModeChanged = _lastPersistedShuffleMode != s.shuffleMode;
+    final positionChanged =
+        _lastPersistedPositionSeconds < 0 || ((posSec - _lastPersistedPositionSeconds).abs() >= 1); // 至少1秒变化才触发，避免过于频繁
 
-    if (!shouldPersist) return;
+    // 没有任何变化，直接返回
+    if (!songChanged && !playingChanged && !loopModeChanged && !shuffleModeChanged && !positionChanged) {
+      return;
+    }
 
     _saveStateDebounceTimer?.cancel();
 
-    // 如果歌曲变化或播放状态变化，立即保存（不等待防抖），确保切换歌曲或暂停/播放时状态能及时保存
-    if (songChanged || playingChanged) {
-      unawaited(savePlayerState());
-      _lastPersistedPositionSeconds = s.position.inSeconds;
-      _lastPersistedIsPlaying = s.isPlaying;
-      _lastPersistedSong = s.currentSong;
-    } else {
-      // 其他变化使用防抖
-      _saveStateDebounceTimer = Timer(const Duration(milliseconds: 800), () {
-        // 以落盘时的最新 state 为准
-        unawaited(savePlayerState());
-        final latest = state.value;
-        if (latest != null) {
-          _lastPersistedPositionSeconds = latest.position.inSeconds;
-          _lastPersistedIsPlaying = latest.isPlaying;
-          _lastPersistedSong = latest.currentSong;
-        }
+    // 如果歌曲变化、播放状态变化或播放模式变化，立即保存（不等待防抖），确保切换歌曲、暂停/播放或切换播放模式时状态能及时保存
+    if (songChanged || playingChanged || loopModeChanged || shuffleModeChanged) {
+      unawaited(
+        savePlayerState().then((_) {
+          // 以落盘时的最新 state 为准，确保 _lastPersisted* 与实际保存的状态一致
+          final latest = state.value;
+          if (latest != null) {
+            _lastPersistedPositionSeconds = latest.position.inSeconds;
+            _lastPersistedIsPlaying = latest.isPlaying;
+            _lastPersistedSong = latest.currentSong;
+            _lastPersistedLoopMode = latest.loopMode;
+            _lastPersistedShuffleMode = latest.shuffleMode;
+          }
+        }),
+      );
+    } else if (positionChanged) {
+      // 只有位置变化时使用防抖（统一500ms，减少频繁写入）
+      _saveStateDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        // 以落盘时的最新 state 为准，确保 _lastPersisted* 与实际保存的状态一致
+        unawaited(
+          savePlayerState().then((_) {
+            final latest = state.value;
+            if (latest != null) {
+              _lastPersistedPositionSeconds = latest.position.inSeconds;
+              _lastPersistedIsPlaying = latest.isPlaying;
+              _lastPersistedSong = latest.currentSong;
+              _lastPersistedLoopMode = latest.loopMode;
+              _lastPersistedShuffleMode = latest.shuffleMode;
+            }
+          }),
+        );
       });
     }
   }
