@@ -1,0 +1,270 @@
+{
+  "version": "2.0.0", // tasks.json 配置文件版本
+  "tasks": [
+    {
+      // ==================== 1. 依赖管理任务 ====================
+      "label": "flutter: get packages", // 任务名称：显示在任务列表中
+      "type": "shell", // 任务类型：shell 命令
+      "command": "flutter", // 命令：flutter
+      "args": [
+        "pub", // pub 子命令：包管理
+        "get" // get 子命令：获取依赖
+      ],
+      "group": "build", // 任务组：构建相关
+      "presentation": {
+        "echo": true, // 显示命令输出
+        "reveal": "always", // ✅ 总是显示终端
+        "focus": true, // ✅ 自动聚焦终端
+        "panel": "dedicated" // ✅ 专用面板，避免干扰
+      },
+      "problemMatcher": [] // 问题匹配器（空表示无）
+    },
+    {
+      "label": "flutter: pub upgrade", // 升级依赖
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "pub", // pub 命令
+        "upgrade" // 升级到最新兼容版本
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 2. 清理维护任务 ====================
+      "label": "flutter: clean", // 清理构建缓存
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "clean" // 清理构建缓存和临时文件
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 3. 代码质量任务 ====================
+      "label": "flutter: format", // 代码格式化
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "format", // 格式化命令
+        "." // 格式化当前目录所有文件
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: analyze", // 代码分析
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "analyze" // 静态代码分析，检查错误和警告
+      ],
+      "group": "test", // 任务组：测试相关
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示结果
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      }
+    },
+    {
+      // ==================== 4. 运行任务 ====================
+      "label": "flutter: run debug", // 调试模式运行
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run", // 运行命令
+        "--debug" // 调试模式
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: run release", // 发布模式运行
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run", // 运行命令
+        "--release" // 发布模式
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 5. 构建任务 ====================
+      "label": "flutter: build apk", // 构建 Android APK
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", // 构建命令
+        "apk", // Android APK
+        "--release" // Android APK
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示构建进度
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: build apk abi", // 构建 Android APK (按架构拆分)
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", // 构建命令
+        "apk", // Android APK
+        "--release", // Android APK
+        "--split-per-abi" // 按架构拆分 APK
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示构建进度
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: build ios", // 构建 iOS 应用
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", // 构建命令
+        "ios" // iOS 应用
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: build web", // 构建 Web 应用
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", // 构建命令
+        "web" // Web 应用
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 6. 测试任务 ====================
+      "label": "flutter: test", // 运行测试
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "test" // 运行所有测试
+      ],
+      "group": "test", // 测试组
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示测试结果
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 7. 代码生成任务 ====================
+      "label": "flutter: build_runner build", // 代码生成（一次性）
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run", // 运行命令
+        "build_runner", // build_runner 工具
+        "build", // 构建模式
+        "--delete-conflicting-outputs" // 删除冲突的输出文件
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: build_runner watch", // 代码生成（监听模式）
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run", // 运行命令
+        "build_runner", // build_runner 工具
+        "watch", // 监听模式
+        "--delete-conflicting-outputs" // 删除冲突的输出文件
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    },
+    {
+      // ==================== 8. 环境诊断任务 ====================
+      "label": "flutter: doctor", // 环境检查
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "doctor" // 检查 Flutter 开发环境
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", // ✅ 总是显示诊断结果
+        "focus": true, // ✅ 聚焦
+        "panel": "dedicated" // ✅ 专用面板
+      },
+      "problemMatcher": []
+    }
+  ]
+}

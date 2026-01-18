@@ -1,0 +1,2725 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.3.101"
+  },
+  "paths": {
+    "/thdaction": {
+      "post": {
+        "summary": "发送第三方播放指令",
+        "operationId": "thdaction_thdaction_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Item"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Thdaction Thdaction Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "获取首页HTML",
+        "operationId": "read_index__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/getversion": {
+      "get": {
+        "summary": "获取当前版本",
+        "description": "获取当前运行的xiaomusic版本号",
+        "operationId": "getversion_getversion_get",
+        "responses": {
+          "200": {
+            "description": "版本信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResp"
+                },
+                "example": {
+                  "version": "1.0.0"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/getvolume": {
+      "get": {
+        "summary": "获取设备音量",
+        "description": "获取指定设备的当前音量值（0-100）",
+        "operationId": "getvolume_getvolume_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "音量信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VolumeResp"
+                },
+                "example": {
+                  "volume": 50
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setvolume": {
+      "post": {
+        "summary": "设置设备音量",
+        "description": "设置指定设备的音量值（0-100）",
+        "operationId": "setvolume_setvolume_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DidVolume"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "设置结果和当前音量",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetVolumeResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "volume": 50
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/searchmusic": {
+      "get": {
+        "summary": "搜索音乐",
+        "description": "根据关键词搜索音乐，返回匹配的歌曲名称列表",
+        "operationId": "searchmusic_searchmusic_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "匹配的歌曲名称列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Searchmusic Searchmusic Get"
+                },
+                "example": ["七里香.mp3", "夜曲.mp3", "青花瓷.mp3"]
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/playingmusic": {
+      "get": {
+        "summary": "获取当前播放状态",
+        "description": "获取指定设备的当前播放状态，包括是否正在播放、当前歌曲、当前歌单、播放进度等信息",
+        "operationId": "playingmusic_playingmusic_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "播放状态信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayingMusicResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "is_playing": true,
+                  "cur_music": "七里香.mp3",
+                  "cur_playlist": "所有歌曲",
+                  "offset": 120.5,
+                  "duration": 240.0
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cmd": {
+      "post": {
+        "summary": "发送命令",
+        "description": "向指定设备发送语音命令，系统会根据配置的关键词匹配执行相应操作",
+        "operationId": "do_cmd_cmd_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DidCmd"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "命令执行结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/cmdstatus": {
+      "get": {
+        "summary": "查询命令执行状态",
+        "description": "查询最近一次命令的执行状态，返回finish（已完成）或running（执行中）",
+        "operationId": "cmd_status_cmdstatus_get",
+        "responses": {
+          "200": {
+            "description": "命令执行状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CmdStatusResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "status": "finish"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/getsetting": {
+      "get": {
+        "summary": "获取系统设置",
+        "operationId": "getsetting_getsetting_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "need_device_list",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Need Device List true返回device_list字段，false不返回"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "系统配置信息",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "account": "212121212",
+                  "password": "******",
+                  "mi_did": "433421",
+                  "cookie": "",
+                  "verbose": false,
+                  "music_path": "music",
+                  "temp_path": "music/tmp",
+                  "download_path": "music/download",
+                  "conf_path": "conf",
+                  "cache_dir": "cache",
+                  "hostname": "192.168.0.11",
+                  "port": 8090,
+                  "public_port": 58090,
+                  "proxy": "",
+                  "loudnorm": "",
+                  "search_prefix": "bilisearch:",
+                  "ffmpeg_location": "./ffmpeg/bin",
+                  "get_duration_type": "ffprobe",
+                  "active_cmd": "play,search_play,set_play_type_rnd,playlocal,search_playlocal,play_music_list,play_music_list_index,stop_after_minute,stop",
+                  "exclude_dirs": "@eaDir,tmp",
+                  "ignore_tag_dirs": "",
+                  "music_path_depth": 10,
+                  "disable_httpauth": false,
+                  "httpauth_username": "joke",
+                  "httpauth_password": "******",
+                  "music_list_url": "",
+                  "music_list_json": "",
+                  "custom_play_list_json": "",
+                  "disable_download": false,
+                  "key_word_dict": {
+                    "下一首": "play_next",
+                    "上一首": "play_prev",
+                    "单曲循环": "set_play_type_one",
+                    "全部循环": "set_play_type_all",
+                    "随机播放": "set_play_type_rnd",
+                    "单曲播放": "set_play_type_sin",
+                    "顺序播放": "set_play_type_seq",
+                    "分钟后关机": "stop_after_minute",
+                    "刷新列表": "gen_music_list",
+                    "加入收藏": "add_to_favorites",
+                    "收藏歌曲": "add_to_favorites",
+                    "取消收藏": "del_from_favorites",
+                    "播放列表第": "play_music_list_index",
+                    "删除歌曲": "cmd_del_music",
+                    "播放本地歌曲": "playlocal",
+                    "本地播放歌曲": "playlocal",
+                    "本地搜索播放": "search_playlocal",
+                    "播放歌曲": "play",
+                    "放歌曲": "play",
+                    "播放音乐": "play",
+                    "搜索播放": "search_play",
+                    "关机": "stop",
+                    "暂停": "stop",
+                    "停止": "stop",
+                    "停止播放": "stop",
+                    "播放列表": "play_music_list",
+                    "播放歌单": "play_music_list",
+                    "测试自定义口令": "exec#code1(\"hello\")",
+                    "测试链接": "exec#httpget(\"https://github.com/hanxi/xiaomusic\")"
+                  },
+                  "key_match_order": [
+                    "分钟后关机",
+                    "下一首",
+                    "上一首",
+                    "单曲循环",
+                    "全部循环",
+                    "随机播放",
+                    "单曲播放",
+                    "顺序播放",
+                    "关机",
+                    "刷新列表",
+                    "播放列表第",
+                    "播放列表",
+                    "加入收藏",
+                    "收藏歌曲",
+                    "取消收藏",
+                    "删除歌曲",
+                    "播放本地歌曲",
+                    "本地播放歌曲",
+                    "本地搜索播放",
+                    "播放歌曲",
+                    "放歌曲",
+                    "播放音乐",
+                    "搜索播放",
+                    "暂停",
+                    "停止",
+                    "停止播放",
+                    "播放歌单",
+                    "测试自定义口令",
+                    "测试链接"
+                  ],
+                  "use_music_api": false,
+                  "use_music_audio_id": "1582971365183456177",
+                  "use_music_id": "355454500",
+                  "log_file": "xiaomusic.log.txt",
+                  "fuzzy_match_cutoff": 0.6,
+                  "enable_fuzzy_match": true,
+                  "stop_tts_msg": "好运",
+                  "enable_config_example": false,
+                  "keywords_playlocal": "播放本地歌曲,本地播放歌曲",
+                  "keywords_search_playlocal": "本地搜索播放",
+                  "keywords_play": "播放歌曲,放歌曲,播放音乐",
+                  "keywords_search_play": "搜索播放",
+                  "keywords_stop": "关机,暂停,停止,停止播放",
+                  "keywords_playlist": "播放列表,播放歌单",
+                  "user_key_word_dict": {
+                    "测试自定义口令": "exec#code1(\"hello\")",
+                    "测试链接": "exec#httpget(\"https://github.com/hanxi/xiaomusic\")"
+                  },
+                  "enable_force_stop": false,
+                  "devices": {
+                    "4367284": {
+                      "did": "4367284",
+                      "device_id": "cb212121289ee2bdb",
+                      "hardware": "S12A",
+                      "name": "小米AI音箱",
+                      "play_type": 4,
+                      "cur_music": "薛之谦-暧昧",
+                      "cur_playlist": "所有歌曲"
+                    }
+                  },
+                  "group_list": "",
+                  "remove_id3tag": false,
+                  "convert_to_mp3": false,
+                  "delay_sec": 3,
+                  "continue_play": false,
+                  "enable_file_watch": false,
+                  "file_watch_debounce": 10,
+                  "pull_ask_sec": 1,
+                  "enable_pull_ask": true,
+                  "crontab_json": "",
+                  "enable_yt_dlp_cookies": false,
+                  "enable_save_tag": false,
+                  "enable_analytics": true,
+                  "get_ask_by_mina": false,
+                  "play_type_one_tts_msg": "已经设置为单曲循环",
+                  "play_type_all_tts_msg": "已经设置为全部循环",
+                  "play_type_rnd_tts_msg": "已经设置为随机播放",
+                  "play_type_sin_tts_msg": "已经设置为单曲播放",
+                  "play_type_seq_tts_msg": "已经设置为顺序播放",
+                  "recently_added_playlist_len": 50,
+                  "enable_cmd_del_music": true,
+                  "search_music_count": 100,
+                  "web_music_proxy": false,
+                  "device_list": [
+                    {
+                      "deviceID": "212121-21-4f98-96f1-eb1289ee2bdb",
+                      "serialNumber": "18090/21",
+                      "name": "小米AI音箱",
+                      "alias": "小米AI音箱",
+                      "current": false,
+                      "presence": "online",
+                      "address": "223.22.64.2",
+                      "miotDID": "212",
+                      "hardware": "S12A",
+                      "romVersion": "1.76.54",
+                      "romChannel": "release",
+                      "capabilities": {
+                        "content_blacklist": 1,
+                        "lan_tv_control": 1,
+                        "night_mode_v2": 1,
+                        "school_timetable": 1,
+                        "night_mode": 1,
+                        "user_nick_name": 1,
+                        "player_pause_timer": 1,
+                        "dialog_h5": 1,
+                        "child_mode_2": 1,
+                        "dlna": 1,
+                        "report_times": 1,
+                        "voice_print": 1,
+                        "ai_instruction": 1,
+                        "alarm_volume": 1,
+                        "classified_alarm": 1,
+                        "loadmore_v2": 1,
+                        "mesh": 1,
+                        "ai_protocol_3_0": 1,
+                        "voice_print_multidevice": 1,
+                        "night_mode_detail": 1,
+                        "child_mode": 1,
+                        "baby_schedule": 1,
+                        "tone_setting": 1,
+                        "earthquake": 1,
+                        "alarm_repeat_option_v2": 1,
+                        "xiaomi_voip": 1,
+                        "nearby_wakeup_cloud": 1,
+                        "family_voice": 1,
+                        "bluetooth_option_v2": 1,
+                        "skill_try": 0,
+                        "yueyu": 1,
+                        "yunduantts": 1,
+                        "mico_current": 1,
+                        "cp_level": 1,
+                        "voip_used_time": 1
+                      },
+                      "remoteCtrlType": "",
+                      "deviceSNProfile": "2222=",
+                      "deviceProfile": "333=",
+                      "brokerEndpoint": "c3-xq-mt003.bj:1884",
+                      "brokerIndex": 114,
+                      "mac": "E4:D4342426A:45:AD",
+                      "ssid": ""
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savesetting": {
+      "post": {
+        "summary": "保存系统设置",
+        "description": "保存系统配置，密码字段如果为******或空则保持原值不变",
+        "operationId": "savesetting_savesetting_post",
+        "responses": {
+          "200": {
+            "description": "保存结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Savesetting Savesetting Post"
+                },
+                "example": "save success"
+              }
+            }
+          },
+          "400": {
+            "description": "JSON格式错误"
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/musiclist": {
+      "get": {
+        "summary": "获取所有歌单",
+        "operationId": "musiclist_musiclist_get",
+        "responses": {
+          "200": {
+            "description": "所有歌单及其包含的歌曲列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": "string",
+                  "title": "Response Musiclist Musiclist Get"
+                },
+                "example": {
+                  "所有歌曲": ["七里香.mp3", "夜曲.mp3"],
+                  "收藏": ["夜曲.mp3"],
+                  "粤语歌": ["海阔天空.mp3"],
+                  "新建文件夹": ["测试.mp3"]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/musicinfo": {
+      "get": {
+        "summary": "获取歌曲详情",
+        "description": "获取单首歌曲的详细信息，包括播放URL和可选的标签信息（标题、艺术家、专辑等）",
+        "operationId": "musicinfo_musicinfo_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "musictag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Musictag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "歌曲信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MusicInfoResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "name": "七里香.mp3",
+                  "url": "http://192.168.2.5:8090/music/七里香.mp3",
+                  "tags": {
+                    "title": "七里香",
+                    "artist": "周杰伦",
+                    "album": "七里香",
+                    "year": "2004"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/musicinfos": {
+      "get": {
+        "summary": "批量获取歌曲详情",
+        "description": "批量获取多首歌曲的详细信息，包括URL和可选的标签信息",
+        "operationId": "musicinfos_musicinfos_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "Name"
+            }
+          },
+          {
+            "name": "musictag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Musictag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "歌曲信息列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MusicInfoItem"
+                  },
+                  "title": "Response Musicinfos Musicinfos Get"
+                },
+                "example": [
+                  {
+                    "name": "七里香.mp3",
+                    "url": "http://192.168.2.5:8090/music/七里香.mp3",
+                    "tags": {
+                      "title": "七里香",
+                      "artist": "周杰伦",
+                      "album": "七里香"
+                    }
+                  },
+                  {
+                    "name": "夜曲.mp3",
+                    "url": "http://192.168.2.5:8090/music/夜曲.mp3",
+                    "tags": {}
+                  }
+                ]
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setmusictag": {
+      "post": {
+        "summary": "设置歌曲标签信息",
+        "description": "设置歌曲的ID3标签信息，包括标题、艺术家、专辑、年份、流派、歌词和封面图片",
+        "operationId": "setmusictag_setmusictag_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MusicInfoObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "设置结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/curplaylist": {
+      "get": {
+        "summary": "获取当前播放列表名称",
+        "description": "获取指定设备当前正在播放的歌单名称",
+        "operationId": "curplaylist_curplaylist_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前播放列表名称，如果设备不存在则返回空字符串",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Curplaylist Curplaylist Get"
+                },
+                "example": "所有歌曲"
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delmusic": {
+      "post": {
+        "summary": "删除歌曲",
+        "description": "从音乐库中删除指定的歌曲文件",
+        "operationId": "delmusic_delmusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MusicItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "删除操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Delmusic Delmusic Post"
+                },
+                "example": "success"
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playmusic": {
+      "post": {
+        "summary": "播放指定歌曲",
+        "description": "在指定设备上播放歌曲，可通过歌曲名或搜索关键字播放",
+        "operationId": "playmusic_playmusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DidPlayMusic"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "播放操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playmusiclist": {
+      "post": {
+        "summary": "播放歌单",
+        "description": "在指定设备上播放指定歌单，可指定从歌单中的某首歌曲开始播放",
+        "operationId": "playmusiclist_playmusiclist_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DidPlayMusicList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "播放操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/downloadjson": {
+      "post": {
+        "summary": "下载JSON文件",
+        "description": "从指定URL下载JSON文件内容",
+        "operationId": "downloadjson_downloadjson_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrlInfo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "下载结果和文件内容",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadJsonResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "content": "{\"key\": \"value\", \"data\": [1, 2, 3]}"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/downloadlog": {
+      "get": {
+        "summary": "下载日志文件",
+        "operationId": "downloadlog_downloadlog_get",
+        "responses": {
+          "200": {
+            "description": "日志文件内容（文本格式）",
+            "content": {
+              "text/plain": {
+                "example": "2025-12-17 10:00:00 INFO: 系统启动\n2025-12-17 10:01:00 DEBUG: 播放音乐\n"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playurl": {
+      "get": {
+        "summary": "播放URL",
+        "operationId": "playurl_playurl_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Did"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "播放结果列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Playurl Playurl Get"
+                },
+                "example": [
+                  {
+                    "ret": "OK",
+                    "device_id": "123456789",
+                    "status": "playing"
+                  }
+                ]
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/playtts": {
+      "get": {
+        "summary": "文本转语音",
+        "description": "在指定设备上播放文本转语音（TTS），设备会朗读指定的文本内容",
+        "operationId": "playtts_playtts_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Did"
+            }
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Text"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "TTS播放结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/refreshmusictag": {
+      "post": {
+        "summary": "刷新音乐标签缓存",
+        "description": "清除并重新加载所有音乐文件的标签信息缓存",
+        "operationId": "refreshmusictag_refreshmusictag_post",
+        "responses": {
+          "200": {
+            "description": "刷新操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/debug_play_by_music_url": {
+      "post": {
+        "summary": "调试接口：直接调用mina_service播放",
+        "operationId": "debug_play_by_music_url_debug_play_by_music_url_post",
+        "responses": {
+          "200": {
+            "description": "播放结果",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "status": "playing"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/latestversion": {
+      "get": {
+        "summary": "获取最新版本",
+        "description": "从远程仓库获取xiaomusic的最新版本号",
+        "operationId": "latest_version_latestversion_get",
+        "responses": {
+          "200": {
+            "description": "版本信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LatestVersionResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "version": "1.0.0"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/downloadplaylist": {
+      "post": {
+        "summary": "下载歌单",
+        "description": "从URL下载歌单或B站收藏夹，支持自动创建目录并整理文件",
+        "operationId": "downloadplaylist_downloadplaylist_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadPlayList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "下载操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/downloadonemusic": {
+      "post": {
+        "summary": "下载单首歌曲",
+        "description": "从URL下载单首歌曲或视频，支持自动命名或指定文件名",
+        "operationId": "downloadonemusic_downloadonemusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadOneMusic"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "下载操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/uploadytdlpcookie": {
+      "post": {
+        "summary": "上传yt-dlp cookies文件",
+        "description": "上传yt-dlp所需的cookies文件，用于访问需要登录的视频网站",
+        "operationId": "upload_yt_dlp_cookie_uploadytdlpcookie_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_yt_dlp_cookie_uploadytdlpcookie_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "上传结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadCookieResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "filename": "cookies.txt",
+                  "file_location": "conf/yt-dlp-cookie.txt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/playlistadd": {
+      "post": {
+        "summary": "新建歌单",
+        "description": "创建一个新的自定义歌单",
+        "operationId": "playlistadd_playlistadd_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "创建结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistdel": {
+      "post": {
+        "summary": "删除歌单",
+        "description": "删除指定的自定义歌单",
+        "operationId": "playlistdel_playlistdel_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "删除结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistupdatename": {
+      "post": {
+        "summary": "重命名歌单",
+        "description": "重命名指定的自定义歌单",
+        "operationId": "playlistupdatename_playlistupdatename_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListUpdateObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "重命名结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistnames": {
+      "get": {
+        "summary": "获取所有自定义歌单名称",
+        "description": "获取所有用户创建的自定义歌单名称列表",
+        "operationId": "getplaylistnames_playlistnames_get",
+        "responses": {
+          "200": {
+            "description": "歌单名称列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistNamesResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "names": ["收藏", "粤语歌", "新建文件夹"]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistaddmusic": {
+      "post": {
+        "summary": "向歌单添加歌曲",
+        "description": "向指定歌单中添加一首或多首歌曲",
+        "operationId": "playlistaddmusic_playlistaddmusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListMusicObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "添加结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistdelmusic": {
+      "post": {
+        "summary": "从歌单移除歌曲",
+        "description": "从指定歌单中移除一首或多首歌曲",
+        "operationId": "playlistdelmusic_playlistdelmusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListMusicObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "移除结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistupdatemusic": {
+      "post": {
+        "summary": "覆盖更新歌单内的歌曲",
+        "description": "用新的歌曲列表完全替换指定歌单中的所有歌曲",
+        "operationId": "playlistupdatemusic_playlistupdatemusic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListMusicObj"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "更新结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/playlistmusics": {
+      "get": {
+        "summary": "获取歌单中的所有歌曲",
+        "description": "获取指定歌单中包含的所有歌曲名称列表",
+        "operationId": "getplaylist_playlistmusics_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "歌单中的歌曲列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistMusicsResp"
+                },
+                "example": {
+                  "ret": "OK",
+                  "musics": ["七里香.mp3", "夜曲.mp3", "青花瓷.mp3"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/updateversion": {
+      "post": {
+        "summary": "系统更新",
+        "description": "更新系统到指定版本，更新完成后会自动重启服务",
+        "operationId": "updateversion_updateversion_post",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "lite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Lite"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "更新操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetMsg"
+                },
+                "example": {
+                  "ret": "OK"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/music/{file_path}": {
+      "get": {
+        "summary": "下载或播放音乐文件",
+        "operationId": "music_file_music__file_path__get",
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "音乐文件流（支持Range请求，用于音频播放）",
+            "content": {
+              "audio/mpeg": {
+                "example": "二进制音频数据"
+              },
+              "audio/mp3": {
+                "example": "二进制音频数据"
+              }
+            }
+          },
+          "404": {
+            "description": "文件不存在或访问被拒绝"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "summary": "音乐文件Options请求",
+        "operationId": "music_options_music__file_path__options",
+        "responses": {
+          "200": {
+            "description": "CORS预检响应，包含Accept-Ranges头",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "headers": {
+              "Accept-Ranges": {
+                "description": "支持字节范围请求",
+                "schema": {
+                  "type": "string",
+                  "example": "bytes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/picture/{file_path}": {
+      "get": {
+        "summary": "获取音乐封面图片",
+        "operationId": "get_picture_picture__file_path__get",
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "图片文件流",
+            "content": {
+              "image/jpeg": {
+                "example": "二进制图片数据"
+              },
+              "image/png": {
+                "example": "二进制图片数据"
+              }
+            }
+          },
+          "404": {
+            "description": "图片文件不存在或访问被拒绝"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proxy": {
+      "get": {
+        "summary": "基于正常下载逻辑的代理接口",
+        "description": "通过Base64编码的URL代理下载文件，支持流式传输",
+        "operationId": "proxy_proxy_get",
+        "parameters": [
+          {
+            "name": "urlb64",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Urlb64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文件流（根据URL返回对应的Content-Type）",
+            "content": {
+              "audio/mpeg": {
+                "example": "二进制音频数据"
+              },
+              "video/mp4": {
+                "example": "二进制视频数据"
+              },
+              "application/octet-stream": {
+                "example": "二进制文件数据"
+              }
+            }
+          },
+          "400": {
+            "description": "Base64解码失败或URL格式无效"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "连接错误"
+          },
+          "504": {
+            "description": "下载超时"
+          }
+        }
+      }
+    },
+    "/generate_ws_token": {
+      "get": {
+        "summary": "生成WebSocket Token",
+        "description": "生成用于WebSocket连接的JWT token，token有效期为5分钟",
+        "operationId": "generate_ws_token_generate_ws_token_get",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "did",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WsTokenResp"
+                },
+                "example": {
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "expire_in": 300
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "设备ID无效"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_yt_dlp_cookie_uploadytdlpcookie_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": ["file"],
+        "title": "Body_upload_yt_dlp_cookie_uploadytdlpcookie_post"
+      },
+      "CmdStatusResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "status"],
+        "title": "CmdStatusResp"
+      },
+      "DidCmd": {
+        "properties": {
+          "did": {
+            "type": "string",
+            "title": "Did",
+            "description": "设备ID"
+          },
+          "cmd": {
+            "type": "string",
+            "title": "Cmd",
+            "description": "命令内容"
+          }
+        },
+        "type": "object",
+        "required": ["did", "cmd"],
+        "title": "DidCmd"
+      },
+      "DidPlayMusic": {
+        "properties": {
+          "did": {
+            "type": "string",
+            "title": "Did",
+            "description": "设备ID"
+          },
+          "musicname": {
+            "type": "string",
+            "title": "Musicname",
+            "description": "歌曲名",
+            "default": ""
+          },
+          "searchkey": {
+            "type": "string",
+            "title": "Searchkey",
+            "description": "搜索关键字",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": ["did"],
+        "title": "DidPlayMusic"
+      },
+      "DidPlayMusicList": {
+        "properties": {
+          "did": {
+            "type": "string",
+            "title": "Did",
+            "description": "设备ID"
+          },
+          "listname": {
+            "type": "string",
+            "title": "Listname",
+            "description": "歌单名称",
+            "default": ""
+          },
+          "musicname": {
+            "type": "string",
+            "title": "Musicname",
+            "description": "歌曲名称(可选)",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": ["did"],
+        "title": "DidPlayMusicList"
+      },
+      "DidVolume": {
+        "properties": {
+          "did": {
+            "type": "string",
+            "title": "Did",
+            "description": "设备ID"
+          },
+          "volume": {
+            "type": "integer",
+            "title": "Volume",
+            "description": "音量大小 (0-100)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["did"],
+        "title": "DidVolume"
+      },
+      "DownloadJsonResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "content"],
+        "title": "DownloadJsonResp"
+      },
+      "DownloadOneMusic": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "保存的文件名，留空则自动获取",
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "歌曲或视频的URL"
+          }
+        },
+        "type": "object",
+        "required": ["url"],
+        "title": "DownloadOneMusic"
+      },
+      "DownloadPlayList": {
+        "properties": {
+          "dirname": {
+            "type": "string",
+            "title": "Dirname",
+            "description": "下载到的目录名称"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "歌单或视频的URL"
+          }
+        },
+        "type": "object",
+        "required": ["dirname", "url"],
+        "title": "DownloadPlayList"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Item": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "args": {
+            "type": "string",
+            "title": "Args"
+          }
+        },
+        "type": "object",
+        "required": ["action", "args"],
+        "title": "Item"
+      },
+      "LatestVersionResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": ["ret"],
+        "title": "LatestVersionResp"
+      },
+      "MusicInfoItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "tags": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tags",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": ["name", "url"],
+        "title": "MusicInfoItem"
+      },
+      "MusicInfoObj": {
+        "properties": {
+          "musicname": {
+            "type": "string",
+            "title": "Musicname",
+            "description": "歌曲文件名"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "标题",
+            "default": ""
+          },
+          "artist": {
+            "type": "string",
+            "title": "Artist",
+            "description": "艺术家",
+            "default": ""
+          },
+          "album": {
+            "type": "string",
+            "title": "Album",
+            "description": "专辑",
+            "default": ""
+          },
+          "year": {
+            "type": "string",
+            "title": "Year",
+            "description": "年份",
+            "default": ""
+          },
+          "genre": {
+            "type": "string",
+            "title": "Genre",
+            "description": "流派",
+            "default": ""
+          },
+          "lyrics": {
+            "type": "string",
+            "title": "Lyrics",
+            "description": "歌词",
+            "default": ""
+          },
+          "picture": {
+            "type": "string",
+            "title": "Picture",
+            "description": "封面图片(Base64)",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": ["musicname"],
+        "title": "MusicInfoObj"
+      },
+      "MusicInfoResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "tags": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tags",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": ["ret", "name", "url"],
+        "title": "MusicInfoResp"
+      },
+      "MusicItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "歌曲文件名"
+          }
+        },
+        "type": "object",
+        "required": ["name"],
+        "title": "MusicItem"
+      },
+      "PlayListMusicObj": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "歌单名称",
+            "default": ""
+          },
+          "music_list": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Music List",
+            "description": "歌曲名称列表"
+          }
+        },
+        "type": "object",
+        "required": ["music_list"],
+        "title": "PlayListMusicObj"
+      },
+      "PlayListObj": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "歌单名称",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "PlayListObj"
+      },
+      "PlayListUpdateObj": {
+        "properties": {
+          "oldname": {
+            "type": "string",
+            "title": "Oldname",
+            "description": "旧歌单名"
+          },
+          "newname": {
+            "type": "string",
+            "title": "Newname",
+            "description": "新歌单名"
+          }
+        },
+        "type": "object",
+        "required": ["oldname", "newname"],
+        "title": "PlayListUpdateObj"
+      },
+      "PlayingMusicResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "is_playing": {
+            "type": "boolean",
+            "title": "Is Playing"
+          },
+          "cur_music": {
+            "type": "string",
+            "title": "Cur Music"
+          },
+          "cur_playlist": {
+            "type": "string",
+            "title": "Cur Playlist"
+          },
+          "offset": {
+            "type": "number",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ret",
+          "is_playing",
+          "cur_music",
+          "cur_playlist",
+          "offset",
+          "duration"
+        ],
+        "title": "PlayingMusicResp"
+      },
+      "PlaylistMusicsResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "musics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Musics"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "musics"],
+        "title": "PlaylistMusicsResp"
+      },
+      "PlaylistNamesResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Names"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "names"],
+        "title": "PlaylistNamesResp"
+      },
+      "RetMsg": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          }
+        },
+        "type": "object",
+        "required": ["ret"],
+        "title": "RetMsg"
+      },
+      "SetVolumeResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "volume": {
+            "type": "integer",
+            "title": "Volume"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "volume"],
+        "title": "SetVolumeResp"
+      },
+      "UploadCookieResp": {
+        "properties": {
+          "ret": {
+            "type": "string",
+            "title": "Ret"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "file_location": {
+            "type": "string",
+            "title": "File Location"
+          }
+        },
+        "type": "object",
+        "required": ["ret", "filename", "file_location"],
+        "title": "UploadCookieResp"
+      },
+      "UrlInfo": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "文件URL"
+          }
+        },
+        "type": "object",
+        "required": ["url"],
+        "title": "UrlInfo"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      },
+      "VersionResp": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": ["version"],
+        "title": "VersionResp"
+      },
+      "VolumeResp": {
+        "properties": {
+          "volume": {
+            "type": "integer",
+            "title": "Volume"
+          }
+        },
+        "type": "object",
+        "required": ["volume"],
+        "title": "VolumeResp"
+      },
+      "WsTokenResp": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "expire_in": {
+            "type": "integer",
+            "title": "Expire In"
+          }
+        },
+        "type": "object",
+        "required": ["token", "expire_in"],
+        "title": "WsTokenResp"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBasic": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  }
+}

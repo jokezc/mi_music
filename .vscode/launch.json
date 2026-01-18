@@ -1,0 +1,156 @@
+{
+  "version": "0.2.0", // launch.json 配置文件版本
+  "configurations": [
+    {
+      // ==================== 基础调试配置 ====================
+      "name": "Flutter: 运行应用 (Debug)", // 配置名称：显示在调试下拉菜单中
+      "request": "launch", // 请求类型：launch（启动）或 attach（附加）
+      "type": "dart", // 调试器类型：Dart/Flutter
+      "program": "lib/main.dart", // 应用入口文件
+      "args": [], // 命令行参数（空数组表示无额外参数）
+      "flutterMode": "debug", // Flutter 运行模式：debug（调试模式）
+      "env": {}, // 环境变量（空对象表示无自定义环境变量）
+      "preLaunchTask": "flutter: get packages" // 启动前执行的任务：获取依赖
+    },
+    {
+      // Release 模式：性能优化，无调试信息
+      "name": "Flutter: 运行应用 (Release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [],
+      "flutterMode": "release", // Release 模式：优化性能，适合发布
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      // Profile 模式：性能分析，保留部分调试信息
+      "name": "Flutter: 运行应用 (Profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [],
+      "flutterMode": "profile", // Profile 模式：性能分析，适合性能测试
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      // ==================== 调试参数配置 ====================
+      "name": "Flutter: 运行应用 (带调试器)", // 显式指定调试参数
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--debug" // 显式指定调试模式参数
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      // ==================== 热重载/重启配置 ====================
+      "name": "Flutter: 运行应用 (热重载)", // 热重载：保持应用状态
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--hot-reload" // 热重载参数：代码更改后快速更新，保持状态
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      "name": "Flutter: 运行应用 (热重启)", // 热重启：重置应用状态
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--hot-restart" // 热重启参数：完全重启应用，重置状态
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      // ==================== 多平台配置 ====================
+      "name": "Flutter: 运行应用 (Web)", // Web 平台
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d", // 指定设备参数
+        "chrome" // Chrome 浏览器
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      "name": "Flutter: 运行应用 (Windows)", // Windows 桌面平台
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d", // 指定设备参数
+        "windows" // Windows 桌面应用
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      "name": "Flutter: 运行应用 (Android)", // Android 移动平台
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d", // 指定设备参数
+        "android" // Android 设备/模拟器
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      "name": "Flutter: 运行应用 (iOS)", // iOS 移动平台
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d", // 指定设备参数
+        "ios" // iOS 设备/模拟器
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      // ==================== 高级调试配置 ====================
+      "name": "Flutter: 运行应用 (调试模式)", // 调试+详细日志
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--debug", // 调试模式
+        "--verbose" // 详细日志输出
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    },
+    {
+      "name": "Flutter: 运行应用 (无调试)", // 性能测试模式
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--no-debug" // 无调试器，纯运行
+      ],
+      "env": {},
+      "preLaunchTask": "flutter: get packages"
+    }
+  ],
+  "compounds": [
+    {
+      // ==================== 复合配置 ====================
+      "name": "Flutter: 完整调试会话", // 组合配置：清理+获取依赖+运行
+      "configurations": [
+        "Flutter: 运行应用 (Debug)" // 依赖的配置名称
+      ],
+      "preLaunchTask": "flutter: clean && flutter: get packages" // 清理并重新获取依赖
+    }
+  ]
+}

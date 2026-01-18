@@ -1,0 +1,145 @@
+{
+  // ==================== 编辑器基础设置 ====================
+  // 保存文件时自动格式化代码
+  "editor.formatOnSave": true,
+  // 保存文件时自动执行代码操作
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit", // 整理 import 语句（删除未使用的，按规则排序）
+    "source.fixAll": "explicit" // 自动修复所有可修复的问题
+  },
+  // 缩进设置
+  "editor.tabSize": 2, // 使用 2 个空格作为缩进
+  "editor.insertSpaces": true, // 使用空格而不是制表符
+  "editor.detectIndentation": false, // 不自动检测缩进，强制使用上面的设置
+  // 自动保存
+  "files.autoSave": "afterDelay", // 文件修改后自动保存
+  "files.autoSaveDelay": 1000, // 自动保存延迟时间（毫秒）
+  // ==================== Dart/Flutter SDK 设置 ====================
+  // Flutter SDK 路径（相对路径）
+  // "dart.flutterSdkPath": "./flutter",
+  // 代码行最大长度
+  "dart.lineLength": 120, // 超过 120 字符会自动换行
+  // 热重载设置
+  "dart.hotReloadOnSave": "all", // 保存时自动热重载所有更改
+  // 分析排除文件夹（提高性能）
+  "dart.analysisExcludedFolders": [
+    "android", // Android 原生代码
+    "ios", // iOS 原生代码
+    "build", // 构建输出
+    ".dart_tool", // Dart 工具生成的文件
+    ".idea", // IntelliJ IDEA 配置
+    ".vscode" // VS Code 配置
+  ],
+  // ==================== 文件浏览器设置 ====================
+  // 在文件浏览器中隐藏的文件/文件夹
+  "files.exclude": {
+    "**/.git": true, // Git 版本控制文件
+    "**/.svn": true, // SVN 版本控制文件
+    "**/.hg": true, // Mercurial 版本控制文件
+    "**/node_modules": true, // Node.js 依赖
+    "**/bower_components": true, // Bower 依赖
+    "**/*.pyc": true, // Python 编译文件
+    "**/.pyo": true, // Python 优化文件
+    "**/__pycache__": true, // Python 缓存
+    "**/.DS_Store": true, // macOS 系统文件
+    "**/Thumbs.db": true, // Windows 缩略图缓存
+    "**/build": true, // Flutter 构建输出
+    "**/.dart_tool": true, // Dart 工具文件
+    "**/.idea": true, // IDEA 配置
+    "**/.vscode": false // VS Code 配置（显示）
+  },
+  // 搜索时排除的文件/文件夹
+  "search.exclude": {
+    "**/node_modules": true, // Node.js 依赖
+    "**/bower_components": true, // Bower 依赖
+    "**/build": true, // 构建输出
+    "**/.dart_tool": true, // Dart 工具文件
+    "**/.idea": true, // IDEA 配置
+    "**/.vscode": false // VS Code 配置（可搜索）
+  },
+  // ==================== Flutter 开发体验 ====================
+  // Flutter 热重载设置
+  "flutter.hotReloadOnSave": "all", // 保存时热重载
+  // UI 增强功能
+  "flutter.closingLabels": true, // 显示闭合标签（类/方法结束标记）
+  "flutter.outline": true, // 显示 Flutter 大纲视图
+  // Flutter 调试器设置
+  "flutter.debugger": {
+    "showDartDebugging": true, // 显示 Dart 调试信息
+    "showFlutterDebugging": true // 显示 Flutter 调试信息
+  },
+  // ==================== Dart 编辑器设置 ====================
+  // Dart 文件专用设置
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code", // 默认格式化工具
+    "editor.formatOnSave": true, // 保存时格式化
+    "editor.selectionHighlight": true, // 高亮选中变量
+    "editor.suggestSelection": "first", // 自动选择第一个建议
+    "editor.tabCompletion": "on", // Tab 键触发补全
+    "editor.wordWrap": "on", // 自动换行
+    "editor.wordWrapColumn": 120, // 换行列数
+    "editor.fontLigatures": true, // 字体连字（如 != 显示为 ≠）
+    "editor.inlayHints.enabled": "on" // 显示类型提示
+  },
+  // ==================== 窗口和终端设置 ====================
+  // 窗口缩放级别（0 为正常）
+  "window.zoomLevel": 0,
+  // 终端设置
+  "terminal.integrated.defaultProfile.windows": "PowerShell", // Windows 默认终端
+  "terminal.integrated.shellArgs.windows": [
+    "-NoExit" // PowerShell 启动后不自动退出
+  ],
+  // ==================== 调试设置 ====================
+  // 调试控制台
+  "debug.console.fontSize": 13, // 调试控制台字体大小
+  "debug.inlineValues": "on", // 在代码中显示变量值
+  "debug.showInStatusBar": "onFirstSessionStart", // 首次调试时在状态栏显示
+  // ==================== Dart 调试相关设置 ====================
+  // 调试范围控制
+  "dart.debugExternalPackageLibraries": false, // 不调试外部包代码
+  "dart.debugSdkLibraries": false, // 不调试 SDK 代码
+  "dart.maxLogLineLength": 2000, // 日志行最大长度
+  // 警告设置
+  "dart.warnWhenEditingFilesInBuildFolder": true, // 编辑 build 文件夹时警告
+  "dart.warnWhenEditingFilesInSdkFolder": true, // 编辑 SDK 文件夹时警告
+  // ==================== 热重载/重启设置 ====================
+  // 热重载/重启行为
+  "dart.flutterHotReloadOnSave": "all", // 保存时热重载（保持状态）
+  "dart.flutterHotRestartOnSave": false, // 保存时不热重启（不重置状态）
+  // ==================== 错误和测试设置 ====================
+  // 错误显示
+  "dart.flutterStructuredErrors": true, // 显示结构化错误信息
+  // 测试相关
+  "dart.flutterTestCodeLens": true, // 显示测试代码操作按钮
+  "dart.flutterTestOpenTestOnRun": false, // 运行测试时不自动打开测试文件
+  "dart.flutterTestShowSkippedTests": false, // 不显示跳过的测试
+  "dart.flutterTestTimeout": 30, // 测试超时时间（秒）
+  // ==================== UI 增强和调试 ====================
+  // Widget 调试
+  "dart.flutterTrackWidgetCreation": true, // 跟踪 Widget 创建（用于调试）
+  // UI 指南
+  "dart.flutterUiGuides": true, // 显示 Flutter UI 指南
+  "dart.flutterUiGuidesCustomTracking": true, // 自定义 UI 指踪
+  // ==================== 智能提示和功能 ====================
+  // 语言功能
+  "dart.lsp": true, // 使用语言服务器协议
+  "dart.previewDart2": true, // Dart 2 模式
+  "dart.previewFlutterUiGuides": true, // Flutter UI 指南预览
+  "dart.previewFlutterUiGuidesCustomTracking": true, // 自定义跟踪预览
+  "dart.previewLsp": true, // LSP 预览功能
+  // SDK 路径（空字符串表示使用环境变量）
+  "dart.sdkPath": "",
+  // ==================== 日志和显示设置 ====================
+  // 日志显示
+  "dart.showDartDeveloperLogs": false, // 不显示 Dart 开发者日志
+  "dart.showIgnoreInfo": true, // 显示忽略信息
+  "dart.showSkippedTests": false, // 不显示跳过的测试
+  // 代码提示
+  "dart.showTestCodeLens": true, // 显示测试代码操作
+  // 工具使用
+  "dart.useDevTools": true, // 使用 DevTools
+  "dart.useLegacyFormatting": false, // 不使用旧格式化
+  // 编辑警告
+  "dart.warnOnEditingFilesInSdk": true, // 编辑 SDK 文件时警告
+  "dart.warnOnEditingFilesInBuild": true // 编辑 build 文件时警告
+}
