@@ -117,11 +117,20 @@ GoRouter router(Ref ref) {
                   final encodedName = state.pathParameters['name']!;
                   // 安全解码，如果解码失败则使用原始值
                   String name;
-                  try {
-                    name = Uri.decodeComponent(encodedName);
-                  } catch (e) {
-                    _logger.e("解码歌单名称 $encodedName 失败: $e");
-                    // 如果解码失败（例如包含无效的百分号编码），使用原始值
+                  // 检查是否包含百分号编码（%XX 格式）
+                  final hasPercentEncoding = encodedName.contains('%') && 
+                      RegExp(r'%[0-9A-Fa-f]{2}').hasMatch(encodedName);
+                  
+                  if (hasPercentEncoding) {
+                    try {
+                      name = Uri.decodeComponent(encodedName);
+                    } catch (e) {
+                      _logger.w("解码歌单名称 $encodedName 失败: $e，使用原始值");
+                      // 如果解码失败（例如包含无效的百分号编码），使用原始值
+                      name = encodedName;
+                    }
+                  } else {
+                    // 如果不包含百分号编码，说明可能已经被解码或本身就是原始值
                     name = encodedName;
                   }
                   return PlaylistDetailPage(playlistName: name);

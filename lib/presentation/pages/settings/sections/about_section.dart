@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const String currentVersion = '1.0.0+1';
 
 Future<Map<String, dynamic>> _checkForUpdate() async {
   try {
@@ -17,7 +17,7 @@ Future<Map<String, dynamic>> _checkForUpdate() async {
       final latestVersion = data['tag_name'] ?? '';
       final releaseUrl = data['html_url'] ?? 'https://github.com/jokezc/mi_music/releases';
       return {
-        'hasUpdate': latestVersion.isNotEmpty && latestVersion != currentVersion,
+        'hasUpdate': latestVersion.isNotEmpty && latestVersion != BaseConstants.currentVersion,
         'latestVersion': latestVersion,
         'releaseUrl': releaseUrl,
       };
@@ -37,7 +37,7 @@ Future<void> _showUpdateDialog(BuildContext context, String latestVersion, Strin
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('当前版本: $currentVersion'),
+          Text('当前版本: ${BaseConstants.currentVersion}'),
           Text('最新版本: $latestVersion'),
           const SizedBox(height: 8),
           const Text('是否前往下载新版本？'),
@@ -92,7 +92,7 @@ class AboutSection extends ConsumerWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(currentVersion),
+                          Text(BaseConstants.currentVersion),
                           if (snapshot.hasData && snapshot.data!['hasUpdate'] == true)
                             Padding(
                               padding: const EdgeInsets.only(left: 8),
@@ -173,7 +173,7 @@ class AboutSection extends ConsumerWidget {
                         showLicensePage(
                           context: context,
                           applicationName: S.appName,
-                          applicationVersion: currentVersion,
+                          applicationVersion: BaseConstants.currentVersion,
                           applicationIcon: Container(
                             width: 64,
                             height: 64,
@@ -294,7 +294,7 @@ class AboutSection extends ConsumerWidget {
           Navigator.of(context).pop();
         }
 
-        if (latestVersion.isNotEmpty && latestVersion != currentVersion) {
+        if (latestVersion.isNotEmpty && latestVersion != BaseConstants.currentVersion) {
           if (context.mounted) {
             _showUpdateDialog(context, latestVersion, releaseUrl);
           }
