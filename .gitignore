@@ -47,6 +47,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android release signing secrets (DO NOT COMMIT)
+**/*.jks
+**/*.keystore
+android/key.properties
 /.trae/skills
 /.claude
 /.shared
