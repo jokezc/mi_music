@@ -116,6 +116,6 @@ flutter build apk --release --split-per-abi
 
 |                微信支付                 |                  支付宝                  |
 | :-------------------------------------: | :--------------------------------------: |
-| <img src="assets/wx.jpg" width="200" /> | <img src="assets/zfb.jpg" width="200" /> |
+| <img src="assets/wx.jpg" width="300" /> | <img src="assets/zfb.jpg" width="300" /> |
 
 感谢每一位支持的朋友！
