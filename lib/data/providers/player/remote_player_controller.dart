@@ -55,15 +55,17 @@ class RemotePlayerControllerImpl implements IPlayerController {
   }
 
   /// 将 playType 转换为 LoopMode 和 shuffleMode
-  /// playType: 1=全部循环, 2=随机播放, 3=单曲循环, 4=顺序播放
+  /// playType: 0=单曲循环, 1=全部循环, 2=随机播放, 3=单曲播放, 4=顺序播放
   static ({LoopMode loopMode, bool shuffleMode}) _playTypeToMode(int? playType) {
     switch (playType) {
+      case 0: // 单曲循环
+        return (loopMode: LoopMode.one, shuffleMode: false);
       case 1: // 全部循环
         return (loopMode: LoopMode.all, shuffleMode: false);
       case 2: // 随机播放
         return (loopMode: LoopMode.all, shuffleMode: true);
-      case 3: // 单曲循环
-        return (loopMode: LoopMode.one, shuffleMode: false);
+      case 3: // 单曲播放
+        return (loopMode: LoopMode.off, shuffleMode: false);
       case 4: // 顺序播放
       default:
         return (loopMode: LoopMode.off, shuffleMode: false);
@@ -107,10 +109,18 @@ class RemotePlayerControllerImpl implements IPlayerController {
     }
   }
 
-  Device? _getDeviceByDid(String did) {
-    final devicesAsync = _ref.read(playerDevicesProvider);
-    final devices = devicesAsync.value ?? {};
-    return devices[did];
+  /// 根据 did 获取设备信息（异步，确保获取最新数据）
+  Future<Device?> _getDeviceByDid(String did) async {
+    try {
+      final devices = await _ref.read(playerDevicesProvider.future);
+      return devices[did];
+    } catch (e) {
+      _logger.w('获取设备信息失败 (did: $did): $e');
+      // 降级：尝试从同步读取获取
+      final devicesAsync = _ref.read(playerDevicesProvider);
+      final devices = devicesAsync.value ?? {};
+      return devices[did];
+    }
   }
 
   void startPolling(String? did) {
@@ -145,7 +155,7 @@ class RemotePlayerControllerImpl implements IPlayerController {
     try {
       final apiClient = _ref.read(apiClientProvider);
       final resp = await apiClient.getPlayingMusic(did);
-
+      // _logger.d("获取远程播放状态: ${resp.toJson()}");
       // 检查是否已被销毁（异步操作期间可能被销毁）
       if (_disposed) {
         return _currentState;
@@ -159,8 +169,10 @@ class RemotePlayerControllerImpl implements IPlayerController {
       final durationSeconds = resp.duration.toInt();
       final duration = durationSeconds > 36000 ? Duration.zero : Duration(seconds: durationSeconds);
 
-      // 按 did 解析对应设备，避免切换后读取到新的“当前设备”导致错配
-      final currentDevice = _getDeviceByDid(did) ?? _currentState?.currentDevice ?? _getCurrentDevice();
+      // 按 did 解析对应设备，避免切换后读取到新的"当前设备"导致错配
+      // 使用异步方法获取最新设备信息，确保 playType 等字段是最新的
+      final currentDevice = await _getDeviceByDid(did) ?? _currentState?.currentDevice ?? _getCurrentDevice();
+      // _logger.d('获取设备信息: did=$did, playType=${currentDevice?.playType}, name=${currentDevice?.name}');
       final playlistName = resp.curPlaylist.trim();
       final currentSong = resp.curMusic;
 
@@ -205,6 +217,7 @@ class RemotePlayerControllerImpl implements IPlayerController {
       }
 
       // 从设备信息中获取播放模式（playType）
+      // 优先使用设备信息中的 playType，如果没有则使用状态中已有的播放模式
       final playMode = currentDevice?.playType != null
           ? _playTypeToMode(currentDevice!.playType)
           : (loopMode: baseState.loopMode, shuffleMode: baseState.shuffleMode);
@@ -507,37 +520,50 @@ class RemotePlayerControllerImpl implements IPlayerController {
 
     final apiClient = _ref.read(apiClientProvider);
 
-    // 重新获取设备信息（从最新的设备列表中获取）
-    final updatedDevice = _getCurrentDevice();
+    // 获取当前设备信息（使用异步方法确保获取最新数据）
+    final updatedDevice = await _getDeviceByDid(did) ?? currentDevice;
     final currentPlayType = updatedDevice?.playType;
 
     _logger.d('当前播放模式 playType: $currentPlayType, 设备: ${updatedDevice?.name}');
 
     // 根据设备信息中的 playType 判断下一个模式
-    // playType: 1=全部循环, 2=随机播放, 3=单曲循环, 4=顺序播放
-    // 切换路径：全部循环(1) -> 随机播放(2) -> 单曲循环(3) -> 顺序播放(4) -> 全部循环(1)
+    // playType: 0=单曲循环, 1=全部循环, 2=随机播放, 3=单曲播放, 4=顺序播放
+    // 切换路径：单曲循环(0) -> 全部循环(1) -> 随机播放(2) -> 顺序播放(4) -> 单曲循环(0)
     String cmd;
     if (currentPlayType == null || currentPlayType == 4) {
-      // 顺序播放(4) 或未知 -> 全部循环(1)
+      // 顺序播放(4) 或未知 -> 单曲循环(0)
+      cmd = PlayerCommands.singleLoop;
+    } else if (currentPlayType == 0) {
+      // 单曲循环(0) -> 全部循环(1)
       cmd = PlayerCommands.allLoop;
     } else if (currentPlayType == 1) {
       // 全部循环(1) -> 随机播放(2)
       cmd = PlayerCommands.shuffle;
     } else if (currentPlayType == 2) {
-      // 随机播放(2) -> 单曲循环(3)
-      cmd = PlayerCommands.singleLoop;
-    } else if (currentPlayType == 3) {
-      // 单曲循环(3) -> 顺序播放(4)
+      // 随机播放(2) -> 顺序播放(4)
       cmd = PlayerCommands.sequential;
+    } else if (currentPlayType == 3) {
+      // 单曲播放(3) -> 单曲循环(0)
+      cmd = PlayerCommands.singleLoop;
     } else {
-      // 未知值，默认切换到全部循环
-      cmd = PlayerCommands.allLoop;
+      // 未知值，默认切换到单曲循环
+      cmd = PlayerCommands.singleLoop;
     }
 
     _logger.d('发送播放模式切换命令: $cmd');
+
+    // 发送命令
     await apiClient.sendCmd(DidCmd(did: did, cmd: cmd));
 
-    // 刷新状态以同步播放模式和其他信息
+    // 刷新设备列表 Provider，确保设备列表中的 playType 已更新
+    _ref.invalidate(playerDevicesProvider);
+    _logger.d('已刷新设备列表 Provider，等待设备信息更新');
+
+    // 等待一小段时间让服务器处理命令并更新设备信息
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 刷新状态以同步播放模式和其他信息（此时设备信息应该已经更新）
+    // _fetchRemoteStatus 会从最新的设备列表中获取 playType，确保以接口为准
     final gen = _pollGen;
     await _fetchRemoteStatus(did, gen: gen);
   }

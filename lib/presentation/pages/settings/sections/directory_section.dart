@@ -64,7 +64,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
   Future<void> _loadSettings() async {
     try {
       final apiClient = ref.read(apiClientProvider);
-      final setting = await apiClient.getSetting(true);
+      final setting = await apiClient.getSetting(false);
       setState(() {
         _currentSetting = setting;
         _musicPathController.text = setting.musicPath ?? '';
@@ -81,12 +81,9 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
     } catch (e) {
       _logger.e("加载设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.errorLoading}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.errorLoading}: $e'), backgroundColor: AppColors.error));
       }
     }
   }
@@ -100,33 +97,15 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
       final musicPathDepth = int.tryParse(_musicPathDepthController.text.trim());
 
       final updatedSetting = _currentSetting!.copyWith(
-        musicPath: _musicPathController.text.trim().isEmpty
-            ? null
-            : _musicPathController.text.trim(),
-        downloadPath: _downloadPathController.text.trim().isEmpty
-            ? null
-            : _downloadPathController.text.trim(),
-        tempPath: _tempPathController.text.trim().isEmpty
-            ? null
-            : _tempPathController.text.trim(),
-        confPath: _confPathController.text.trim().isEmpty
-            ? null
-            : _confPathController.text.trim(),
-        cacheDir: _cacheDirController.text.trim().isEmpty
-            ? null
-            : _cacheDirController.text.trim(),
-        logFile: _logFileController.text.trim().isEmpty
-            ? null
-            : _logFileController.text.trim(),
-        ffmpegLocation: _ffmpegLocationController.text.trim().isEmpty
-            ? null
-            : _ffmpegLocationController.text.trim(),
-        excludeDirs: _excludeDirsController.text.trim().isEmpty
-            ? null
-            : _excludeDirsController.text.trim(),
-        ignoreTagDirs: _ignoreTagDirsController.text.trim().isEmpty
-            ? null
-            : _ignoreTagDirsController.text.trim(),
+        musicPath: _musicPathController.text.trim().isEmpty ? null : _musicPathController.text.trim(),
+        downloadPath: _downloadPathController.text.trim().isEmpty ? null : _downloadPathController.text.trim(),
+        tempPath: _tempPathController.text.trim().isEmpty ? null : _tempPathController.text.trim(),
+        confPath: _confPathController.text.trim().isEmpty ? null : _confPathController.text.trim(),
+        cacheDir: _cacheDirController.text.trim().isEmpty ? null : _cacheDirController.text.trim(),
+        logFile: _logFileController.text.trim().isEmpty ? null : _logFileController.text.trim(),
+        ffmpegLocation: _ffmpegLocationController.text.trim().isEmpty ? null : _ffmpegLocationController.text.trim(),
+        excludeDirs: _excludeDirsController.text.trim().isEmpty ? null : _excludeDirsController.text.trim(),
+        ignoreTagDirs: _ignoreTagDirsController.text.trim().isEmpty ? null : _ignoreTagDirsController.text.trim(),
         musicPathDepth: musicPathDepth,
       );
 
@@ -137,22 +116,16 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
       await _loadSettings();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(S.saveSuccess),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(S.saveSuccess), backgroundColor: AppColors.success));
       }
     } catch (e) {
       _logger.e("保存设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.saveFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.saveFailed}: $e'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) {
@@ -175,139 +148,135 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
     }
 
     return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.settings, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    S.directorySettings,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _musicPathController,
-                decoration: InputDecoration(
-                  labelText: S.musicDirectory,
-                  prefixIcon: const Icon(Icons.folder),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _downloadPathController,
-                decoration: InputDecoration(
-                  labelText: S.musicDownloadDirectory,
-                  prefixIcon: const Icon(Icons.download),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _tempPathController,
-                decoration: InputDecoration(
-                  labelText: S.tempFileDirectory,
-                  prefixIcon: const Icon(Icons.folder_special),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _confPathController,
-                decoration: InputDecoration(
-                  labelText: S.configFileDirectory,
-                  prefixIcon: const Icon(Icons.settings),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _cacheDirController,
-                decoration: InputDecoration(
-                  labelText: S.cacheFileDirectory,
-                  prefixIcon: const Icon(Icons.cached),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _logFileController,
-                decoration: InputDecoration(
-                  labelText: S.logFile,
-                  prefixIcon: const Icon(Icons.description),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _ffmpegLocationController,
-                decoration: InputDecoration(
-                  labelText: S.ffmpegPath,
-                  prefixIcon: const Icon(Icons.video_library),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _excludeDirsController,
-                decoration: InputDecoration(
-                  labelText: S.excludeDirs,
-                  prefixIcon: const Icon(Icons.block),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个目录用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _ignoreTagDirsController,
-                decoration: InputDecoration(
-                  labelText: S.ignoreTagDirs,
-                  prefixIcon: const Icon(Icons.label_off),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个目录用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _musicPathDepthController,
-                decoration: InputDecoration(
-                  labelText: S.musicPathDepth,
-                  prefixIcon: const Icon(Icons.layers),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(S.saveChanges),
+              const Icon(Icons.settings, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                S.directorySettings,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 24),
+          TextField(
+            controller: _musicPathController,
+            decoration: InputDecoration(
+              labelText: S.musicDirectory,
+              prefixIcon: const Icon(Icons.folder),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _downloadPathController,
+            decoration: InputDecoration(
+              labelText: S.musicDownloadDirectory,
+              prefixIcon: const Icon(Icons.download),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _tempPathController,
+            decoration: InputDecoration(
+              labelText: S.tempFileDirectory,
+              prefixIcon: const Icon(Icons.folder_special),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _confPathController,
+            decoration: InputDecoration(
+              labelText: S.configFileDirectory,
+              prefixIcon: const Icon(Icons.settings),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _cacheDirController,
+            decoration: InputDecoration(
+              labelText: S.cacheFileDirectory,
+              prefixIcon: const Icon(Icons.cached),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _logFileController,
+            decoration: InputDecoration(
+              labelText: S.logFile,
+              prefixIcon: const Icon(Icons.description),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ffmpegLocationController,
+            decoration: InputDecoration(
+              labelText: S.ffmpegPath,
+              prefixIcon: const Icon(Icons.video_library),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _excludeDirsController,
+            decoration: InputDecoration(
+              labelText: S.excludeDirs,
+              prefixIcon: const Icon(Icons.block),
+              border: const OutlineInputBorder(),
+              helperText: '多个目录用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ignoreTagDirsController,
+            decoration: InputDecoration(
+              labelText: S.ignoreTagDirs,
+              prefixIcon: const Icon(Icons.label_off),
+              border: const OutlineInputBorder(),
+              helperText: '多个目录用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _musicPathDepthController,
+            decoration: InputDecoration(
+              labelText: S.musicPathDepth,
+              prefixIcon: const Icon(Icons.layers),
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _saveSettings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(S.saveChanges),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -462,4 +431,3 @@ extension SystemSettingCopyWith on SystemSetting {
     );
   }
 }
-

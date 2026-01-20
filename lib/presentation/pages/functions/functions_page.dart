@@ -375,7 +375,7 @@ class _DeviceInfoCardState extends ConsumerState<_DeviceInfoCard> {
     });
     try {
       final apiClient = ref.read(apiClientProvider);
-      final setting = await apiClient.getSetting(true);
+      final setting = await apiClient.getSetting(false);
       if (mounted) {
         setState(() {
           _systemSetting = setting;

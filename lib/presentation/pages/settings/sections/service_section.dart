@@ -55,7 +55,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
   Future<void> _loadSettings() async {
     try {
       final apiClient = ref.read(apiClientProvider);
-      final setting = await apiClient.getSetting(true);
+      final setting = await apiClient.getSetting(false);
       setState(() {
         _currentSetting = setting;
         _hostnameController.text = setting.hostname ?? '';
@@ -64,20 +64,14 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
         _proxyController.text = setting.proxy ?? '';
         _disableHttpAuth = setting.disableHttpAuth ?? false;
         _httpAuthUsernameController.text = setting.httpAuthUsername ?? '';
-        _httpAuthPasswordController.text =
-            setting.httpAuthPassword == '******'
-                ? ''
-                : (setting.httpAuthPassword ?? '');
+        _httpAuthPasswordController.text = setting.httpAuthPassword == '******' ? '' : (setting.httpAuthPassword ?? '');
       });
     } catch (e) {
       _logger.e("加载设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.errorLoading}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.errorLoading}: $e'), backgroundColor: AppColors.error));
       }
     }
   }
@@ -92,14 +86,10 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
       final publicPort = int.tryParse(_publicPortController.text.trim());
 
       final updatedSetting = _currentSetting!.copyWith(
-        hostname: _hostnameController.text.trim().isEmpty
-            ? null
-            : _hostnameController.text.trim(),
+        hostname: _hostnameController.text.trim().isEmpty ? null : _hostnameController.text.trim(),
         port: port,
         publicPort: publicPort,
-        proxy: _proxyController.text.trim().isEmpty
-            ? null
-            : _proxyController.text.trim(),
+        proxy: _proxyController.text.trim().isEmpty ? null : _proxyController.text.trim(),
         disableHttpAuth: _disableHttpAuth,
         httpAuthUsername: _httpAuthUsernameController.text.trim().isEmpty
             ? null
@@ -116,22 +106,16 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
       await _loadSettings();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(S.saveSuccess),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(S.saveSuccess), backgroundColor: AppColors.success));
       }
     } catch (e) {
       _logger.e("保存设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.saveFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.saveFailed}: $e'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) {
@@ -154,122 +138,114 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
     }
 
     return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.settings, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    S.serviceSettings,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _hostnameController,
-                decoration: InputDecoration(
-                  labelText: S.hostnameIp,
-                  prefixIcon: const Icon(Icons.dns),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _portController,
-                decoration: InputDecoration(
-                  labelText: S.localPort,
-                  prefixIcon: const Icon(Icons.numbers),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _publicPortController,
-                decoration: InputDecoration(
-                  labelText: S.publicPort,
-                  prefixIcon: const Icon(Icons.numbers),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _proxyController,
-                decoration: InputDecoration(
-                  labelText: S.proxyAddress,
-                  hintText: S.proxyAddressHint,
-                  prefixIcon: const Icon(Icons.vpn_key),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text(S.disableHttpAuth),
-                value: _disableHttpAuth,
-                onChanged: (value) {
-                  setState(() => _disableHttpAuth = value);
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _httpAuthUsernameController,
-                decoration: InputDecoration(
-                  labelText: S.httpAuthUsername,
-                  prefixIcon: const Icon(Icons.person),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _httpAuthPasswordController,
-                decoration: InputDecoration(
-                  labelText: S.httpAuthPassword,
-                  prefixIcon: const Icon(Icons.lock),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                  ),
-                ),
-                obscureText: _obscurePassword,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : const Text(S.saveChanges),
+              const Icon(Icons.settings, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                S.serviceSettings,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 24),
+          TextField(
+            controller: _hostnameController,
+            decoration: InputDecoration(
+              labelText: S.hostnameIp,
+              prefixIcon: const Icon(Icons.dns),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _portController,
+            decoration: InputDecoration(
+              labelText: S.localPort,
+              prefixIcon: const Icon(Icons.numbers),
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _publicPortController,
+            decoration: InputDecoration(
+              labelText: S.publicPort,
+              prefixIcon: const Icon(Icons.numbers),
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _proxyController,
+            decoration: InputDecoration(
+              labelText: S.proxyAddress,
+              hintText: S.proxyAddressHint,
+              prefixIcon: const Icon(Icons.vpn_key),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text(S.disableHttpAuth),
+            value: _disableHttpAuth,
+            onChanged: (value) {
+              setState(() => _disableHttpAuth = value);
+            },
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _httpAuthUsernameController,
+            decoration: InputDecoration(
+              labelText: S.httpAuthUsername,
+              prefixIcon: const Icon(Icons.person),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _httpAuthPasswordController,
+            decoration: InputDecoration(
+              labelText: S.httpAuthPassword,
+              prefixIcon: const Icon(Icons.lock),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
+            ),
+            obscureText: _obscurePassword,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _saveSettings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(S.saveChanges),
+          ),
+        ],
+      ),
+    );
   }
 }

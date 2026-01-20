@@ -127,9 +127,6 @@ class _PlayerAppBar extends ConsumerWidget {
   }
 
   void _showDeviceSelector(BuildContext context, WidgetRef ref) {
-    // 强制刷新一次设备列表
-    // ref.invalidate(systemSettingProvider);
-
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),

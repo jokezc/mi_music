@@ -102,12 +102,6 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
 
   Future<void> _showDeviceSelector(BuildContext context) async {
     try {
-      // 强制刷新一次设备列表
-      // ref.invalidate(systemSettingProvider);
-
-      // 等待刷新完成
-      await ref.read(systemSettingProvider.future);
-
       if (!context.mounted) return;
       showModalBottomSheet(
         context: context,

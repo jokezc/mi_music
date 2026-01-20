@@ -55,7 +55,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
   Future<void> _loadSettings() async {
     try {
       final apiClient = ref.read(apiClientProvider);
-      final setting = await apiClient.getSetting(true);
+      final setting = await apiClient.getSetting(false);
       setState(() {
         _currentSetting = setting;
         _activeCmdController.text = setting.activeCmd ?? '';
@@ -69,12 +69,9 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
     } catch (e) {
       _logger.e("加载设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.errorLoading}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.errorLoading}: $e'), backgroundColor: AppColors.error));
       }
     }
   }
@@ -86,24 +83,18 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
 
     try {
       final updatedSetting = _currentSetting!.copyWith(
-        activeCmd: _activeCmdController.text.trim().isEmpty
-            ? null
-            : _activeCmdController.text.trim(),
+        activeCmd: _activeCmdController.text.trim().isEmpty ? null : _activeCmdController.text.trim(),
         keywordsPlayLocal: _keywordsPlayLocalController.text.trim().isEmpty
             ? null
             : _keywordsPlayLocalController.text.trim(),
         keywordsSearchPlayLocal: _keywordsSearchPlayLocalController.text.trim().isEmpty
             ? null
             : _keywordsSearchPlayLocalController.text.trim(),
-        keywordsPlay: _keywordsPlayController.text.trim().isEmpty
-            ? null
-            : _keywordsPlayController.text.trim(),
+        keywordsPlay: _keywordsPlayController.text.trim().isEmpty ? null : _keywordsPlayController.text.trim(),
         keywordsSearchPlay: _keywordsSearchPlayController.text.trim().isEmpty
             ? null
             : _keywordsSearchPlayController.text.trim(),
-        keywordsStop: _keywordsStopController.text.trim().isEmpty
-            ? null
-            : _keywordsStopController.text.trim(),
+        keywordsStop: _keywordsStopController.text.trim().isEmpty ? null : _keywordsStopController.text.trim(),
         keywordsPlaylist: _keywordsPlaylistController.text.trim().isEmpty
             ? null
             : _keywordsPlaylistController.text.trim(),
@@ -116,22 +107,16 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
       await _loadSettings();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(S.saveSuccess),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(S.saveSuccess), backgroundColor: AppColors.success));
       }
     } catch (e) {
       _logger.e("保存设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.saveFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.saveFailed}: $e'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) {
@@ -154,114 +139,111 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
     }
 
     return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.settings, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    S.voiceSettings,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _activeCmdController,
-                decoration: InputDecoration(
-                  labelText: S.allowedWakeupCommands,
-                  prefixIcon: const Icon(Icons.mic),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个命令用逗号分隔',
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsPlayLocalController,
-                decoration: InputDecoration(
-                  labelText: S.playLocalSongCommand,
-                  prefixIcon: const Icon(Icons.music_note),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsPlayController,
-                decoration: InputDecoration(
-                  labelText: S.playSongCommand,
-                  prefixIcon: const Icon(Icons.play_arrow),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsPlaylistController,
-                decoration: InputDecoration(
-                  labelText: S.playListCommand,
-                  prefixIcon: const Icon(Icons.queue_music),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsStopController,
-                decoration: InputDecoration(
-                  labelText: S.stopCommand,
-                  prefixIcon: const Icon(Icons.stop),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsSearchPlayLocalController,
-                decoration: InputDecoration(
-                  labelText: S.localSearchPlayCommand,
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _keywordsSearchPlayController,
-                decoration: InputDecoration(
-                  labelText: S.searchPlayCommand,
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
-                  helperText: '多个口令用逗号分隔',
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(S.saveChanges),
+              const Icon(Icons.settings, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                S.voiceSettings,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 24),
+          TextField(
+            controller: _activeCmdController,
+            decoration: InputDecoration(
+              labelText: S.allowedWakeupCommands,
+              prefixIcon: const Icon(Icons.mic),
+              border: const OutlineInputBorder(),
+              helperText: '多个命令用逗号分隔',
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsPlayLocalController,
+            decoration: InputDecoration(
+              labelText: S.playLocalSongCommand,
+              prefixIcon: const Icon(Icons.music_note),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsPlayController,
+            decoration: InputDecoration(
+              labelText: S.playSongCommand,
+              prefixIcon: const Icon(Icons.play_arrow),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsPlaylistController,
+            decoration: InputDecoration(
+              labelText: S.playListCommand,
+              prefixIcon: const Icon(Icons.queue_music),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsStopController,
+            decoration: InputDecoration(
+              labelText: S.stopCommand,
+              prefixIcon: const Icon(Icons.stop),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsSearchPlayLocalController,
+            decoration: InputDecoration(
+              labelText: S.localSearchPlayCommand,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordsSearchPlayController,
+            decoration: InputDecoration(
+              labelText: S.searchPlayCommand,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              helperText: '多个口令用逗号分隔',
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _saveSettings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(S.saveChanges),
+          ),
+        ],
+      ),
+    );
   }
 }
-

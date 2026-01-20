@@ -58,34 +58,25 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
   Future<void> _loadSettings() async {
     try {
       final apiClient = ref.read(apiClientProvider);
-      final setting = await apiClient.getSetting(true);
+      final setting = await apiClient.getSetting(false);
       setState(() {
         _currentSetting = setting;
         _enablePullAsk = setting.enablePullAsk ?? false;
-        _pullAskSecController.text =
-            setting.pullAskSec?.toString() ?? '1';
+        _pullAskSecController.text = setting.pullAskSec?.toString() ?? '1';
         _getAskByMina = setting.getAskByMina ?? false;
         _stopTtsMsgController.text = setting.stopTtsMsg ?? '';
-        _playTypeOneTtsMsgController.text =
-            setting.playTypeOneTtsMsg ?? '';
-        _playTypeAllTtsMsgController.text =
-            setting.playTypeAllTtsMsg ?? '';
-        _playTypeRndTtsMsgController.text =
-            setting.playTypeRndTtsMsg ?? '';
-        _playTypeSinTtsMsgController.text =
-            setting.playTypeSinTtsMsg ?? '';
-        _playTypeSeqTtsMsgController.text =
-            setting.playTypeSeqTtsMsg ?? '';
+        _playTypeOneTtsMsgController.text = setting.playTypeOneTtsMsg ?? '';
+        _playTypeAllTtsMsgController.text = setting.playTypeAllTtsMsg ?? '';
+        _playTypeRndTtsMsgController.text = setting.playTypeRndTtsMsg ?? '';
+        _playTypeSinTtsMsgController.text = setting.playTypeSinTtsMsg ?? '';
+        _playTypeSeqTtsMsgController.text = setting.playTypeSeqTtsMsg ?? '';
       });
     } catch (e) {
       _logger.e("加载设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.errorLoading}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.errorLoading}: $e'), backgroundColor: AppColors.error));
       }
     }
   }
@@ -102,9 +93,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
         enablePullAsk: _enablePullAsk,
         pullAskSec: pullAskSec,
         getAskByMina: _getAskByMina,
-        stopTtsMsg: _stopTtsMsgController.text.trim().isEmpty
-            ? null
-            : _stopTtsMsgController.text.trim(),
+        stopTtsMsg: _stopTtsMsgController.text.trim().isEmpty ? null : _stopTtsMsgController.text.trim(),
         playTypeOneTtsMsg: _playTypeOneTtsMsgController.text.trim().isEmpty
             ? null
             : _playTypeOneTtsMsgController.text.trim(),
@@ -129,22 +118,16 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
       await _loadSettings();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(S.saveSuccess),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(S.saveSuccess), backgroundColor: AppColors.success));
       }
     } catch (e) {
       _logger.e("保存设置失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${S.saveFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.saveFailed}: $e'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) {
@@ -167,125 +150,121 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
     }
 
     return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.settings, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    S.dialogSettings,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SwitchListTile(
-                title: const Text(S.getDialogueRecords),
-                value: _enablePullAsk,
-                onChanged: (value) {
-                  setState(() => _enablePullAsk = value);
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _pullAskSecController,
-                decoration: InputDecoration(
-                  labelText: S.getDialogueInterval,
-                  prefixIcon: const Icon(Icons.timer),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text(S.specialModelGetDialogueRecords),
-                value: _getAskByMina,
-                onChanged: (value) {
-                  setState(() => _getAskByMina = value);
-                },
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _stopTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.stopPromptTone,
-                  prefixIcon: const Icon(Icons.stop),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _playTypeOneTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.singleSongLoopPromptTone,
-                  prefixIcon: const Icon(Icons.repeat_one),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _playTypeAllTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.allLoopPromptTone,
-                  prefixIcon: const Icon(Icons.repeat),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _playTypeRndTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.randomPlayPromptTone,
-                  prefixIcon: const Icon(Icons.shuffle),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _playTypeSinTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.singleSongPlayPromptTone,
-                  prefixIcon: const Icon(Icons.music_note),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _playTypeSeqTtsMsgController,
-                decoration: InputDecoration(
-                  labelText: S.sequentialPlayPromptTone,
-                  prefixIcon: const Icon(Icons.queue_music),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : const Text(S.saveChanges),
+              const Icon(Icons.settings, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                S.dialogSettings,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 24),
+          SwitchListTile(
+            title: const Text(S.getDialogueRecords),
+            value: _enablePullAsk,
+            onChanged: (value) {
+              setState(() => _enablePullAsk = value);
+            },
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _pullAskSecController,
+            decoration: InputDecoration(
+              labelText: S.getDialogueInterval,
+              prefixIcon: const Icon(Icons.timer),
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text(S.specialModelGetDialogueRecords),
+            value: _getAskByMina,
+            onChanged: (value) {
+              setState(() => _getAskByMina = value);
+            },
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _stopTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.stopPromptTone,
+              prefixIcon: const Icon(Icons.stop),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _playTypeOneTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.singleSongLoopPromptTone,
+              prefixIcon: const Icon(Icons.repeat_one),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _playTypeAllTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.allLoopPromptTone,
+              prefixIcon: const Icon(Icons.repeat),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _playTypeRndTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.randomPlayPromptTone,
+              prefixIcon: const Icon(Icons.shuffle),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _playTypeSinTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.singleSongPlayPromptTone,
+              prefixIcon: const Icon(Icons.music_note),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _playTypeSeqTtsMsgController,
+            decoration: InputDecoration(
+              labelText: S.sequentialPlayPromptTone,
+              prefixIcon: const Icon(Icons.queue_music),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _saveSettings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(S.saveChanges),
+          ),
+        ],
+      ),
+    );
   }
 }
