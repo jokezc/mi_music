@@ -97,7 +97,8 @@ class _PlayerAppBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final isLocalMode = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isLocalMode ?? true));
+    final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
+    final isLocalMode = currentDevice?.type == DeviceType.local;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -109,7 +110,21 @@ class _PlayerAppBar extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
             tooltip: '关闭',
           ),
-          const Spacer(),
+          // 中间显示设备名称（仅远程设备显示）
+          Expanded(
+            child: !isLocalMode && currentDevice?.name != null
+                ? Center(
+                    child: Text(
+                      currentDevice!.name!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
           // 设备切换按钮
           IconButton(
             icon: Icon(
@@ -253,19 +268,13 @@ class _PlayerInfo extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch specific fields to avoid unnecessary rebuilds
     final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
     final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // 构建显示文本：优先显示歌单名称，如果没有则显示设备信息
-    String displayText;
-    if (currentPlaylistName != null && currentPlaylistName.isNotEmpty) {
-      displayText = currentPlaylistName;
-    } else {
-      displayText = (currentDevice?.type == DeviceType.local) ? '本地播放' : '远程播放: ${currentDevice?.name ?? "未知设备"}';
-    }
+    // 只显示歌单名称，如果没有则不显示
+    final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : "";
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -285,14 +294,19 @@ class _PlayerInfo extends ConsumerWidget {
                     textAlign: TextAlign.center,
                   ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            displayText,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+          // 只在有歌单名称时显示
+          if (displayText != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              displayText,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
-          ),
+          ],
         ],
       ),
     );
