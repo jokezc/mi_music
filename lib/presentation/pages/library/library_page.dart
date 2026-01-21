@@ -10,8 +10,8 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
-import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
+import 'package:mi_music/presentation/widgets/input_dialog.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 
@@ -25,13 +25,32 @@ class LibraryPage extends ConsumerStatefulWidget {
   ConsumerState<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _LibraryPageState extends ConsumerState<LibraryPage> {
+class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    // 当键盘收起时（bottomInset变为0），如果搜索框有焦点，则取消焦点
+    final bottomInset = View.of(context).viewInsets.bottom;
+    if (bottomInset == 0 && _searchFocusNode.hasFocus) {
+      _searchFocusNode.unfocus();
+    }
   }
 
   Future<void> _handleRefresh() async {
@@ -67,35 +86,77 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             onPressed: () => _showDeviceSelector(context),
             tooltip: S.deviceSelector,
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _handleRefresh, tooltip: S.refresh),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 首页搜索框
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: '搜索全部歌单中的歌曲...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                contentPadding: EdgeInsets.symmetric(horizontal: 20),
-              ),
-              onSubmitted: (val) {
-                if (val.trim().isNotEmpty) {
-                  final query = val.trim();
-                  _searchController.clear();
-                  // 跳转到搜索界面，指定搜索全部歌单，并带上搜索词
-                  context.push('/search?playlist=${Uri.encodeComponent('全部')}&q=${Uri.encodeComponent(query)}');
+            padding: const EdgeInsets.only(right: 8.0),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.add),
+              tooltip: '歌单操作',
+              offset: const Offset(0, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onSelected: (value) {
+                switch (value) {
+                  case 'create':
+                    _showCreatePlaylistDialog(context);
+                    break;
+                  case 'manage':
+                    context.push('/manage-playlists');
+                    break;
+                  case 'refresh':
+                    _handleRefresh();
+                    break;
                 }
               },
-              textInputAction: TextInputAction.search,
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'create',
+                  child: Row(children: [Icon(Icons.playlist_add), SizedBox(width: 8), Text('新建歌单')]),
+                ),
+                const PopupMenuItem(
+                  value: 'manage',
+                  child: Row(children: [Icon(Icons.settings), SizedBox(width: 8), Text('管理歌单')]),
+                ),
+                PopupMenuItem(
+                  value: 'refresh',
+                  child: Row(children: [const Icon(Icons.refresh), const SizedBox(width: 8), Text(S.refresh)]),
+                ),
+              ],
             ),
           ),
-          const Expanded(child: _PlaylistsTab()),
         ],
+      ),
+      body: GestureDetector(
+        onTap: () {
+          // 点击空白处取消焦点
+          FocusScope.of(context).unfocus();
+        },
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            // 首页搜索框
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: '搜索全部歌单中的歌曲...',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                ),
+                onSubmitted: (val) {
+                  if (val.trim().isNotEmpty) {
+                    final query = val.trim();
+                    _searchController.clear();
+                    // 跳转到搜索界面，指定搜索全部歌单，并带上搜索词
+                    context.push('/search?playlist=${Uri.encodeComponent('全部')}&q=${Uri.encodeComponent(query)}');
+                  }
+                },
+                textInputAction: TextInputAction.search,
+              ),
+            ),
+            const Expanded(child: _PlaylistsTab()),
+          ],
+        ),
       ),
     );
   }
@@ -116,55 +177,43 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('打开设备选择器失败: $e')));
     }
   }
+
+  Future<void> _showCreatePlaylistDialog(BuildContext context) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const InputDialog(title: '新建歌单', labelText: '歌单名称'),
+    );
+
+    if (name != null && name.trim().isNotEmpty) {
+      try {
+        await ref.read(playlistControllerProvider.notifier).createPlaylist(name.trim());
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$name" 创建成功')));
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
+      }
+    }
+  }
 }
 
 /// 歌单 Tab
 class _PlaylistsTab extends ConsumerWidget {
   const _PlaylistsTab();
 
-  /// 系统级别的歌单名称列表（不包括"收藏"，因为收藏需要置顶）
-  static const _systemPlaylistNames = {'临时搜索列表', '所有歌曲', '所有电台', '全部', '下载', '其他', '最近新增'};
-
-  /// 对歌单列表进行排序：
-  /// 1. "收藏" 置顶
-  /// 2. 用户创建的歌单（非系统歌单）排在前面
-  /// 3. 系统歌单（除了"收藏"）排在最后
-  List<String> _sortPlaylists(List<String> names) {
-    final favoritePlaylist = <String>[];
-    final userPlaylists = <String>[];
-    final systemPlaylists = <String>[];
-
-    for (final name in names) {
-      if (name == BaseConstants.likePlaylist) {
-        favoritePlaylist.add(name);
-      } else if (_systemPlaylistNames.contains(name)) {
-        systemPlaylists.add(name);
-      } else {
-        userPlaylists.add(name);
-      }
-    }
-
-    // 对用户歌单和系统歌单进行字母排序
-    userPlaylists.sort();
-    systemPlaylists.sort();
-
-    // 合并：收藏 -> 用户歌单 -> 系统歌单
-    return [...favoritePlaylist, ...userPlaylists, ...systemPlaylists];
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 优先使用缓存
-    final playlistsAsync = ref.watch(cachedPlaylistNamesProvider);
+    // 使用合并了本地状态的 Provider
+    final playlistsAsync = ref.watch(playlistUiListProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return playlistsAsync.when(
-      data: (names) {
-        // 对歌单进行排序：收藏置顶，用户歌单优先，系统歌单排在最下
-        final visibleNames = _sortPlaylists(names);
+      data: (allPlaylists) {
+        // 过滤掉隐藏的歌单
+        final visiblePlaylists = allPlaylists.where((p) => !p.isHidden).toList();
 
-        if (visibleNames.isEmpty) {
+        if (visiblePlaylists.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -188,33 +237,10 @@ class _PlaylistsTab extends ConsumerWidget {
             await ref.read(cacheRefreshControllerProvider.notifier).refresh();
           },
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: visibleNames.length,
+            padding: const EdgeInsets.symmetric(vertical: 4), // 减小列表上下间距
+            itemCount: visiblePlaylists.length,
             itemBuilder: (context, index) {
-              final name = visibleNames[index];
-              return ListTile(
-                leading: PlaylistCover(playlistName: name, size: 48),
-                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.play_circle_outline),
-                      color: AppColors.primary,
-                      onPressed: () {
-                        // 播放整个歌单
-                        ref.read(unifiedPlayerControllerProvider.notifier).playPlaylistByName(name);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $name')));
-                      },
-                      tooltip: S.play,
-                    ),
-                    const Icon(Icons.chevron_right),
-                  ],
-                ),
-                onTap: () {
-                  context.push('/playlist/${Uri.encodeComponent(name)}');
-                },
-              );
+              return _PlaylistTile(playlist: visiblePlaylists[index]);
             },
           ),
         );
@@ -235,6 +261,51 @@ class _PlaylistsTab extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PlaylistTile extends ConsumerWidget {
+  final PlaylistUiModel playlist;
+  const _PlaylistTile({required this.playlist});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = playlist.name;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final songsAsync = ref.watch(cachedPlaylistSongsProvider(name));
+    final count = songsAsync.asData?.value.length ?? 0;
+
+    return ListTile(
+      visualDensity: const VisualDensity(vertical: -2), // 减小垂直间距
+      leading: PlaylistCover(playlistName: name, size: 48),
+      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        '$count 首',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.play_circle_outline),
+            color: AppColors.primary,
+            onPressed: () {
+              ref.read(unifiedPlayerControllerProvider.notifier).playPlaylistByName(name);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $name')));
+            },
+            tooltip: S.play,
+          ),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
+      onTap: () {
+        context.push('/playlist/${Uri.encodeComponent(name)}');
+      },
     );
   }
 }
