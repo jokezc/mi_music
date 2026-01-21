@@ -87,7 +87,7 @@ class AboutSection extends ConsumerWidget {
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.phone_android),
+                      leading: const Icon(Icons.phone_android_rounded),
                       title: const Text(S.appVersion),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -108,7 +108,7 @@ class AboutSection extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: const Icon(Icons.dns),
+                      leading: const Icon(Icons.dns_rounded),
                       title: const Text(S.backendVersion),
                       trailing: FutureBuilder(
                         future: ref.read(apiClientProvider).getVersion(),
@@ -135,9 +135,9 @@ class AboutSection extends ConsumerWidget {
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.code),
+                      leading: const Icon(Icons.code_rounded),
                       title: const Text('App 开源地址'),
-                      trailing: const Icon(Icons.open_in_new),
+                      trailing: const Icon(Icons.open_in_new_rounded),
                       onTap: () async {
                         final url = Uri.parse('https://github.com/jokezc/mi_music');
                         if (await canLaunchUrl(url)) {
@@ -147,9 +147,9 @@ class AboutSection extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: const Icon(Icons.dns),
+                      leading: const Icon(Icons.dns_rounded),
                       title: const Text('后端服务'),
-                      trailing: const Icon(Icons.open_in_new),
+                      trailing: const Icon(Icons.open_in_new_rounded),
                       onTap: () async {
                         final url = Uri.parse('https://github.com/hanxi/xiaomusic');
                         if (await canLaunchUrl(url)) {
@@ -159,16 +159,16 @@ class AboutSection extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: const Icon(Icons.update),
+                      leading: const Icon(Icons.update_rounded),
                       title: const Text('检查更新'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => _checkForUpdateAndShowDialog(context),
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: const Icon(Icons.article),
+                      leading: const Icon(Icons.article_rounded),
                       title: const Text(S.openSourceLicense),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () {
                         showLicensePage(
                           context: context,
@@ -181,7 +181,7 @@ class AboutSection extends ConsumerWidget {
                               gradient: AppColors.primaryGradient,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.music_note, size: 36, color: Colors.white),
+                            child: const Icon(Icons.music_note_rounded, size: 36, color: Colors.white),
                           ),
                         );
                       },
@@ -198,11 +198,11 @@ class AboutSection extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.favorite, color: Colors.red),
+                          const Icon(Icons.favorite_rounded, color: Colors.red),
                           const SizedBox(width: 8),
                           const Text('支持我们', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(width: 8),
-                          const Icon(Icons.favorite, color: Colors.red),
+                          const Icon(Icons.favorite_rounded, color: Colors.red),
                         ],
                       ),
                       const SizedBox(height: 8),

@@ -28,18 +28,18 @@ class ScaffoldWithNav extends StatelessWidget {
             },
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.library_music_outlined),
-                selectedIcon: Icon(Icons.library_music),
+                icon: Icon(Icons.library_music_rounded),
+                selectedIcon: Icon(Icons.library_music_rounded),
                 label: S.navLibrary,
               ),
               NavigationDestination(
-                icon: Icon(Icons.arrow_circle_down),
-                selectedIcon: Icon(Icons.download_for_offline),
+                icon: Icon(Icons.arrow_circle_down_rounded),
+                selectedIcon: Icon(Icons.download_for_offline_rounded),
                 label: S.download,
               ),
               NavigationDestination(
-                icon: Icon(Icons.widgets_outlined),
-                selectedIcon: Icon(Icons.widgets),
+                icon: Icon(Icons.widgets_rounded),
+                selectedIcon: Icon(Icons.widgets_rounded),
                 label: S.navFunctions,
               ),
             ],

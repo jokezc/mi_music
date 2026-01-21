@@ -126,7 +126,7 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
               decoration: InputDecoration(
                 labelText: S.serverUrl,
                 hintText: S.serverUrlHint,
-                prefixIcon: const Icon(Icons.dns),
+                prefixIcon: const Icon(Icons.dns_rounded),
                 border: const OutlineInputBorder(),
               ),
               keyboardType: TextInputType.url,
@@ -136,7 +136,7 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
               controller: _usernameController,
               decoration: InputDecoration(
                 labelText: S.usernameOptional,
-                prefixIcon: const Icon(Icons.person),
+                prefixIcon: const Icon(Icons.person_rounded),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -145,11 +145,11 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: S.passwordOptional,
-                prefixIcon: const Icon(Icons.lock),
+                prefixIcon: const Icon(Icons.lock_rounded),
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                   ),
                   onPressed: () {
                     setState(() => _obscurePassword = !_obscurePassword);
@@ -167,7 +167,7 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.wifi_find),
+                  : const Icon(Icons.wifi_find_rounded),
               label: Text(_isLoading ? S.connecting : S.testConnection),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -176,7 +176,7 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _logout,
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.logout_rounded),
               label: const Text(S.logout),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),

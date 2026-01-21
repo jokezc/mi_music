@@ -154,7 +154,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.directorySettings,
@@ -167,7 +167,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _musicPathController,
             decoration: InputDecoration(
               labelText: S.musicDirectory,
-              prefixIcon: const Icon(Icons.folder),
+              prefixIcon: const Icon(Icons.folder_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -176,7 +176,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _downloadPathController,
             decoration: InputDecoration(
               labelText: S.musicDownloadDirectory,
-              prefixIcon: const Icon(Icons.download),
+              prefixIcon: const Icon(Icons.download_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -185,7 +185,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _tempPathController,
             decoration: InputDecoration(
               labelText: S.tempFileDirectory,
-              prefixIcon: const Icon(Icons.folder_special),
+              prefixIcon: const Icon(Icons.folder_special_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -194,7 +194,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _confPathController,
             decoration: InputDecoration(
               labelText: S.configFileDirectory,
-              prefixIcon: const Icon(Icons.settings),
+              prefixIcon: const Icon(Icons.settings_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -203,7 +203,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _cacheDirController,
             decoration: InputDecoration(
               labelText: S.cacheFileDirectory,
-              prefixIcon: const Icon(Icons.cached),
+              prefixIcon: const Icon(Icons.cached_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -212,7 +212,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _logFileController,
             decoration: InputDecoration(
               labelText: S.logFile,
-              prefixIcon: const Icon(Icons.description),
+              prefixIcon: const Icon(Icons.description_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -221,7 +221,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _ffmpegLocationController,
             decoration: InputDecoration(
               labelText: S.ffmpegPath,
-              prefixIcon: const Icon(Icons.video_library),
+              prefixIcon: const Icon(Icons.video_library_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -230,7 +230,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _excludeDirsController,
             decoration: InputDecoration(
               labelText: S.excludeDirs,
-              prefixIcon: const Icon(Icons.block),
+              prefixIcon: const Icon(Icons.block_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个目录用逗号分隔',
             ),
@@ -240,7 +240,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _ignoreTagDirsController,
             decoration: InputDecoration(
               labelText: S.ignoreTagDirs,
-              prefixIcon: const Icon(Icons.label_off),
+              prefixIcon: const Icon(Icons.label_off_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个目录用逗号分隔',
             ),
@@ -250,7 +250,7 @@ class _DirectorySectionState extends ConsumerState<DirectorySection> {
             controller: _musicPathDepthController,
             decoration: InputDecoration(
               labelText: S.musicPathDepth,
-              prefixIcon: const Icon(Icons.layers),
+              prefixIcon: const Icon(Icons.layers_rounded),
               border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,

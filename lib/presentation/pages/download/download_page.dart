@@ -96,7 +96,7 @@ class _DownloadMusicFormState extends ConsumerState<_DownloadMusicForm> {
           decoration: const InputDecoration(
             labelText: S.musicUrl,
             hintText: S.musicUrlHint,
-            prefixIcon: Icon(Icons.link),
+            prefixIcon: Icon(Icons.link_rounded),
           ),
         ),
         const SizedBox(height: 12),
@@ -105,7 +105,7 @@ class _DownloadMusicFormState extends ConsumerState<_DownloadMusicForm> {
           decoration: const InputDecoration(
             labelText: '歌曲名称（可选）',
             hintText: '自定义歌曲名称',
-            prefixIcon: Icon(Icons.music_note),
+            prefixIcon: Icon(Icons.music_note_rounded),
           ),
         ),
         const SizedBox(height: 16),
@@ -115,7 +115,7 @@ class _DownloadMusicFormState extends ConsumerState<_DownloadMusicForm> {
             onPressed: _isLoading ? null : _download,
             icon: _isLoading
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.download),
+                : const Icon(Icons.download_rounded),
             label: Text(_isLoading ? S.downloading : S.download),
           ),
         ),
@@ -181,7 +181,7 @@ class _DownloadPlaylistFormState extends ConsumerState<_DownloadPlaylistForm> {
           decoration: const InputDecoration(
             labelText: S.playlistUrl,
             hintText: S.playlistUrlHint,
-            prefixIcon: Icon(Icons.link),
+            prefixIcon: Icon(Icons.link_rounded),
           ),
         ),
         const SizedBox(height: 12),
@@ -190,7 +190,7 @@ class _DownloadPlaylistFormState extends ConsumerState<_DownloadPlaylistForm> {
           decoration: const InputDecoration(
             labelText: S.folderName,
             hintText: S.folderNameHint,
-            prefixIcon: Icon(Icons.folder),
+            prefixIcon: Icon(Icons.folder_rounded),
           ),
         ),
         const SizedBox(height: 16),
@@ -200,7 +200,7 @@ class _DownloadPlaylistFormState extends ConsumerState<_DownloadPlaylistForm> {
             onPressed: _isLoading ? null : _download,
             icon: _isLoading
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.download),
+                : const Icon(Icons.download_rounded),
             label: Text(_isLoading ? S.downloading : S.download),
           ),
         ),

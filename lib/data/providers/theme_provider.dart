@@ -64,11 +64,11 @@ extension AppThemeModeExtension on AppThemeMode {
   IconData get icon {
     switch (this) {
       case AppThemeMode.system:
-        return Icons.brightness_auto;
+        return Icons.brightness_auto_rounded;
       case AppThemeMode.light:
-        return Icons.light_mode;
+        return Icons.light_mode_rounded;
       case AppThemeMode.dark:
-        return Icons.dark_mode;
+        return Icons.dark_mode_rounded;
     }
   }
 }

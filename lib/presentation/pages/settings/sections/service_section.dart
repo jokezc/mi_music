@@ -144,7 +144,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.serviceSettings,
@@ -157,7 +157,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             controller: _hostnameController,
             decoration: InputDecoration(
               labelText: S.hostnameIp,
-              prefixIcon: const Icon(Icons.dns),
+              prefixIcon: const Icon(Icons.dns_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -166,7 +166,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             controller: _portController,
             decoration: InputDecoration(
               labelText: S.localPort,
-              prefixIcon: const Icon(Icons.numbers),
+              prefixIcon: const Icon(Icons.numbers_rounded),
               border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
@@ -177,7 +177,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             controller: _publicPortController,
             decoration: InputDecoration(
               labelText: S.publicPort,
-              prefixIcon: const Icon(Icons.numbers),
+              prefixIcon: const Icon(Icons.numbers_rounded),
               border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
@@ -189,7 +189,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             decoration: InputDecoration(
               labelText: S.proxyAddress,
               hintText: S.proxyAddressHint,
-              prefixIcon: const Icon(Icons.vpn_key),
+              prefixIcon: const Icon(Icons.vpn_key_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -206,7 +206,7 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             controller: _httpAuthUsernameController,
             decoration: InputDecoration(
               labelText: S.httpAuthUsername,
-              prefixIcon: const Icon(Icons.person),
+              prefixIcon: const Icon(Icons.person_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -215,10 +215,10 @@ class _ServiceSectionState extends ConsumerState<ServiceSection> {
             controller: _httpAuthPasswordController,
             decoration: InputDecoration(
               labelText: S.httpAuthPassword,
-              prefixIcon: const Icon(Icons.lock),
+              prefixIcon: const Icon(Icons.lock_rounded),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },

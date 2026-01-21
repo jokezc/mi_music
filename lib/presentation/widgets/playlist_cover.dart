@@ -31,7 +31,7 @@ class PlaylistCover extends ConsumerWidget {
           ),
           borderRadius: borderRadius ?? BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.favorite, color: Colors.white, size: 24),
+        child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 24),
       );
     }
 
@@ -71,7 +71,7 @@ class PlaylistCover extends ConsumerWidget {
         gradient: AppColors.primaryGradient,
         borderRadius: borderRadius ?? BorderRadius.circular(8),
       ),
-      child: const Icon(Icons.playlist_play, color: Colors.white, size: 24),
+      child: const Icon(Icons.playlist_play_rounded, color: Colors.white, size: 24),
     );
   }
 }

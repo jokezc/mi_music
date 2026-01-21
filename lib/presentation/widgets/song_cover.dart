@@ -71,7 +71,7 @@ class SongCover extends ConsumerWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(8),
       ),
       child: const Icon(
-        Icons.music_note,
+        Icons.music_note_rounded,
         color: AppColors.primary,
         size: 24,
       ),
