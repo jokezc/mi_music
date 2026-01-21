@@ -337,8 +337,18 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
     );
 
     if (newName != null && newName.isNotEmpty && newName != oldName) {
+      final nameToCheck = newName.trim();
+      // Check for duplicates
+      final playlists = ref.read(playlistUiListProvider).asData?.value ?? [];
+      if (playlists.any((p) => p.name == nameToCheck)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$nameToCheck" 已存在，请使用其他名称')));
+        }
+        return;
+      }
+
       try {
-        await ref.read(playlistControllerProvider.notifier).renamePlaylist(oldName, newName);
+        await ref.read(playlistControllerProvider.notifier).renamePlaylist(oldName, nameToCheck);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('重命名成功')));
         }

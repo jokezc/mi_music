@@ -89,7 +89,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: PopupMenuButton<String>(
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.ac_unit_rounded),
               tooltip: '歌单操作',
               offset: const Offset(0, 50),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -109,15 +109,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'create',
-                  child: Row(children: [Icon(Icons.playlist_add), SizedBox(width: 8), Text('新建歌单')]),
+                  child: Row(children: [Icon(Icons.playlist_add), SizedBox(width: 8), Text(S.createPlaylist)]),
                 ),
                 const PopupMenuItem(
                   value: 'manage',
-                  child: Row(children: [Icon(Icons.settings), SizedBox(width: 8), Text('管理歌单')]),
+                  child: Row(children: [Icon(Icons.settings), SizedBox(width: 8), Text(S.managePlaylists)]),
                 ),
                 PopupMenuItem(
                   value: 'refresh',
-                  child: Row(children: [const Icon(Icons.refresh), const SizedBox(width: 8), Text(S.refresh)]),
+                  child: Row(children: [const Icon(Icons.refresh), const SizedBox(width: 8), Text(S.refreshPlaylists)]),
                 ),
               ],
             ),
@@ -185,10 +185,19 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
     );
 
     if (name != null && name.trim().isNotEmpty) {
-      try {
-        await ref.read(playlistControllerProvider.notifier).createPlaylist(name.trim());
+      final nameToCheck = name.trim();
+      // Check for duplicates
+      final playlists = ref.read(playlistUiListProvider).asData?.value ?? [];
+      if (playlists.any((p) => p.name == nameToCheck)) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$name" 创建成功')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$nameToCheck" 已存在，请使用其他名称')));
+        return;
+      }
+
+      try {
+        await ref.read(playlistControllerProvider.notifier).createPlaylist(nameToCheck);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$nameToCheck" 创建成功')));
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));

@@ -55,6 +55,8 @@ class S {
 
   // 歌单
   static const String playlists = '歌单';
+  static const String refreshPlaylists = '刷新歌单';
+  static const String managePlaylists = '管理歌单';
   static const String createPlaylist = '新建歌单';
   static const String deletePlaylist = '删除歌单';
   static const String renamePlaylist = '重命名歌单';
