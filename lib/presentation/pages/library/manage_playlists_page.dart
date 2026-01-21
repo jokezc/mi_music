@@ -25,7 +25,7 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
         title: Text(_isSelectionMode ? '已选择 ${_selectedItems.length} 项' : '管理歌单'),
         leading: _isSelectionMode
             ? IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(Icons.close_rounded),
                 onPressed: () {
                   setState(() {
                     _isSelectionMode = false;
@@ -37,7 +37,7 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
         actions: [
           if (!_isSelectionMode)
             IconButton(
-              icon: const Icon(Icons.checklist),
+              icon: const Icon(Icons.checklist_rounded),
               tooltip: '批量管理',
               onPressed: () {
                 setState(() {
@@ -47,17 +47,17 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
             ),
           if (_isSelectionMode) ...[
             IconButton(
-              icon: const Icon(Icons.visibility_off),
+              icon: const Icon(Icons.visibility_off_rounded),
               tooltip: '批量隐藏',
               onPressed: _selectedItems.isEmpty ? null : () => _batchHide(true),
             ),
             IconButton(
-              icon: const Icon(Icons.visibility),
+              icon: const Icon(Icons.visibility_rounded),
               tooltip: '批量显示',
               onPressed: _selectedItems.isEmpty ? null : () => _batchHide(false),
             ),
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete_rounded),
               tooltip: '批量删除',
               onPressed: _selectedItems.isEmpty ? null : _batchDelete,
             ),
@@ -130,8 +130,8 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
                     },
                   )
                 : (isFavorite
-                      ? const Icon(Icons.favorite, color: Colors.red)
-                      : ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle))),
+                      ? const Icon(Icons.favorite_rounded, color: Colors.red)
+                      : ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle_rounded))),
             title: Row(
               children: [
                 Flexible(
@@ -177,12 +177,12 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
                     children: [
                       if (item.type == PlaylistType.custom)
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined),
+                          icon: const Icon(Icons.edit_rounded),
                           tooltip: '重命名',
                           onPressed: () => _renamePlaylist(item.name),
                         ),
                       IconButton(
-                        icon: Icon(item.isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        icon: Icon(item.isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                         color: item.isHidden ? (isDark ? Colors.white38 : Colors.grey) : AppColors.primary,
                         tooltip: item.isHidden ? '显示' : '隐藏',
                         onPressed: () => _toggleHidden(item.name),

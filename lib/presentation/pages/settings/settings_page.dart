@@ -26,32 +26,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   final List<_SettingCategory> _categories = [
     _SettingCategory(
-      icon: Icons.account_circle,
+      icon: Icons.account_circle_rounded,
       title: S.accountSettings,
       widget: const AccountSection(),
     ),
     _SettingCategory(
-      icon: Icons.folder,
+      icon: Icons.folder_rounded,
       title: S.directorySettings,
       widget: const DirectorySection(),
     ),
     _SettingCategory(
-      icon: Icons.arrow_forward,
+      icon: Icons.arrow_forward_rounded,
       title: S.serviceSettings,
       widget: const ServiceSection(),
     ),
     _SettingCategory(
-      icon: Icons.play_circle_outline,
+      icon: Icons.play_circle_rounded,
       title: S.playSettings,
       widget: const PlaySection(),
     ),
     _SettingCategory(
-      icon: Icons.mic,
+      icon: Icons.mic_rounded,
       title: S.voiceSettings,
       widget: const VoiceControlSection(),
     ),
     _SettingCategory(
-      icon: Icons.chat_bubble_outline,
+      icon: Icons.chat_bubble_rounded,
       title: S.dialogSettings,
       widget: const DialogTtsSection(),
     ),
@@ -137,7 +137,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             child: ListTile(
               leading: Icon(category.icon, size: 28),
               title: Text(category.title),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(

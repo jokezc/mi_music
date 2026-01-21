@@ -10,7 +10,7 @@ class SnackBarUtils {
     _showSnackBar(
       context,
       message: message,
-      icon: Icons.check_circle,
+      icon: Icons.check_circle_rounded,
       backgroundColor: AppColors.success,
     );
   }
@@ -20,7 +20,7 @@ class SnackBarUtils {
     _showSnackBar(
       context,
       message: message,
-      icon: Icons.error,
+      icon: Icons.error_rounded,
       backgroundColor: AppColors.error,
     );
   }
@@ -30,7 +30,7 @@ class SnackBarUtils {
     _showSnackBar(
       context,
       message: message,
-      icon: Icons.warning,
+      icon: Icons.warning_rounded,
       backgroundColor: AppColors.warning,
     );
   }
@@ -40,7 +40,7 @@ class SnackBarUtils {
     _showSnackBar(
       context,
       message: message,
-      icon: Icons.info,
+      icon: Icons.info_rounded,
       backgroundColor: AppColors.info,
     );
   }

@@ -98,7 +98,7 @@ class _ThemePreviewCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.music_note, color: Colors.white),
+                  child: const Icon(Icons.music_note_rounded, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -116,7 +116,7 @@ class _ThemePreviewCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.play_circle_outline),
+                  icon: const Icon(Icons.play_circle_rounded),
                   onPressed: () {},
                 ),
               ],

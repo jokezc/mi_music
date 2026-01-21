@@ -109,15 +109,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'create',
-                  child: Row(children: [Icon(Icons.playlist_add), SizedBox(width: 8), Text(S.createPlaylist)]),
+                  child: Row(children: [Icon(Icons.playlist_add_rounded), SizedBox(width: 8), Text(S.createPlaylist)]),
                 ),
                 const PopupMenuItem(
                   value: 'manage',
-                  child: Row(children: [Icon(Icons.settings), SizedBox(width: 8), Text(S.managePlaylists)]),
+                  child: Row(children: [Icon(Icons.settings_rounded), SizedBox(width: 8), Text(S.managePlaylists)]),
                 ),
                 PopupMenuItem(
                   value: 'refresh',
-                  child: Row(children: [const Icon(Icons.refresh), const SizedBox(width: 8), Text(S.refreshPlaylists)]),
+                  child: Row(children: [Icon(Icons.refresh_rounded), SizedBox(width: 8), Text(S.refreshPlaylists)]),
                 ),
               ],
             ),
@@ -139,7 +139,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
                 controller: _searchController,
                 decoration: const InputDecoration(
                   hintText: '搜索全部歌单中的歌曲...',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search_rounded),
                   border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
                   contentPadding: EdgeInsets.symmetric(horizontal: 20),
                 ),
@@ -227,7 +227,7 @@ class _PlaylistsTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.queue_music, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                Icon(Icons.queue_music_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
                 const SizedBox(height: 16),
                 Text(
                   S.emptyPlaylist,
@@ -259,7 +259,7 @@ class _PlaylistsTab extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
             const SizedBox(height: 16),
             Text('${S.error}: $err'),
             const SizedBox(height: 16),
@@ -301,7 +301,7 @@ class _PlaylistTile extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.play_circle_outline),
+            icon: const Icon(Icons.play_circle_outline_rounded),
             color: AppColors.primary,
             onPressed: () {
               ref.read(unifiedPlayerControllerProvider.notifier).playPlaylistByName(name);
@@ -309,7 +309,7 @@ class _PlaylistTile extends ConsumerWidget {
             },
             tooltip: S.play,
           ),
-          const Icon(Icons.chevron_right),
+          const Icon(Icons.chevron_right_rounded),
         ],
       ),
       onTap: () {
@@ -353,10 +353,10 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
             controller: _searchController,
             decoration: InputDecoration(
               hintText: S.searchHint,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(Icons.clear_rounded),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
@@ -388,7 +388,7 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.music_off,
+                            Icons.music_off_rounded,
                             size: 80,
                             color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                           ),
@@ -421,7 +421,7 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
                               color: isDark ? AppColors.darkSurface : AppColors.lightDivider,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.music_note, color: AppColors.primary),
+                            child: Icon(Icons.music_note_rounded, color: AppColors.primary),
                           ),
                           title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
                           trailing: Row(
@@ -429,14 +429,14 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
                             children: [
                               IconButton(
                                 icon: Icon(
-                                  favoriteSet.contains(song) ? Icons.favorite : Icons.favorite_border,
+                                  favoriteSet.contains(song) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                                   color: favoriteSet.contains(song) ? Colors.red : null,
                                 ),
                                 tooltip: favoriteSet.contains(song) ? '取消收藏' : '收藏',
                                 onPressed: () => _toggleFavorite(context, song, isFavorite: favoriteSet.contains(song)),
                               ),
                               PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert),
+                                icon: const Icon(Icons.more_vert_rounded),
                                 tooltip: '更多',
                                 onSelected: (value) {
                                   if (value == 'delete') {
@@ -448,7 +448,7 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline, color: Colors.red),
+                                        Icon(Icons.delete_outline_rounded, color: Colors.red),
                                         SizedBox(width: 8),
                                         Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
                                       ],
@@ -469,7 +469,7 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                      const Icon(Icons.error_rounded, size: 48, color: AppColors.error),
                       const SizedBox(height: 16),
                       Text('${S.error}: $err'),
                       const SizedBox(height: 16),
@@ -564,7 +564,7 @@ class _FavoritesTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite_border, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                Icon(Icons.favorite_border_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
                 const SizedBox(height: 16),
                 Text(
                   '暂无收藏歌曲',
@@ -605,11 +605,11 @@ class _FavoritesTab extends ConsumerWidget {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.favorite, color: Colors.white),
+                  child: const Icon(Icons.favorite_rounded, color: Colors.white),
                 ),
                 title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
                 trailing: IconButton(
-                  icon: const Icon(Icons.favorite),
+                  icon: const Icon(Icons.favorite_rounded),
                   color: Colors.red,
                   tooltip: '取消收藏',
                   onPressed: () async {
@@ -645,7 +645,7 @@ class _FavoritesTab extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.favorite_border, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+              Icon(Icons.favorite_border_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
               const SizedBox(height: 16),
               Text(
                 '暂无收藏歌曲',

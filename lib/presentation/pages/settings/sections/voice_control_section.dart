@@ -145,7 +145,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.voiceSettings,
@@ -158,7 +158,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _activeCmdController,
             decoration: InputDecoration(
               labelText: S.allowedWakeupCommands,
-              prefixIcon: const Icon(Icons.mic),
+              prefixIcon: const Icon(Icons.mic_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个命令用逗号分隔',
             ),
@@ -169,7 +169,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsPlayLocalController,
             decoration: InputDecoration(
               labelText: S.playLocalSongCommand,
-              prefixIcon: const Icon(Icons.music_note),
+              prefixIcon: const Icon(Icons.music_note_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),
@@ -179,7 +179,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsPlayController,
             decoration: InputDecoration(
               labelText: S.playSongCommand,
-              prefixIcon: const Icon(Icons.play_arrow),
+              prefixIcon: const Icon(Icons.play_arrow_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),
@@ -189,7 +189,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsPlaylistController,
             decoration: InputDecoration(
               labelText: S.playListCommand,
-              prefixIcon: const Icon(Icons.queue_music),
+              prefixIcon: const Icon(Icons.queue_music_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),
@@ -199,7 +199,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsStopController,
             decoration: InputDecoration(
               labelText: S.stopCommand,
-              prefixIcon: const Icon(Icons.stop),
+              prefixIcon: const Icon(Icons.stop_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),
@@ -209,7 +209,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsSearchPlayLocalController,
             decoration: InputDecoration(
               labelText: S.localSearchPlayCommand,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),
@@ -219,7 +219,7 @@ class _VoiceControlSectionState extends ConsumerState<VoiceControlSection> {
             controller: _keywordsSearchPlayController,
             decoration: InputDecoration(
               labelText: S.searchPlayCommand,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_rounded),
               border: const OutlineInputBorder(),
               helperText: '多个口令用逗号分隔',
             ),

@@ -78,7 +78,7 @@ class _PlayerControlCard extends ConsumerWidget {
                     color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.play_circle_outline, color: AppColors.secondary),
+                  child: const Icon(Icons.play_circle_rounded, color: AppColors.secondary),
                 ),
                 const SizedBox(width: 12),
                 Text(S.playerControl, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -145,7 +145,7 @@ class _PlayerControlCard extends ConsumerWidget {
             ),
             const SizedBox(width: 16),
             IconButton(
-              icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
+              icon: Icon(isPlaying ? Icons.pause_circle_rounded : Icons.play_circle_rounded),
               iconSize: 56,
               color: AppColors.primary,
               onPressed: () {
@@ -191,7 +191,7 @@ class _VolumeControlState extends ConsumerState<_VolumeControl> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.volume_down, size: 24),
+        const Icon(Icons.volume_down_rounded, size: 24),
         Expanded(
           child: Slider(
             value: _volume,
@@ -207,7 +207,7 @@ class _VolumeControlState extends ConsumerState<_VolumeControl> {
             },
           ),
         ),
-        const Icon(Icons.volume_up, size: 24),
+        const Icon(Icons.volume_up_rounded, size: 24),
       ],
     );
   }
@@ -235,7 +235,7 @@ class _QuickActionsCard extends ConsumerWidget {
                     color: AppColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.flash_on, color: AppColors.accent),
+                  child: const Icon(Icons.flash_on_rounded, color: AppColors.accent),
                 ),
                 const SizedBox(width: 12),
                 Text(S.quickActions, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -442,7 +442,7 @@ class _DeviceInfoCardState extends ConsumerState<_DeviceInfoCard> {
                     color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.info_outline, color: AppColors.info),
+                  child: const Icon(Icons.info_rounded, color: AppColors.info),
                 ),
                 const SizedBox(width: 12),
                 Text(S.deviceInfo, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -559,7 +559,7 @@ class _SettingsCard extends ConsumerWidget {
                     color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.settings, color: AppColors.warning),
+                  child: const Icon(Icons.settings_rounded, color: AppColors.warning),
                 ),
                 const SizedBox(width: 12),
                 Text(S.settings, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -568,10 +568,10 @@ class _SettingsCard extends ConsumerWidget {
             const SizedBox(height: 16),
             // 连接配置入口
             ListTile(
-              leading: const Icon(Icons.link),
+              leading: const Icon(Icons.link_rounded),
               title: const Text(S.connectionConfig),
               subtitle: const Text('配置连接服务端的账号密码'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               contentPadding: EdgeInsets.zero,
               onTap: () {
                 context.push('/connection-config');
@@ -580,10 +580,10 @@ class _SettingsCard extends ConsumerWidget {
             const Divider(),
             // 软件设置入口
             ListTile(
-              leading: const Icon(Icons.settings_applications),
+              leading: const Icon(Icons.settings_applications_rounded),
               title: const Text(S.softwareSettings),
               subtitle: const Text('外观设置和客户端配置选项'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               contentPadding: EdgeInsets.zero,
               onTap: () {
                 context.push('/client-settings');
@@ -592,10 +592,10 @@ class _SettingsCard extends ConsumerWidget {
             const Divider(),
             // 服务器设置入口
             ListTile(
-              leading: const Icon(Icons.dns),
+              leading: const Icon(Icons.dns_rounded),
               title: const Text(S.goToSettings),
               subtitle: const Text('后端服务配置'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               contentPadding: EdgeInsets.zero,
               onTap: () {
                 context.push('/settings');
@@ -604,10 +604,10 @@ class _SettingsCard extends ConsumerWidget {
             const Divider(),
             // 关于入口
             ListTile(
-              leading: const Icon(Icons.info),
+              leading: const Icon(Icons.info_rounded),
               title: const Text(S.about),
               subtitle: const Text('应用版本和相关信息'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               contentPadding: EdgeInsets.zero,
               onTap: () {
                 context.push('/about');

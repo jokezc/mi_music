@@ -138,7 +138,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.playSettings,
@@ -151,7 +151,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
             initialValue: _searchPrefix,
             decoration: InputDecoration(
               labelText: S.searchPrefix,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_rounded),
               border: const OutlineInputBorder(),
             ),
             items: const [
@@ -167,7 +167,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
             initialValue: _getDurationType,
             decoration: InputDecoration(
               labelText: S.getDurationType,
-              prefixIcon: const Icon(Icons.timer),
+              prefixIcon: const Icon(Icons.timer_rounded),
               border: const OutlineInputBorder(),
             ),
             items: const [
@@ -183,7 +183,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
             controller: _loudnormController,
             decoration: InputDecoration(
               labelText: S.loudnorm,
-              prefixIcon: const Icon(Icons.volume_up),
+              prefixIcon: const Icon(Icons.volume_up_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -208,7 +208,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
             controller: _delaySecController,
             decoration: InputDecoration(
               labelText: S.delaySec,
-              prefixIcon: const Icon(Icons.schedule),
+              prefixIcon: const Icon(Icons.schedule_rounded),
               border: const OutlineInputBorder(),
               helperText: '支持负数',
             ),
@@ -228,7 +228,7 @@ class _PlaySectionState extends ConsumerState<PlaySection> {
             controller: _fuzzyMatchCutoffController,
             decoration: InputDecoration(
               labelText: S.fuzzyMatchCutoff,
-              prefixIcon: const Icon(Icons.tune),
+              prefixIcon: const Icon(Icons.tune_rounded),
               border: const OutlineInputBorder(),
               helperText: '范围: 0.1 ~ 0.9',
             ),
