@@ -163,15 +163,19 @@ class PlaylistController extends _$PlaylistController {
 
   Future<void> addMusicToPlaylist(String playlistName, List<String> musicList) async {
     await ref.read(apiClientProvider).playlistAddMusic(PlayListMusicObj(name: playlistName, musicList: musicList));
-    ref.invalidate(playlistMusicsProvider(playlistName));
-    ref.invalidate(cachedPlaylistMusicsProvider(playlistName));
-    ref.invalidate(cachedPlaylistSongsProvider(playlistName));
+    // 刷新指定歌单缓存（只刷新歌单结构，不获取歌曲详情）
+    await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly(playlistName: playlistName);
   }
 
   Future<void> removeMusicFromPlaylist(String playlistName, List<String> musicList) async {
     await ref.read(apiClientProvider).playlistDelMusic(PlayListMusicObj(name: playlistName, musicList: musicList));
-    ref.invalidate(playlistMusicsProvider(playlistName));
-    ref.invalidate(cachedPlaylistMusicsProvider(playlistName));
-    ref.invalidate(cachedPlaylistSongsProvider(playlistName));
+    // 刷新指定歌单缓存（只刷新歌单结构，不获取歌曲详情）
+    await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly(playlistName: playlistName);
+  }
+
+  Future<void> updatePlaylistMusic(String playlistName, List<String> musicList) async {
+    await ref.read(apiClientProvider).playlistUpdateMusic(PlayListMusicObj(name: playlistName, musicList: musicList));
+    // 刷新指定歌单缓存（只刷新歌单结构，不获取歌曲详情）
+    await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly(playlistName: playlistName);
   }
 }

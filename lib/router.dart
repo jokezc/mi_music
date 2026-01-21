@@ -21,6 +21,7 @@ import 'package:mi_music/presentation/pages/settings/appearance_page.dart';
 import 'package:mi_music/presentation/pages/settings/client_settings_page.dart';
 import 'package:mi_music/presentation/pages/settings/settings_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mi_music/presentation/pages/playlist/song_multi_select_page.dart';
 
 part 'router.g.dart';
 
@@ -108,6 +109,23 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ManagePlaylistsPage(),
       ),
+      GoRoute(
+        path: '/song-multi-select',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final title = extra?['title'] as String? ?? '';
+          final allSongs = extra?['allSongs'] as List<String>? ?? [];
+          final initialSelectedSongs = extra?['initialSelectedSongs'] as List<String>? ?? [];
+          final actionLabel = extra?['actionLabel'] as String? ?? '确定';
+          return SongMultiSelectPage(
+            title: title,
+            allSongs: allSongs,
+            initialSelectedSongs: initialSelectedSongs,
+            actionLabel: actionLabel,
+          );
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNav(navigationShell: navigationShell);
@@ -124,9 +142,9 @@ GoRouter router(Ref ref) {
                   // 安全解码，如果解码失败则使用原始值
                   String name;
                   // 检查是否包含百分号编码（%XX 格式）
-                  final hasPercentEncoding = encodedName.contains('%') && 
-                      RegExp(r'%[0-9A-Fa-f]{2}').hasMatch(encodedName);
-                  
+                  final hasPercentEncoding =
+                      encodedName.contains('%') && RegExp(r'%[0-9A-Fa-f]{2}').hasMatch(encodedName);
+
                   if (hasPercentEncoding) {
                     try {
                       name = Uri.decodeComponent(encodedName);
