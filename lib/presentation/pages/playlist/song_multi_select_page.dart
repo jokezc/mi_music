@@ -76,10 +76,10 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: S.searchHint,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear_rounded),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');

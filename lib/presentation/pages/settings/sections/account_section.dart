@@ -117,7 +117,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.accountSettings,
@@ -130,7 +130,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
             controller: _accountController,
             decoration: InputDecoration(
               labelText: S.xiaomiAccount,
-              prefixIcon: const Icon(Icons.account_circle),
+              prefixIcon: const Icon(Icons.account_circle_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -139,10 +139,10 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
             controller: _passwordController,
             decoration: InputDecoration(
               labelText: S.password,
-              prefixIcon: const Icon(Icons.lock),
+              prefixIcon: const Icon(Icons.lock_rounded),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
@@ -155,7 +155,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
             enabled: false,
             decoration: InputDecoration(
               labelText: S.xiaomiAccountDid,
-              prefixIcon: const Icon(Icons.device_hub),
+              prefixIcon: const Icon(Icons.device_hub_rounded),
               border: const OutlineInputBorder(),
               helperText: '只读',
             ),

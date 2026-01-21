@@ -44,7 +44,7 @@ class SongTile extends StatelessWidget {
               color: isDark ? AppColors.darkSurface : AppColors.lightDivider,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.music_note, color: AppColors.primary),
+            child: const Icon(Icons.music_note_rounded, color: AppColors.primary),
           ),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitle != null
@@ -52,7 +52,7 @@ class SongTile extends StatelessWidget {
           : null,
       trailing: onPlay != null
           ? IconButton(
-              icon: const Icon(Icons.play_circle_outline),
+              icon: const Icon(Icons.play_circle_rounded),
               color: AppColors.primary,
               onPressed: onPlay,
               tooltip: '播放',
@@ -77,7 +77,7 @@ class SongTile extends StatelessWidget {
                   ? AppColors.warning
                   : AppColors.accent,
               foregroundColor: Colors.white,
-              icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+              icon: isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               label: isFavorite ? '取消收藏' : '收藏',
             ),
           if (onAddToPlaylist != null)
@@ -85,7 +85,7 @@ class SongTile extends StatelessWidget {
               onPressed: (_) => onAddToPlaylist?.call(),
               backgroundColor: AppColors.info,
               foregroundColor: Colors.white,
-              icon: Icons.playlist_add,
+              icon: Icons.playlist_add_rounded,
               label: '添加到歌单',
             ),
           if (onDelete != null)
@@ -93,7 +93,7 @@ class SongTile extends StatelessWidget {
               onPressed: (_) => onDelete?.call(),
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              icon: Icons.delete,
+              icon: Icons.delete_rounded,
               label: '删除',
             ),
         ],
@@ -140,7 +140,7 @@ class PlaylistTile extends StatelessWidget {
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.playlist_play, color: Colors.white),
+        child: const Icon(Icons.playlist_play_rounded, color: Colors.white),
       ),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitleText.isNotEmpty
@@ -151,12 +151,12 @@ class PlaylistTile extends StatelessWidget {
         children: [
           if (onPlay != null)
             IconButton(
-              icon: const Icon(Icons.play_circle_outline),
+              icon: const Icon(Icons.play_circle_rounded),
               color: AppColors.primary,
               onPressed: onPlay,
               tooltip: '播放',
             ),
-          const Icon(Icons.chevron_right),
+          const Icon(Icons.chevron_right_rounded),
         ],
       ),
       onTap: onTap,
@@ -176,7 +176,7 @@ class PlaylistTile extends StatelessWidget {
               onPressed: (_) => onEdit?.call(),
               backgroundColor: AppColors.info,
               foregroundColor: Colors.white,
-              icon: Icons.edit,
+              icon: Icons.edit_rounded,
               label: '编辑',
             ),
           if (onDelete != null)
@@ -184,7 +184,7 @@ class PlaylistTile extends StatelessWidget {
               onPressed: (_) => onDelete?.call(),
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              icon: Icons.delete,
+              icon: Icons.delete_rounded,
               label: '删除',
             ),
         ],

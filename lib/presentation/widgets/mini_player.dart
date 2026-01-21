@@ -60,7 +60,7 @@ class MiniPlayer extends ConsumerWidget {
                                   gradient: AppColors.primaryGradient,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.music_note, color: Colors.white, size: 24),
+                                child: const Icon(Icons.music_note_rounded, color: Colors.white, size: 24),
                               ),
                       ),
                       const SizedBox(width: 12),
@@ -106,7 +106,7 @@ class MiniPlayer extends ConsumerWidget {
                             tooltip: S.previous,
                           ),
                           IconButton(
-                            icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
+                            icon: Icon(isPlaying ? Icons.pause_circle_rounded : Icons.play_circle_rounded),
                             iconSize: 40,
                             color: AppColors.primary,
                             onPressed: () {

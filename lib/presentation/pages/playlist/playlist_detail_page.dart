@@ -53,7 +53,7 @@ class PlaylistDetailPage extends ConsumerWidget {
         title: Text(playlistName),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search_rounded),
             onPressed: () {
               // 跳转到搜索界面，指定搜索当前歌单
               context.push('/search?playlist=${Uri.encodeComponent(playlistName)}');
@@ -96,23 +96,23 @@ class PlaylistDetailPage extends ConsumerWidget {
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'add_songs',
-                    child: Row(children: [Icon(Icons.playlist_add), SizedBox(width: 8), Text('添加歌曲')]),
+                    child: Row(children: [Icon(Icons.playlist_add_rounded), SizedBox(width: 8), Text('添加歌曲')]),
                   ),
                   const PopupMenuItem(
                     value: 'remove_songs',
-                    child: Row(children: [Icon(Icons.playlist_remove), SizedBox(width: 8), Text('移除歌曲')]),
+                    child: Row(children: [Icon(Icons.playlist_remove_rounded), SizedBox(width: 8), Text('移除歌曲')]),
                   ),
                   const PopupMenuItem(
                     value: 'rename',
-                    child: Row(children: [Icon(Icons.edit), SizedBox(width: 8), Text('重命名歌单')]),
+                    child: Row(children: [Icon(Icons.edit_rounded), SizedBox(width: 8), Text('重命名歌单')]),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
-                    child: Row(children: [Icon(Icons.delete), SizedBox(width: 8), Text('删除歌单')]),
+                    child: Row(children: [Icon(Icons.delete_rounded), SizedBox(width: 8), Text('删除歌单')]),
                   ),
                   const PopupMenuItem(
                     value: 'clear',
-                    child: Row(children: [Icon(Icons.cleaning_services), SizedBox(width: 8), Text('清空歌单')]),
+                    child: Row(children: [Icon(Icons.cleaning_services_rounded), SizedBox(width: 8), Text('清空歌单')]),
                   ),
                   const PopupMenuItem(
                     value: 'play_all',
@@ -131,7 +131,7 @@ class PlaylistDetailPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.music_off, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                  Icon(Icons.music_off_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
                   const SizedBox(height: 16),
                   Text(
                     S.emptySongs,
@@ -205,7 +205,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                           children: [
                             IconButton(
                               icon: Icon(
-                                favoriteSet.contains(song) ? Icons.favorite : Icons.favorite_border,
+                                favoriteSet.contains(song) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                                 color: favoriteSet.contains(song) ? Colors.red : null,
                               ),
                               tooltip: favoriteSet.contains(song) ? '取消收藏' : '收藏',
@@ -213,7 +213,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                                   FavoriteUtils.toggleFavorite(context, ref, song, favoriteSet.contains(song)),
                             ),
                             PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
+                              icon: const Icon(Icons.more_vert_rounded),
                               tooltip: '更多',
                               onSelected: (value) {
                                 if (value == 'delete') {
@@ -228,7 +228,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                                     value: 'remove',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.remove_circle_outline, color: Colors.orange),
+                                        Icon(Icons.remove_circle_rounded, color: Colors.orange),
                                         SizedBox(width: 8),
                                         Text('从歌单移除'),
                                       ],
@@ -238,7 +238,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                                   value: 'delete',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.delete_outline, color: Colors.red),
+                                      Icon(Icons.delete_rounded, color: Colors.red),
                                       SizedBox(width: 8),
                                       Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
                                     ],
@@ -266,7 +266,7 @@ class PlaylistDetailPage extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                const Icon(Icons.error_rounded, size: 48, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text('${S.error}: $err'),
                 const SizedBox(height: 16),

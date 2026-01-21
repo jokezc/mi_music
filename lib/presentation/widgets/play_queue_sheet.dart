@@ -94,7 +94,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                 // 定位到当前播放歌曲按钮
                 if (currentIndex >= 0 && currentIndex < playlist.length)
                   IconButton(
-                    icon: const Icon(Icons.my_location),
+                    icon: const Icon(Icons.my_location_rounded),
                     onPressed: () {
                       _scrollToCurrentSong(currentIndex, playlist.length);
                     },
@@ -131,7 +131,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.queue_music, size: 64, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+            Icon(Icons.queue_music_rounded, size: 64, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
             const SizedBox(height: 16),
             Text(
               '播放队列为空',
@@ -165,7 +165,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.equalizer, color: Colors.white),
+                  child: const Icon(Icons.equalizer_rounded, color: Colors.white),
                 )
               : SongCover(songName: song, size: 48),
           title: Text(
@@ -184,7 +184,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
               if (isPlaying)
                 const Padding(
                   padding: EdgeInsets.only(right: 8),
-                  child: Icon(Icons.volume_up, size: 20, color: AppColors.primary),
+                  child: Icon(Icons.volume_up_rounded, size: 20, color: AppColors.primary),
                 ),
             ],
           ),

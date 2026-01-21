@@ -156,7 +156,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, size: 24),
+              const Icon(Icons.settings_rounded, size: 24),
               const SizedBox(width: 8),
               Text(
                 S.dialogSettings,
@@ -177,7 +177,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _pullAskSecController,
             decoration: InputDecoration(
               labelText: S.getDialogueInterval,
-              prefixIcon: const Icon(Icons.timer),
+              prefixIcon: const Icon(Icons.timer_rounded),
               border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
@@ -196,7 +196,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _stopTtsMsgController,
             decoration: InputDecoration(
               labelText: S.stopPromptTone,
-              prefixIcon: const Icon(Icons.stop),
+              prefixIcon: const Icon(Icons.stop_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -205,7 +205,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _playTypeOneTtsMsgController,
             decoration: InputDecoration(
               labelText: S.singleSongLoopPromptTone,
-              prefixIcon: const Icon(Icons.repeat_one),
+              prefixIcon: const Icon(Icons.repeat_one_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -214,7 +214,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _playTypeAllTtsMsgController,
             decoration: InputDecoration(
               labelText: S.allLoopPromptTone,
-              prefixIcon: const Icon(Icons.repeat),
+              prefixIcon: const Icon(Icons.repeat_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -223,7 +223,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _playTypeRndTtsMsgController,
             decoration: InputDecoration(
               labelText: S.randomPlayPromptTone,
-              prefixIcon: const Icon(Icons.shuffle),
+              prefixIcon: const Icon(Icons.shuffle_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -232,7 +232,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _playTypeSinTtsMsgController,
             decoration: InputDecoration(
               labelText: S.singleSongPlayPromptTone,
-              prefixIcon: const Icon(Icons.music_note),
+              prefixIcon: const Icon(Icons.music_note_rounded),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -241,7 +241,7 @@ class _DialogTtsSectionState extends ConsumerState<DialogTtsSection> {
             controller: _playTypeSeqTtsMsgController,
             decoration: InputDecoration(
               labelText: S.sequentialPlayPromptTone,
-              prefixIcon: const Icon(Icons.queue_music),
+              prefixIcon: const Icon(Icons.queue_music_rounded),
               border: const OutlineInputBorder(),
             ),
           ),

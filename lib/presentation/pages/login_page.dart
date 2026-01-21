@@ -123,7 +123,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(Icons.music_note, size: 56, color: Colors.white),
+                  child: const Icon(Icons.music_note_rounded, size: 56, color: Colors.white),
                 ),
                 const SizedBox(height: 24),
                 // Title
@@ -147,7 +147,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: InputDecoration(
                     labelText: S.serverUrl,
                     hintText: S.serverUrlHint,
-                    prefixIcon: const Icon(Icons.dns),
+                    prefixIcon: const Icon(Icons.dns_rounded),
                   ),
                   keyboardType: TextInputType.url,
                   validator: (value) {
@@ -164,7 +164,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 // Username
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(labelText: S.usernameOptional, prefixIcon: const Icon(Icons.person)),
+                  decoration: InputDecoration(labelText: S.usernameOptional, prefixIcon: const Icon(Icons.person_rounded)),
                 ),
                 const SizedBox(height: 16),
                 // Password
@@ -172,9 +172,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: S.passwordOptional,
-                    prefixIcon: const Icon(Icons.lock),
+                    prefixIcon: const Icon(Icons.lock_rounded),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
                       },

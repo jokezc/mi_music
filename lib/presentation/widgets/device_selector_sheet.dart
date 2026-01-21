@@ -44,7 +44,7 @@ class DeviceSelectorSheet extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.speaker_group, color: AppColors.primary),
+                  child: const Icon(Icons.speaker_group_rounded, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -53,7 +53,7 @@ class DeviceSelectorSheet extends ConsumerWidget {
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context), tooltip: S.cancel),
+                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context), tooltip: S.cancel),
               ],
             ),
           ),
@@ -64,7 +64,7 @@ class DeviceSelectorSheet extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Icon(Icons.devices_other, size: 48, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                  Icon(Icons.devices_other_rounded, size: 48, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
                   const SizedBox(height: 12),
                   Text(
                     S.noDevices,
@@ -110,7 +110,7 @@ class DeviceSelectorSheet extends ConsumerWidget {
                         color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                       ),
                     ),
-                    trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                    trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
                     onTap: () => _handleDeviceSelection(context, ref, device: device),
                   );
                 },

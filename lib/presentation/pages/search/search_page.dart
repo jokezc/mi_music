@@ -54,10 +54,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: displayPlaylistName == '全部' ? S.searchHint : '搜索 $displayPlaylistName 中的歌曲...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear_rounded),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
@@ -83,7 +83,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+            Icon(Icons.search_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
             const SizedBox(height: 16),
             Text(
               S.enterKeyword,
@@ -106,7 +106,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.music_off, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                    Icon(Icons.music_off_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
                     const SizedBox(height: 16),
                     Text(
                       S.noResults,
@@ -128,7 +128,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   leading: SongCover(songName: song),
                   title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
                   trailing: IconButton(
-                    icon: const Icon(Icons.play_circle_outline),
+                    icon: const Icon(Icons.play_circle_rounded),
                     color: AppColors.primary,
                     onPressed: () {
                       ref
@@ -152,7 +152,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                const Icon(Icons.error_rounded, size: 48, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text('${S.error}: $err'),
               ],
