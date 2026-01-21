@@ -74,6 +74,9 @@ abstract class ApiClient {
   @POST("/playlistdelmusic")
   Future<RetMsg> playlistDelMusic(@Body() PlayListMusicObj body);
 
+  @POST("/playlistupdatemusic")
+  Future<RetMsg> playlistUpdateMusic(@Body() PlayListMusicObj body);
+
   // 获取歌单歌曲列表,但是目前仅支持自定义歌单
   @GET("/playlistmusics")
   Future<PlaylistMusicsResp> getPlaylistMusics(@Query("name") String name);
