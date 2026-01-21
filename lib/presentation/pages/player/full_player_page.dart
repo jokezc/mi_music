@@ -112,7 +112,7 @@ class _PlayerAppBar extends ConsumerWidget {
           ),
           // 中间显示设备名称（仅远程设备显示）
           Expanded(
-            child: !isLocalMode && currentDevice?.name != null
+            child: currentDevice?.name != null
                 ? Center(
                     child: Text(
                       currentDevice!.name!,
