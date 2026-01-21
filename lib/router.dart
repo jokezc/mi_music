@@ -10,6 +10,7 @@ import 'package:mi_music/presentation/pages/functions/cron_task_edit_page.dart';
 import 'package:mi_music/presentation/pages/functions/cron_task_list_page.dart';
 import 'package:mi_music/presentation/pages/functions/functions_page.dart';
 import 'package:mi_music/presentation/pages/library/library_page.dart';
+import 'package:mi_music/presentation/pages/library/manage_playlists_page.dart';
 import 'package:mi_music/presentation/pages/login_page.dart';
 import 'package:mi_music/presentation/pages/player/full_player_page.dart';
 import 'package:mi_music/presentation/pages/playlist/playlist_detail_page.dart';
@@ -101,6 +102,11 @@ GoRouter router(Ref ref) {
           final initialQuery = state.uri.queryParameters['q'];
           return SearchPage(playlistName: playlistName, initialQuery: initialQuery);
         },
+      ),
+      GoRoute(
+        path: '/manage-playlists',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ManagePlaylistsPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -53,6 +53,16 @@ class SharedPrefKeys {
   /// 用途: 存储应用主题模式（系统/浅色/深色）
   static const String themeMode = 'theme_mode';
 
+  /// 歌单隐藏状态
+  /// 类型: List[String]
+  /// 用途: 存储被隐藏的歌单名称列表
+  static const String playlistHiddenState = 'playlist_hidden_state';
+
+  /// 歌单自定义排序
+  /// 类型: List[String]
+  /// 用途: 存储歌单的自定义排序顺序
+  static const String playlistSortOrder = 'playlist_sort_order';
+
   // ========== 播放器状态 ==========
 
   /// 当前选中的设备 ID
