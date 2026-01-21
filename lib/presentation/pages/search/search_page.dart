@@ -5,6 +5,7 @@ import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
+import 'package:mi_music/presentation/widgets/song_cover.dart';
 
 /// 搜索页面
 class SearchPage extends ConsumerStatefulWidget {
@@ -50,6 +51,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               controller: _searchController,
+              autofocus: true,
               decoration: InputDecoration(
                 hintText: displayPlaylistName == '全部' ? S.searchHint : '搜索 $displayPlaylistName 中的歌曲...',
                 prefixIcon: const Icon(Icons.search),
@@ -123,15 +125,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               itemBuilder: (context, index) {
                 final song = songs[index];
                 return ListTile(
-                  leading: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.music_note, color: Colors.white),
-                  ),
+                  leading: SongCover(songName: song),
                   title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
                   trailing: IconButton(
                     icon: const Icon(Icons.play_circle_outline),
