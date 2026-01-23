@@ -6,6 +6,7 @@ import 'package:mi_music/core/constants/cmd_commands.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 
@@ -317,9 +318,12 @@ class _DeviceCard extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // 获取当前播放状态和选中设备
-    final playerState = ref.watch(unifiedPlayerControllerProvider).value;
-    final currentDevice = playerState?.currentDevice;
-    final isSelected = currentDevice?.did == device.did;
+    final currentDeviceDid = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice?.did));
+    final playerIsPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
+    final playerSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+
+    final cacheManager = ref.watch(cacheManagerProvider);
+    final isSelected = currentDeviceDid == device.did;
 
     final isLocal = device.type == DeviceType.local;
 
@@ -328,13 +332,14 @@ class _DeviceCard extends ConsumerWidget {
     String currentMusic;
 
     if (isLocal) {
-      // 本地设备：如果是当前选中设备，从 PlayerState 获取状态；否则认为未播放
+      // 本地设备：如果是当前选中设备，从 PlayerState 获取状态；否则从缓存读取
       if (isSelected) {
-        isPlaying = playerState?.isPlaying ?? false;
-        currentMusic = playerState?.currentSong ?? '';
+        isPlaying = playerIsPlaying;
+        currentMusic = playerSong ?? '';
       } else {
-        isPlaying = false;
-        currentMusic = '';
+        final localCache = cacheManager.getPlayerState('local');
+        isPlaying = localCache?.isPlaying ?? false;
+        currentMusic = localCache?.currentSong ?? '';
       }
     } else {
       // 远程设备：优先使用 API 获取的状态
@@ -343,8 +348,8 @@ class _DeviceCard extends ConsumerWidget {
 
       // 如果远程设备是当前选中设备，且 API 状态为空（可能尚未获取），尝试使用 PlayerState
       if (isSelected && playingStatus == null) {
-        isPlaying = playerState?.isPlaying ?? false;
-        currentMusic = playerState?.currentSong ?? '';
+        isPlaying = playerIsPlaying;
+        currentMusic = playerSong ?? '';
       }
     }
 
