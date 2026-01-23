@@ -1,3 +1,4 @@
+import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
 import 'package:mi_music/data/models/api_models.dart';
@@ -7,6 +8,8 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'playlist_provider.g.dart';
+
+final _logger = Logger();
 
 enum PlaylistType { system, custom, folder }
 
@@ -118,8 +121,13 @@ Future<List<PlaylistUiModel>> playlistUiList(Ref ref) async {
 }
 
 @riverpod
-Future<PlaylistNamesResp> playlistNames(Ref ref) {
-  return ref.watch(apiClientProvider).getPlaylistNames();
+Future<PlaylistNamesResp> playlistNames(Ref ref) async {
+  try {
+    return await ref.watch(apiClientProvider).getPlaylistNames();
+  } catch (e, stackTrace) {
+    _logger.e('获取歌单列表失败: $e', stackTrace: stackTrace);
+    return PlaylistNamesResp(ret: 'error', names: []);
+  }
 }
 
 @riverpod
