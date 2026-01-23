@@ -7,6 +7,7 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 
@@ -177,6 +178,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
 
     // 获取当前设备（从播放器状态）
     final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
+    final currentPlayerSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+    final isPlayerPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
+    final cacheManager = ref.watch(cacheManagerProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -275,18 +279,39 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
 
                   // 确定 subtitle 显示内容
                   String subtitleText;
+                  bool showEqualizer = false;
+
                   if (isLocalDevice) {
-                    subtitleText = device.did;
+                    String? displaySong;
+                    bool isLocalPlaying = false;
+
+                    if (isSelected) {
+                      displaySong = currentPlayerSong;
+                      isLocalPlaying = isPlayerPlaying;
+                    } else {
+                      // 未选中时从缓存读取
+                      final localCache = cacheManager.getPlayerState('local');
+                      displaySong = localCache?.currentSong;
+                      isLocalPlaying = localCache?.isPlaying ?? false;
+                    }
+
+                    if (displaySong != null && displaySong.isNotEmpty) {
+                      subtitleText = displaySong;
+                      if (isLocalPlaying) showEqualizer = true;
+                    } else {
+                      subtitleText = device.did == 'local' ? '本机' : device.did;
+                    }
                   } else {
                     subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;
+                    if (isPlaying) showEqualizer = true;
                   }
 
                   // 确定 trailing 显示内容
                   Widget? trailingWidget;
                   if (isSelected) {
                     trailingWidget = const Icon(Icons.check_rounded, color: AppColors.primary);
-                  } else if (isPlaying && !isLocalDevice) {
-                    trailingWidget = Icon(Icons.volume_up_rounded, color: AppColors.primary, size: 20);
+                  } else if (showEqualizer && !isSelected) {
+                    trailingWidget = const Icon(Icons.graphic_eq_rounded, color: AppColors.primary, size: 20);
                   }
 
                   return ListTile(
