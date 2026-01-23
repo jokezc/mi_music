@@ -581,7 +581,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   /// 保存指定设备的播放状态（内部方法，用于设备切换时保存）
   Future<void> _savePlayerStateForDevice(PlayerState state, String deviceKey) async {
     // 仅本地设备需要持久化
-    if (deviceKey != 'local') return;
+    if (deviceKey != BaseConstants.webDevice) return;
     try {
       // 确保 Hive 已初始化
       await ref.read(initCacheProvider.future);
@@ -678,7 +678,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   /// 获取设备标识（用于缓存key）
   String _getDeviceKey(Device? currentDevice) {
     if (currentDevice?.type == DeviceType.local) {
-      return 'local';
+      return BaseConstants.webDevice;
     }
     return currentDevice?.did ?? 'unknown';
   }
