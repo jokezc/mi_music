@@ -227,7 +227,11 @@ class _PlaylistsTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.queue_music_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                Icon(
+                  Icons.queue_music_rounded,
+                  size: 80,
+                  color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   S.emptyPlaylist,
@@ -564,7 +568,11 @@ class _FavoritesTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite_border_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                Icon(
+                  Icons.favorite_border_rounded,
+                  size: 80,
+                  color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   '暂无收藏歌曲',
@@ -645,7 +653,11 @@ class _FavoritesTab extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.favorite_border_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+              Icon(
+                Icons.favorite_border_rounded,
+                size: 80,
+                color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+              ),
               const SizedBox(height: 16),
               Text(
                 '暂无收藏歌曲',
