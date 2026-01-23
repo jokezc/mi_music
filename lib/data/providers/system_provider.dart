@@ -1,6 +1,7 @@
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 
 part 'system_provider.g.dart';
 
@@ -9,7 +10,7 @@ part 'system_provider.g.dart';
 @Riverpod(keepAlive: true)
 Future<Map<String, Device>> playerDevices(Ref ref) async {
   // 创建本地设备
-  const localDeviceId = 'web_device';
+  const localDeviceId = BaseConstants.webDevice;
   final localDevice = Device(did: localDeviceId, name: '本机播放', type: DeviceType.local);
 
   // 直接调用 API 获取系统设置（只需要设备列表）

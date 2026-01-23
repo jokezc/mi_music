@@ -10,6 +10,8 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
+
 
 final _logger = Logger();
 
@@ -290,7 +292,7 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       isLocalPlaying = isPlayerPlaying;
                     } else {
                       // 未选中时从缓存读取
-                      final localCache = cacheManager.getPlayerState('local');
+                      final localCache = cacheManager.getPlayerState(BaseConstants.webDevice);
                       displaySong = localCache?.currentSong;
                       isLocalPlaying = localCache?.isPlaying ?? false;
                     }
@@ -299,7 +301,7 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       subtitleText = displaySong;
                       if (isLocalPlaying) showEqualizer = true;
                     } else {
-                      subtitleText = device.did == 'local' ? '本机' : device.did;
+                      subtitleText = device.did == BaseConstants.webDevice ? '本机' : device.did;
                     }
                   } else {
                     subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;

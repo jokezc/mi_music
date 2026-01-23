@@ -9,6 +9,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 
 final _logger = Logger();
 
@@ -337,7 +338,7 @@ class _DeviceCard extends ConsumerWidget {
         isPlaying = playerIsPlaying;
         currentMusic = playerSong ?? '';
       } else {
-        final localCache = cacheManager.getPlayerState('local');
+        final localCache = cacheManager.getPlayerState(BaseConstants.webDevice);
         isPlaying = localCache?.isPlaying ?? false;
         currentMusic = localCache?.currentSong ?? '';
       }

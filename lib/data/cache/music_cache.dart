@@ -351,7 +351,7 @@ class MusicCacheManager {
   // ========== 播放器状态缓存（按设备隔离）==========
 
   /// 保存播放器状态到缓存
-  /// [deviceKey] 设备标识（'local' 或设备 did）
+  /// [deviceKey] 设备标识（BaseConstants.webDevice 或设备 did）
   Future<void> savePlayerState(String deviceKey, PlayerStateCache state) async {
     if (_playerStateBox == null) {
       _logger.w("播放器状态 Box 未初始化，无法保存缓存: $deviceKey");
@@ -361,7 +361,7 @@ class MusicCacheManager {
   }
 
   /// 获取播放器状态缓存
-  /// [deviceKey] 设备标识（'local' 或设备 did）
+  /// [deviceKey] 设备标识（BaseConstants.webDevice 或设备 did）
   PlayerStateCache? getPlayerState(String deviceKey) {
     if (_playerStateBox == null) {
       _logger.w("播放器状态 Box 未初始化，无法读取缓存: $deviceKey");

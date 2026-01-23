@@ -15,6 +15,7 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 
 final _logger = Logger();
 
@@ -30,7 +31,6 @@ class RemotePlayerControllerImpl implements IPlayerController {
   bool _disposed = false; // 标记控制器是否已被销毁
   int _pollGen = 0; // 轮询代际，用于丢弃过期的异步结果（防止设备切换串台）
   CancelToken? _pollCancelToken; // 用于取消正在进行的轮询请求
-  static const _localDeviceId = 'web_device';
 
   RemotePlayerControllerImpl(this._ref, this._handler);
 
@@ -106,7 +106,7 @@ class RemotePlayerControllerImpl implements IPlayerController {
       if (remoteDevicesList.isNotEmpty) {
         return remoteDevicesList.first;
       } else {
-        return devices[_localDeviceId];
+        return devices[BaseConstants.webDevice];
       }
     }
   }
