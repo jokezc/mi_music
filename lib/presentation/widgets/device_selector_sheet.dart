@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -26,6 +27,13 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
   Map<String, PlayingMusicResp?> _playingStatusMap = {};
   bool _isClosingAllDevices = false;
   bool _isFetchingStatus = false; // 标记是否正在获取播放状态
+  CancelToken? _cancelToken;
+
+  @override
+  void dispose() {
+    _cancelToken?.cancel('Widget disposed');
+    super.dispose();
+  }
 
   /// 获取所有远程设备的播放状态
   Future<void> _fetchAllDevicesPlayingStatus() async {
@@ -37,6 +45,10 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
 
     if (devices.isEmpty) return;
 
+    // 取消上一次的请求
+    _cancelToken?.cancel('New fetch started');
+    _cancelToken = CancelToken();
+
     // 标记为正在获取
     _isFetchingStatus = true;
 
@@ -47,9 +59,12 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
       // 并发获取所有远程设备的播放状态
       final futures = remoteDevices.map((device) async {
         try {
-          final status = await apiClient.getPlayingMusic(device.did);
+          final status = await apiClient.getPlayingMusic(device.did, _cancelToken);
           return MapEntry(device.did, status);
         } catch (e) {
+          if (e is DioException && CancelToken.isCancel(e)) {
+            rethrow;
+          }
           _logger.w('获取设备 ${device.did} 播放状态失败: $e');
           return MapEntry(device.did, null);
         }
@@ -65,6 +80,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
         });
       }
     } catch (e) {
+      if (e is DioException && CancelToken.isCancel(e)) {
+        return;
+      }
       _logger.e('获取设备播放状态失败: $e');
       if (mounted) {
         setState(() {
@@ -228,7 +246,6 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                   // 如果是最后一个 item 且有设备，显示关闭按钮
                   if (index == devices.length) {
                     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-                    print('safeAreaBottom: $safeAreaBottom');
                     return Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, widget.bottomPadding + safeAreaBottom),
                       child: SizedBox(

@@ -387,7 +387,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       else if (did != null && did.isNotEmpty && did != BaseConstants.webDevice) {
         // 远程模式：从API获取真实状态
         final apiClient = ref.read(apiClientProvider);
-        final remoteStatus = await apiClient.getPlayingMusic(did);
+        final remoteStatus = await apiClient.getPlayingMusic(did, null);
         final playlistName = remoteStatus.curPlaylist.trim();
         final currentSong = remoteStatus.curMusic;
 
@@ -454,7 +454,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         final did = currentDevice.did;
         if (did.isNotEmpty) {
           final apiClient = ref.read(apiClientProvider);
-          final remoteStatus = await apiClient.getPlayingMusic(did);
+          final remoteStatus = await apiClient.getPlayingMusic(did, null);
           if (remoteStatus.isPlaying) {
             _logger.i('暂停远程设备: $did');
             await apiClient.sendCmd(DidCmd(did: did, cmd: PlayerCommands.pause));

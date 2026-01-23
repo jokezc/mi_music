@@ -205,6 +205,10 @@ class S {
   static const String pauseCurrentDeviceOnSwitchDesc = '自动暂停正在播放的远程设备';
   static const String syncPlaybackOnSwitch = '切换设备时同步播放内容';
   static const String syncPlaybackOnSwitchDesc = '同步播放内容到新设备（暂停时不同步）';
+  static const String showQuickDeviceSwitcher = '首页显示快速设备切换';
+  static const String showQuickDeviceSwitcherDesc = '在首页搜索框下方显示设备切换快捷入口';
+  static const String pinQuickDeviceSwitcher = '固定快速设备切换栏';
+  static const String pinQuickDeviceSwitcherDesc = '将设备切换栏固定在页面顶部，不随歌单滚动';
   static const String softwareSettings = '软件设置';
 
   // 定时任务

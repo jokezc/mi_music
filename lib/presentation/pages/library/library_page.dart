@@ -10,9 +10,11 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
+import 'package:mi_music/data/providers/settings_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
+import 'package:mi_music/presentation/widgets/quick_device_switcher.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 
 final _logger = Logger();
@@ -28,6 +30,7 @@ class LibraryPage extends ConsumerStatefulWidget {
 class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  final _deviceSwitcherKey = GlobalKey<QuickDeviceSwitcherState>(); // 用于调用 QuickDeviceSwitcher 的 refreshStatus
 
   @override
   void initState() {
@@ -154,7 +157,17 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
                 textInputAction: TextInputAction.search,
               ),
             ),
-            const Expanded(child: _PlaylistsTab()),
+            // 快速设备切换栏 - 固定模式
+            if (ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && s.pinQuickDeviceSwitcher)))
+              QuickDeviceSwitcher(key: _deviceSwitcherKey),
+            Expanded(
+              child: _PlaylistsTab(
+                header:
+                    ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && !s.pinQuickDeviceSwitcher))
+                    ? QuickDeviceSwitcher(key: _deviceSwitcherKey)
+                    : null,
+              ),
+            ),
           ],
         ),
       ),
@@ -208,7 +221,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
 
 /// 歌单 Tab
 class _PlaylistsTab extends ConsumerWidget {
-  const _PlaylistsTab();
+  final Widget? header;
+  const _PlaylistsTab({this.header});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -223,23 +237,39 @@ class _PlaylistsTab extends ConsumerWidget {
         final visiblePlaylists = allPlaylists.where((p) => !p.isHidden).toList();
 
         if (visiblePlaylists.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.queue_music_rounded,
-                  size: 80,
-                  color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+          return RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(cacheRefreshControllerProvider.notifier).refresh();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7, // 确保有足够高度触发下拉刷新
+                child: Column(
+                  children: [
+                    if (header != null) header!,
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.queue_music_rounded,
+                            size: 80,
+                            color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            S.emptyPlaylist,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  S.emptyPlaylist,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         }
@@ -251,8 +281,12 @@ class _PlaylistsTab extends ConsumerWidget {
           },
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 4), // 减小列表上下间距
-            itemCount: visiblePlaylists.length,
+            itemCount: visiblePlaylists.length + (header != null ? 1 : 0),
             itemBuilder: (context, index) {
+              if (header != null) {
+                if (index == 0) return header!;
+                return _PlaylistTile(playlist: visiblePlaylists[index - 1]);
+              }
               return _PlaylistTile(playlist: visiblePlaylists[index]);
             },
           ),
