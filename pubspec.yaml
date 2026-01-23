@@ -36,6 +36,7 @@ dependencies:
   # Audio Player
   just_audio: ^0.10.5
   audio_service: ^0.18.18
+  audio_session: ^0.2.2
   rxdart: ^0.28.0
 
   # UI Enhancement

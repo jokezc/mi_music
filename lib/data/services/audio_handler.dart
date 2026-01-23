@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/data/providers/player/player_state.dart' as app_state;
@@ -12,6 +13,7 @@ final _logger = Logger();
 class MyAudioHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
   final List<StreamSubscription> _playerSubscriptions = [];
+  bool _interrupted = false;
 
   // 核心：使用 List<AudioSource> 管理播放列表（列表模式启用时非空）
   List<AudioSource>? _playlistSources;
@@ -164,7 +166,64 @@ class MyAudioHandler extends BaseAudioHandler {
   }
 
   MyAudioHandler() {
+    _initAudioSession();
     _initPlayerListeners();
+  }
+
+  Future<void> _initAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+
+    // 监听音频打断事件 (如电话呼入、其他App占用音频焦点)
+    session.interruptionEventStream.listen((event) {
+      // 远程模式下，手机端的音频焦点变化不应影响远程设备
+      if (_isRemoteMode) return;
+
+      if (event.begin) {
+        // 打断开始
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            // 降低音量 (Duck) - 许多系统会自动处理，但为了保险可以手动降低
+            if (_player.playing) {
+              _player.setVolume(0.5);
+            }
+            break;
+          case AudioInterruptionType.pause:
+          case AudioInterruptionType.unknown:
+            // 暂停播放
+            if (_player.playing) {
+              pause();
+              _interrupted = true; // 标记为因打断而暂停，以便恢复
+            }
+            break;
+        }
+      } else {
+        // 打断结束
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            // 恢复音量
+            _player.setVolume(1.0);
+            break;
+          case AudioInterruptionType.pause:
+            // 只有当是因为被打断而暂停时，才自动恢复播放
+            if (_interrupted) {
+              play();
+              _interrupted = false;
+            }
+            break;
+          case AudioInterruptionType.unknown:
+            break;
+        }
+      }
+    });
+
+    // 监听耳机拔出等变得“嘈杂”的事件 (Becoming Noisy)
+    // 通常在拔出耳机时触发，标准行为是暂停播放
+    session.becomingNoisyEventStream.listen((_) {
+      if (_player.playing) {
+        pause();
+      }
+    });
   }
 
   void _initPlayerListeners() {
