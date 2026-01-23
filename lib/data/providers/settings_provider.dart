@@ -7,7 +7,15 @@ part 'settings_provider.g.dart';
 @riverpod
 class Settings extends _$Settings {
   @override
-  ({String serverUrl, String username, String password, bool pauseCurrentDeviceOnSwitch, bool syncPlaybackOnSwitch})
+  ({
+    String serverUrl,
+    String username,
+    String password,
+    bool pauseCurrentDeviceOnSwitch,
+    bool syncPlaybackOnSwitch,
+    bool showQuickDeviceSwitcher,
+    bool pinQuickDeviceSwitcher,
+  })
   build() {
     final prefs = ref.watch(sharedPreferencesProvider);
     return (
@@ -16,13 +24,14 @@ class Settings extends _$Settings {
       password: prefs.getString(SharedPrefKeys.password) ?? '',
       pauseCurrentDeviceOnSwitch: prefs.getBool(SharedPrefKeys.pauseCurrentDeviceOnSwitch) ?? true,
       syncPlaybackOnSwitch: prefs.getBool(SharedPrefKeys.syncPlaybackOnSwitch) ?? false,
+      showQuickDeviceSwitcher: prefs.getBool(SharedPrefKeys.showQuickDeviceSwitcher) ?? true,
+      pinQuickDeviceSwitcher: prefs.getBool(SharedPrefKeys.pinQuickDeviceSwitcher) ?? false,
     );
   }
 
   Future<void> setServerUrl(String url) async {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(SharedPrefKeys.serverUrl, url);
-    // settingsProvider 是 autoDispose，async gap 期间可能已被销毁
     if (!ref.mounted) return;
     state = (
       serverUrl: url,
@@ -30,6 +39,8 @@ class Settings extends _$Settings {
       password: state.password,
       pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
       syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
     );
   }
 
@@ -37,7 +48,6 @@ class Settings extends _$Settings {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(SharedPrefKeys.username, username);
     await prefs.setString(SharedPrefKeys.password, password);
-    // settingsProvider 是 autoDispose，async gap 期间可能已被销毁
     if (!ref.mounted) return;
     state = (
       serverUrl: state.serverUrl,
@@ -45,6 +55,8 @@ class Settings extends _$Settings {
       password: password,
       pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
       syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
     );
   }
 
@@ -54,7 +66,6 @@ class Settings extends _$Settings {
     await prefs.setString(SharedPrefKeys.serverUrl, url);
     await prefs.setString(SharedPrefKeys.username, username);
     await prefs.setString(SharedPrefKeys.password, password);
-    // settingsProvider 是 autoDispose，async gap 期间可能已被销毁
     if (!ref.mounted) return;
     state = (
       serverUrl: url,
@@ -62,13 +73,14 @@ class Settings extends _$Settings {
       password: password,
       pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
       syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
     );
   }
 
   Future<void> setPauseCurrentDeviceOnSwitch(bool value) async {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(SharedPrefKeys.pauseCurrentDeviceOnSwitch, value);
-    // settingsProvider 是 autoDispose，async gap 期间可能已被销毁
     if (!ref.mounted) return;
     state = (
       serverUrl: state.serverUrl,
@@ -76,13 +88,14 @@ class Settings extends _$Settings {
       password: state.password,
       pauseCurrentDeviceOnSwitch: value,
       syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
     );
   }
 
   Future<void> setSyncPlaybackOnSwitch(bool value) async {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(SharedPrefKeys.syncPlaybackOnSwitch, value);
-    // settingsProvider 是 autoDispose，async gap 期间可能已被销毁
     if (!ref.mounted) return;
     state = (
       serverUrl: state.serverUrl,
@@ -90,6 +103,38 @@ class Settings extends _$Settings {
       password: state.password,
       pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
       syncPlaybackOnSwitch: value,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
+    );
+  }
+
+  Future<void> setShowQuickDeviceSwitcher(bool value) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(SharedPrefKeys.showQuickDeviceSwitcher, value);
+    if (!ref.mounted) return;
+    state = (
+      serverUrl: state.serverUrl,
+      username: state.username,
+      password: state.password,
+      pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
+      syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: value,
+      pinQuickDeviceSwitcher: state.pinQuickDeviceSwitcher,
+    );
+  }
+
+  Future<void> setPinQuickDeviceSwitcher(bool value) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(SharedPrefKeys.pinQuickDeviceSwitcher, value);
+    if (!ref.mounted) return;
+    state = (
+      serverUrl: state.serverUrl,
+      username: state.username,
+      password: state.password,
+      pauseCurrentDeviceOnSwitch: state.pauseCurrentDeviceOnSwitch,
+      syncPlaybackOnSwitch: state.syncPlaybackOnSwitch,
+      showQuickDeviceSwitcher: state.showQuickDeviceSwitcher,
+      pinQuickDeviceSwitcher: value,
     );
   }
 }

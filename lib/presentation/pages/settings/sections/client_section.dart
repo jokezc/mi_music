@@ -45,6 +45,26 @@ class ClientSection extends ConsumerWidget {
                     settingsNotifier.setSyncPlaybackOnSwitch(value);
                   },
                 ),
+                const Divider(height: 1),
+                // 首页显示快速设备切换
+                SwitchListTile(
+                  title: const Text(S.showQuickDeviceSwitcher),
+                  subtitle: const Text(S.showQuickDeviceSwitcherDesc),
+                  value: settings.showQuickDeviceSwitcher,
+                  onChanged: (value) {
+                    settingsNotifier.setShowQuickDeviceSwitcher(value);
+                  },
+                ),
+                const Divider(height: 1),
+                // 固定快速设备切换栏
+                SwitchListTile(
+                  title: const Text(S.pinQuickDeviceSwitcher),
+                  subtitle: const Text(S.pinQuickDeviceSwitcherDesc),
+                  value: settings.pinQuickDeviceSwitcher,
+                  onChanged: (value) {
+                    settingsNotifier.setPinQuickDeviceSwitcher(value);
+                  },
+                ),
               ],
             ),
           ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/cmd_commands.dart';
@@ -28,6 +29,7 @@ class RemotePlayerControllerImpl implements IPlayerController {
   String? _currentDid;
   bool _disposed = false; // 标记控制器是否已被销毁
   int _pollGen = 0; // 轮询代际，用于丢弃过期的异步结果（防止设备切换串台）
+  CancelToken? _pollCancelToken; // 用于取消正在进行的轮询请求
   static const _localDeviceId = 'web_device';
 
   RemotePlayerControllerImpl(this._ref, this._handler);
@@ -148,13 +150,32 @@ class RemotePlayerControllerImpl implements IPlayerController {
     _pollTimer = null;
     _statusSub?.cancel();
     _statusSub = null;
+
+    // 取消正在进行的请求
+    if (_pollCancelToken != null && !_pollCancelToken!.isCancelled) {
+      _pollCancelToken!.cancel('Stop polling');
+      _pollCancelToken = null;
+    }
+
     _currentDid = null;
   }
 
   Future<PlayerState?> _fetchRemoteStatus(String did, {required int gen}) async {
+    // 如果已有正在进行的请求，取消它，避免请求堆积
+    if (_pollCancelToken != null && !_pollCancelToken!.isCancelled) {
+      // _logger.d("取消上一轮未完成的轮询请求");
+      _pollCancelToken!.cancel('New poll started');
+    }
+    _pollCancelToken = CancelToken();
+
     try {
       final apiClient = _ref.read(apiClientProvider);
-      final resp = await apiClient.getPlayingMusic(did);
+      // 注意：getPlayingMusic 的 CancelToken 是可选位置参数
+      final resp = await apiClient.getPlayingMusic(did, _pollCancelToken);
+
+      // 请求完成，清除 token
+      _pollCancelToken = null;
+
       // _logger.d("获取远程播放状态: ${resp.toJson()}");
       // 检查是否已被销毁（异步操作期间可能被销毁）
       if (_disposed) {
@@ -267,6 +288,11 @@ class RemotePlayerControllerImpl implements IPlayerController {
       }
       return updatedState;
     } catch (e) {
+      // 忽略取消异常
+      if (e is DioException && CancelToken.isCancel(e)) {
+        return _currentState;
+      }
+
       _logger.e("获取远程播放状态失败 (did: $did): $e");
       return _currentState;
     }
@@ -303,6 +329,12 @@ class RemotePlayerControllerImpl implements IPlayerController {
     // 标记为已销毁，防止异步操作继续更新状态
     _disposed = true;
     stopPolling();
+
+    if (_pollCancelToken != null && !_pollCancelToken!.isCancelled) {
+      _pollCancelToken!.cancel('Controller disposed');
+      _pollCancelToken = null;
+    }
+
     // 清空回调，避免已销毁的控制器继续更新状态
     _stateUpdateCallback = null;
 

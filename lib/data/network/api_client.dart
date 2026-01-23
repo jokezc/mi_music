@@ -38,7 +38,7 @@ abstract class ApiClient {
   Future<RetMsg> playTts(@Query("did") String did, @Query("text") String text);
 
   @GET("/playingmusic")
-  Future<PlayingMusicResp> getPlayingMusic(@Query("did") String did);
+  Future<PlayingMusicResp> getPlayingMusic(@Query("did") String did, CancelToken? cancelToken);
 
   @GET("/getvolume")
   Future<VolumeResp> getVolume(@Query("did") String did);

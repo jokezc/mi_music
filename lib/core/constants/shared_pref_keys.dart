@@ -45,6 +45,18 @@ class SharedPrefKeys {
   /// 用途: 控制切换设备时是否同步播放进度
   static const String syncPlaybackOnSwitch = 'sync_playback_on_switch';
 
+  /// 首页显示快速设备切换
+  /// 类型: Bool
+  /// 默认值: true
+  /// 用途: 控制首页搜索框下方是否显示快速设备切换栏
+  static const String showQuickDeviceSwitcher = 'show_quick_device_switcher';
+
+  /// 固定快速设备切换栏
+  /// 类型: Bool
+  /// 默认值: false
+  /// 用途: 控制快速设备切换栏是否固定在顶部（false=随列表滚动，true=固定）
+  static const String pinQuickDeviceSwitcher = 'pin_quick_device_switcher';
+
   // ========== 应用偏好 ==========
 
   /// 主题模式
