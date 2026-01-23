@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
+import 'package:mi_music/core/globals.dart';
 import 'package:mi_music/core/theme/app_theme.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
@@ -33,7 +34,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
     super.initState();
   }
 
- 
   @override
   Widget build(BuildContext context) {
     // 触发缓存初始化（不需要登录）
@@ -56,6 +56,7 @@ class MyApp extends ConsumerWidget {
 
     return AppInitializer(
       child: MaterialApp.router(
+        scaffoldMessengerKey: rootScaffoldMessengerKey,
         title: S.appName,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
