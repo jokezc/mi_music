@@ -1,6 +1,7 @@
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
+import 'package:mi_music/core/utils/snackbar_utils.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
@@ -123,9 +124,11 @@ Future<List<PlaylistUiModel>> playlistUiList(Ref ref) async {
 @riverpod
 Future<PlaylistNamesResp> playlistNames(Ref ref) async {
   try {
+    // 手动制造异常
     return await ref.watch(apiClientProvider).getPlaylistNames();
   } catch (e, stackTrace) {
     _logger.e('获取歌单列表失败: $e', stackTrace: stackTrace);
+    SnackBarUtils.showGlobalWarning('获取自定义歌单失败，请检查 xiaomusic 服务端是否需要更新');
     return PlaylistNamesResp(ret: 'error', names: []);
   }
 }
