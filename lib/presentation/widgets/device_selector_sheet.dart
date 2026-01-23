@@ -13,7 +13,9 @@ final _logger = Logger();
 
 /// 统一的设备选择底部表单组件
 class DeviceSelectorSheet extends ConsumerStatefulWidget {
-  const DeviceSelectorSheet({super.key});
+  final double bottomPadding;
+
+  const DeviceSelectorSheet({super.key, this.bottomPadding = 16});
 
   @override
   ConsumerState<DeviceSelectorSheet> createState() => _DeviceSelectorSheetState();
@@ -220,13 +222,15 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: EdgeInsets.zero,
                 itemCount: devices.length + (devices.isNotEmpty ? 1 : 0), // 设备数量 + 按钮（如果有设备）
                 itemBuilder: (context, index) {
                   // 如果是最后一个 item 且有设备，显示关闭按钮
                   if (index == devices.length) {
+                    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
+                    print('safeAreaBottom: $safeAreaBottom');
                     return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, widget.bottomPadding + safeAreaBottom),
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
