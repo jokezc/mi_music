@@ -257,7 +257,11 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
     }
 
     // 其他错误
-    return AuthResult.error(e.message ?? '网络错误');
+    String msg = e.message ?? '网络错误';
+    if (msg.contains("The connection errored") || msg.contains("Connection failed")) {
+      msg = "无法连接到服务器，请检查网络设置或服务器地址";
+    }
+    return AuthResult.error(msg);
   } catch (e) {
     _logger.e("验证认证失败: $e");
     return AuthResult.error(e.toString());

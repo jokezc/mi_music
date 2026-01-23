@@ -58,6 +58,12 @@
     <true/>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>需要访问本地网络以连接到服务器。</string>
+    <key>NSBonjourServices</key>
+    <array>
+      <string>_http._tcp</string>
+    </array>
     <key>NSAppleMusicUsageDescription</key>
     <string>需要访问您的媒体资料库以播放本地音乐。</string>
     <key>NSMicrophoneUsageDescription</key>
