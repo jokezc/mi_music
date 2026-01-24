@@ -56,7 +56,7 @@ abstract class ApiClient {
   Future<SetVolumeResp> setVolume(@Body() DidVolume body);
 
   // Playlist & Music
-  // 获取所有音乐列表,包含系统歌单和自定义歌单
+  // 获取所有歌单列表,包含系统歌单和自定义歌单
   @GET("/musiclist")
   Future<MusicListResp> getMusicList();
 
@@ -75,6 +75,7 @@ abstract class ApiClient {
   // 查询自定义歌单列表
   @GET("/playlistnames")
   Future<PlaylistNamesResp> getPlaylistNames();
+
   // 创建自定义歌单
   @POST("/playlistadd")
   Future<RetMsg> playlistAdd(@Body() PlayListObj body);
