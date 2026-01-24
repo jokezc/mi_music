@@ -27,33 +27,12 @@ class LibraryPage extends ConsumerStatefulWidget {
   ConsumerState<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingObserver {
-  final _searchController = TextEditingController();
-  final _searchFocusNode = FocusNode();
+class _LibraryPageState extends ConsumerState<LibraryPage> {
   final _deviceSwitcherKey = GlobalKey<QuickDeviceSwitcherState>(); // 用于调用 QuickDeviceSwitcher 的 refreshStatus
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didChangeMetrics() {
-    super.didChangeMetrics();
-    // 当键盘收起时（bottomInset变为0），如果搜索框有焦点，则取消焦点
-    final bottomInset = View.of(context).viewInsets.bottom;
-    if (bottomInset == 0 && _searchFocusNode.hasFocus) {
-      _searchFocusNode.unfocus();
-    }
   }
 
   Future<void> _handleRefresh() async {
@@ -127,49 +106,55 @@ class _LibraryPageState extends ConsumerState<LibraryPage> with WidgetsBindingOb
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () {
-          // 点击空白处取消焦点
-          FocusScope.of(context).unfocus();
-        },
-        behavior: HitTestBehavior.translucent,
-        child: Column(
-          children: [
-            // 首页搜索框
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: '搜索全部歌单中的歌曲...',
-                  prefixIcon: Icon(Icons.search_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20),
+      body: Column(
+        children: [
+          // 首页搜索框 - 点击直接跳转搜索页
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GestureDetector(
+              onTap: () {
+                // 跳转到搜索界面，指定搜索全部歌单
+                context.push('/search?playlist=${Uri.encodeComponent('全部')}');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : AppColors.lightSurface, // 类似输入框的背景色
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                 ),
-                onSubmitted: (val) {
-                  if (val.trim().isNotEmpty) {
-                    final query = val.trim();
-                    _searchController.clear();
-                    // 跳转到搜索界面，指定搜索全部歌单，并带上搜索词
-                    context.push('/search?playlist=${Uri.encodeComponent('全部')}&q=${Uri.encodeComponent(query)}');
-                  }
-                },
-                textInputAction: TextInputAction.search,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors
+                                .lightTextSecondary, // Input decoration prefixIcon default is usually text secondary or hint
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '搜索全部歌单中的歌曲...',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint, // Hint text color
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            // 快速设备切换栏 - 固定模式
-            if (ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && s.pinQuickDeviceSwitcher)))
-              QuickDeviceSwitcher(key: _deviceSwitcherKey),
-            Expanded(
-              child: _PlaylistsTab(
-                header:
-                    ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && !s.pinQuickDeviceSwitcher))
-                    ? QuickDeviceSwitcher(key: _deviceSwitcherKey)
-                    : null,
-              ),
+          ),
+          // 快速设备切换栏 - 固定模式
+          if (ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && s.pinQuickDeviceSwitcher)))
+            QuickDeviceSwitcher(key: _deviceSwitcherKey),
+          Expanded(
+            child: _PlaylistsTab(
+              header: ref.watch(settingsProvider.select((s) => s.showQuickDeviceSwitcher && !s.pinQuickDeviceSwitcher))
+                  ? QuickDeviceSwitcher(key: _deviceSwitcherKey)
+                  : null,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

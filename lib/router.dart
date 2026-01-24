@@ -14,6 +14,7 @@ import 'package:mi_music/presentation/pages/library/manage_playlists_page.dart';
 import 'package:mi_music/presentation/pages/login_page.dart';
 import 'package:mi_music/presentation/pages/player/full_player_page.dart';
 import 'package:mi_music/presentation/pages/playlist/playlist_detail_page.dart';
+import 'package:mi_music/presentation/pages/playlist/song_multi_select_page.dart';
 import 'package:mi_music/presentation/pages/scaffold_with_nav.dart';
 import 'package:mi_music/presentation/pages/search/search_page.dart';
 import 'package:mi_music/presentation/pages/settings/about_page.dart';
@@ -21,7 +22,6 @@ import 'package:mi_music/presentation/pages/settings/appearance_page.dart';
 import 'package:mi_music/presentation/pages/settings/client_settings_page.dart';
 import 'package:mi_music/presentation/pages/settings/settings_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:mi_music/presentation/pages/playlist/song_multi_select_page.dart';
 
 part 'router.g.dart';
 
@@ -97,14 +97,6 @@ GoRouter router(Ref ref) {
         },
       ),
       GoRoute(
-        path: '/search',
-        builder: (context, state) {
-          final playlistName = state.uri.queryParameters['playlist'];
-          final initialQuery = state.uri.queryParameters['q'];
-          return SearchPage(playlistName: playlistName, initialQuery: initialQuery);
-        },
-      ),
-      GoRoute(
         path: '/manage-playlists',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ManagePlaylistsPage(),
@@ -158,6 +150,14 @@ GoRouter router(Ref ref) {
                     name = encodedName;
                   }
                   return PlaylistDetailPage(playlistName: name);
+                },
+              ),
+              GoRoute(
+                path: '/search',
+                builder: (context, state) {
+                  final playlistName = state.uri.queryParameters['playlist'];
+                  final initialQuery = state.uri.queryParameters['q'];
+                  return SearchPage(playlistName: playlistName, initialQuery: initialQuery);
                 },
               ),
             ],
