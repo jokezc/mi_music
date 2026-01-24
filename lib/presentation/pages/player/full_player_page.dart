@@ -145,6 +145,8 @@ class _PlayerAppBar extends ConsumerWidget {
             PopupMenuButton<String>(
               icon: Icon(Icons.ac_unit_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
               tooltip: '更多',
+              offset: const Offset(0, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onSelected: (value) {
                 if (value == 'delete') {
                   SongUtils.deleteSong(context, ref, currentSong);

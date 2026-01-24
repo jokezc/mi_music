@@ -207,6 +207,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                   color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                 ),
                 tooltip: '更多',
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onSelected: (value) {
                   if (value == 'delete') {
                     SongUtils.deleteSong(context, ref, song);

@@ -85,7 +85,7 @@ class LocalPlayerControllerImpl implements IPlayerController {
     _currentState = initialState;
     _logger.i('LocalPlayerControllerImpl: initialState: ${initialState?.toJsonIgnorePlaylist()}');
     // 不再在构造函数中调用 _initializeHandler()，改为通过 initialize() 方法显式调用
-    _setupStateListeners();
+    // 也不在构造函数中启动监听，推迟到 initialize 中模式恢复之后
   }
 
   /// 初始化控制器（必须在创建后调用，确保 setRemoteMode 完成）
@@ -128,16 +128,41 @@ class LocalPlayerControllerImpl implements IPlayerController {
 
       await handler.setRepeatMode(repeatMode);
       await handler.setShuffleMode(shuffleMode);
+    }
 
-      // 2. 恢复当前歌曲（如果不加载，点击播放会无效）
-      // 注意：如果恢复过程耗时较长，此时用户可能已经发起了新的播放请求（如 playPlaylistByName）
-      // 因此在恢复完成后，需要检查 _currentState 是否已经被新的操作更新，避免用旧状态覆盖新状态
-      if (_currentState!.currentSong != null && _currentState!.currentSong!.isNotEmpty) {
-        // 记录开始恢复时的状态版本
-        final stateAtStart = _currentState!;
+    // 2. 模式设置完成后，立即启动状态监听
+    // 这样可以确保监听器接收到的初始状态是我们刚刚设置好的正确状态
+    // 避免了监听器先接收到默认状态从而覆盖掉 _currentState 的问题
+    _setupStateListeners();
 
-        // 必须 await：否则 _isRestoring 可能长时间为 true，导致 UI 监听被抑制
-        await _restoreCurrentSong(handler, stateAtStart);
+    // 3. 恢复当前歌曲（如果不加载，点击播放会无效）
+    if (_currentState != null) {
+      if (_disposed) return;
+
+      // 智能判断：
+      // 如果 Handler 已经在播放或已加载资源（说明是热重载或从后台切回，且服务存活），则信任 Handler 状态，不要强制暂停，也不要重新加载
+      // 如果 Handler 是空闲状态（说明是冷启动），则执行恢复逻辑并强制暂停
+      final isServiceActive =
+          handler.player.playing ||
+          (handler.player.processingState != ProcessingState.idle && handler.player.duration != null);
+
+      if (isServiceActive) {
+        _logger.i("检测到 AudioHandler 正在运行，跳过恢复逻辑，直接同步状态");
+        await _syncFromHandler(handler, fallbackState: _currentState);
+      } else {
+        // 冷启动场景：
+        // 注意：如果恢复过程耗时较长，此时用户可能已经发起了新的播放请求（如 playPlaylistByName）
+        // 因此在恢复完成后，需要检查 _currentState 是否已经被新的操作更新，避免用旧状态覆盖新状态
+        if (_currentState!.currentSong != null && _currentState!.currentSong!.isNotEmpty) {
+          // 记录开始恢复时的状态版本，并强制设为暂停，防止重启自动播放
+          final stateAtStart = _currentState!.copyWith(isPlaying: false);
+
+          // 立即更新本地状态，确保后续逻辑（如 _syncFromHandler）能感知到我们期望是暂停的
+          _currentState = stateAtStart;
+
+          // 必须 await：否则 _isRestoring 可能长时间为 true，导致 UI 监听被抑制
+          await _restoreCurrentSong(handler, stateAtStart);
+        }
       }
     }
 
@@ -423,6 +448,14 @@ class LocalPlayerControllerImpl implements IPlayerController {
   void _setupStateListeners() {
     final handler = _handler;
     if (handler == null) return;
+
+    // 防止重复订阅
+    if (_subs.isNotEmpty) {
+      for (final sub in _subs) {
+        sub.cancel();
+      }
+      _subs.clear();
+    }
 
     _subs.add(
       handler.player.playerStateStream.map((s) => s.playing).distinct().listen((playing) {
