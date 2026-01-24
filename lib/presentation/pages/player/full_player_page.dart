@@ -200,8 +200,7 @@ class _PlayerCover extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch only isPlaying to toggle animation, ignoring position updates
-    final isPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
+    // Watch only isPlaying to toggle animation
     final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
 
     // 获取歌曲图片
@@ -225,75 +224,25 @@ class _PlayerCover extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: pictureUrl != null && pictureUrl.isNotEmpty
-              ? Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // 背景图片
-                    CachedNetworkImage(
-                      imageUrl: pictureUrl,
-                      width: size,
-                      height: size,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-                        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          size: (size * 0.43).clamp(84.0, 120.0),
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    // 旋转动画（播放时）
-                    if (isPlaying)
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: 1),
-                        duration: const Duration(seconds: 10),
-                        builder: (context, value, child) {
-                          return Transform.rotate(angle: value * 2 * 3.14159, child: child);
-                        },
-                        onEnd: () {
-                          // The builder rebuilds, effectively looping?
-                          // TweenAnimationBuilder doesn't loop by default.
-                          // For infinite loop, we usually use AnimationController.
-                          // Keeping existing logic for now, but adding a key might help reset
-                        },
-                        child: Container(
-                          width: size * 0.9,
-                          height: size * 0.9,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
+              ? CachedNetworkImage(
+                  imageUrl: pictureUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    decoration: BoxDecoration(gradient: AppColors.primaryGradient),
+                    child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    decoration: BoxDecoration(gradient: AppColors.primaryGradient),
+                    child: Icon(Icons.music_note_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
+                  ),
                 )
-              : Stack(
+              : Container(
+                  width: size,
+                  height: size,
                   alignment: Alignment.center,
-                  children: [
-                    // 旋转动画（播放时）
-                    if (isPlaying)
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: 1),
-                        duration: const Duration(seconds: 10),
-                        builder: (context, value, child) {
-                          return Transform.rotate(angle: value * 2 * 3.14159, child: child);
-                        },
-                        onEnd: () {
-                          // The builder rebuilds, effectively looping?
-                          // TweenAnimationBuilder doesn't loop by default.
-                          // For infinite loop, we usually use AnimationController.
-                          // Keeping existing logic for now, but adding a key might help reset
-                        },
-                        child: Icon(Icons.album_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
-                      )
-                    else
-                      Icon(Icons.music_note_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
-                  ],
+                  child: Icon(Icons.music_note_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
                 ),
         ),
       ),
