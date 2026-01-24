@@ -12,6 +12,7 @@ import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/favorite_utils.dart';
 import 'package:mi_music/core/utils/permission_utils.dart';
 import 'package:mi_music/core/utils/snackbar_utils.dart';
+import 'package:mi_music/core/utils/song_utils.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
@@ -99,9 +100,12 @@ class _PlayerAppBar extends ConsumerWidget {
 
     final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
     final isLocalMode = currentDevice?.type == DeviceType.local;
+    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+    final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
+    final isCustomPlaylist = SongUtils.isCustomPlaylist(ref, currentPlaylistName ?? '');
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           IconButton(
@@ -136,6 +140,47 @@ class _PlayerAppBar extends ConsumerWidget {
             onPressed: () => _showDeviceSelector(context, ref),
             tooltip: '切换设备',
           ),
+          // 更多菜单
+          if (currentSong != null)
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              ),
+              tooltip: '更多',
+              onSelected: (value) {
+                if (value == 'delete') {
+                  SongUtils.deleteSong(context, ref, currentSong);
+                } else if (value == 'remove') {
+                  if (currentPlaylistName != null) {
+                    SongUtils.removeSongFromPlaylist(context, ref, currentSong, currentPlaylistName);
+                  }
+                }
+              },
+              itemBuilder: (context) => [
+                if (isCustomPlaylist)
+                  const PopupMenuItem(
+                    value: 'remove',
+                    child: Row(
+                      children: [
+                        Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('从歌单移除'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_rounded, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
