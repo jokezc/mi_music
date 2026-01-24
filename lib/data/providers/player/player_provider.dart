@@ -233,24 +233,25 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     // 初始化播放控制器
     await _initializePlayerController(currentDevice, initialState: restoredState);
 
-    // 对于本地设备，优先从控制器获取最新状态（因为可能正在播放），并与缓存状态合并
-    // if (currentDevice.type == DeviceType.local && _playerController is LocalPlayerControllerImpl) {
-    //   final controllerState = await _playerController?.getState();
-    //   if (controllerState != null) {
-    //     // 如果控制器有当前歌曲，说明正在播放，使用控制器状态为主，合并缓存中的完整信息
-    //     if (controllerState.currentSong != null && controllerState.currentSong!.isNotEmpty) {
-    //       return controllerState.copyWith(
-    //         currentDevice: currentDevice,
-    //         // 如果控制器状态中没有 playlist，使用缓存中的
-    //         playlist: controllerState.playlist.isNotEmpty ? controllerState.playlist : (restoredState?.playlist ?? []),
-    //         currentPlaylistName: controllerState.currentPlaylistName ?? restoredState?.currentPlaylistName,
-    //         currentIndex: controllerState.currentIndex >= 0
-    //             ? controllerState.currentIndex
-    //             : (restoredState?.currentIndex ?? 0),
-    //       );
-    //     }
-    //   }
-    // }
+    // 对于本地设备，优先从控制器获取最新状态（因为可能正在播放，或者在初始化过程中修正了状态如强制暂停）
+    // 并与缓存状态合并
+    if (currentDevice.type == DeviceType.local && _playerController is LocalPlayerControllerImpl) {
+      final controllerState = await _playerController?.getState();
+      if (controllerState != null) {
+        // 如果控制器有当前歌曲，说明正在播放或已恢复，使用控制器状态为主
+        // 注意：LocalPlayerController 初始化时已经合并了 restoredState 的信息
+        if (controllerState.currentSong != null && controllerState.currentSong!.isNotEmpty) {
+          final finalState = controllerState.copyWith(currentDevice: currentDevice);
+          // 初始化跟踪变量
+          _lastPersistedSong = finalState.currentSong;
+          _lastPersistedIsPlaying = finalState.isPlaying;
+          _lastPersistedLoopMode = finalState.loopMode;
+          _lastPersistedShuffleMode = finalState.shuffleMode;
+          _lastPersistedPositionSeconds = finalState.position.inSeconds;
+          return finalState;
+        }
+      }
+    }
 
     // 如果有恢复的状态，使用它；否则从控制器获取当前状态
     if (restoredState != null) {

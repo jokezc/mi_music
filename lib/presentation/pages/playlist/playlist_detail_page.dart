@@ -215,6 +215,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                             PopupMenuButton<String>(
                               icon: const Icon(Icons.more_vert_rounded),
                               tooltip: '更多',
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               onSelected: (value) {
                                 if (value == 'delete') {
                                   _deleteMusic(context, ref, song);
