@@ -112,7 +112,15 @@ class LocalPlayerControllerImpl implements IPlayerController {
         if (_currentState != null && index >= 0) {
           final playlist = _currentState!.playlist;
           if (index < playlist.length) {
-            _updateState(_currentState!.copyWith(currentIndex: index, currentSong: playlist[index]));
+            // 切歌时重置时长，防止 UI 显示上一首的时长
+            _updateState(
+              _currentState!.copyWith(
+                currentIndex: index,
+                currentSong: playlist[index],
+                position: Duration.zero, // 重置进度
+                duration: Duration.zero,
+              ),
+            );
           }
         }
       },
@@ -693,6 +701,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
           playlist: [songName],
           currentIndex: 0,
           isPlaying: true, // 预期开始播放，先行更新UI
+          position: Duration.zero, // 重置进度
+          duration: Duration.zero, // 重置时长
         ),
       );
 
@@ -823,6 +833,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
         currentIndex: initialIndex,
         currentSong: validSongs.isNotEmpty ? validSongs[initialIndex] : null,
         isPlaying: true,
+        position: Duration.zero, // 重置进度
+        duration: Duration.zero, // 重置时长
       ),
     );
 
@@ -841,7 +853,12 @@ class LocalPlayerControllerImpl implements IPlayerController {
         final playlist = _currentState!.playlist;
         if (index >= 0 && index < playlist.length) {
           _updateState(
-            _currentState!.copyWith(currentIndex: index, currentSong: playlist[index], position: Duration.zero),
+            _currentState!.copyWith(
+              currentIndex: index,
+              currentSong: playlist[index],
+              position: Duration.zero,
+              duration: Duration.zero, // 重置时长
+            ),
           );
         }
       }

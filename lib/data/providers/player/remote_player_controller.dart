@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/cmd_commands.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
 import 'package:mi_music/data/models/api_models.dart';
@@ -15,7 +16,6 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:mi_music/core/constants/base_constants.dart';
 
 final _logger = Logger();
 
@@ -357,6 +357,8 @@ class RemotePlayerControllerImpl implements IPlayerController {
         currentIndex: 0,
         isPlaying: true, // 预期开始播放，先行更新UI
         currentDevice: currentDevice,
+        position: Duration.zero,
+        duration: Duration.zero, // 重置时长
       ),
     );
 
@@ -423,6 +425,8 @@ class RemotePlayerControllerImpl implements IPlayerController {
           currentIndex: musicName != null ? songs.indexOf(musicName) : 0,
           currentSong: musicName,
           currentDevice: currentDevice,
+          position: Duration.zero,
+          duration: Duration.zero, // 重置时长
         ),
       );
     } catch (e) {
@@ -447,7 +451,14 @@ class RemotePlayerControllerImpl implements IPlayerController {
     final playlistName = _currentState!.currentPlaylistName;
 
     // 更新状态
-    _updateState(_currentState!.copyWith(currentIndex: index, currentSong: songName, position: Duration.zero));
+    _updateState(
+      _currentState!.copyWith(
+        currentIndex: index,
+        currentSong: songName,
+        position: Duration.zero,
+        duration: Duration.zero, // 重置时长
+      ),
+    );
 
     // 通过播放歌曲名称来实现索引切换
     await playSong(songName, playlistName: playlistName);
