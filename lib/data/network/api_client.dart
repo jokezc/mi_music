@@ -35,6 +35,10 @@ abstract class ApiClient {
   @POST("/playmusiclist")
   Future<RetMsg> playMusicList(@Body() DidPlayMusicList body);
 
+  // 播放TTS
+  @GET("/playtts")
+  Future<RetMsg> playTts(@Query("did") String did, @Query("text") String text);
+
   // 播放URL
   @GET("/playurl")
   Future<List<PlayUrlItem>> playUrl(@Query("did") String did, @Query("url") String url);
@@ -51,9 +55,14 @@ abstract class ApiClient {
   @POST("/setvolume")
   Future<SetVolumeResp> setVolume(@Body() DidVolume body);
 
+  // Playlist & Music
   // 获取所有音乐列表,包含系统歌单和自定义歌单
   @GET("/musiclist")
   Future<MusicListResp> getMusicList();
+
+  // 批量获取歌曲信息
+  @GET("/musicinfos")
+  Future<List<MusicInfoItem>> getMusicInfos(@Query("name") List<String>? names, @Query("musictag") bool musicTag);
 
   // 搜索歌曲
   @GET("/searchmusic")
