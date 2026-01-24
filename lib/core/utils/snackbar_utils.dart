@@ -58,6 +58,7 @@ class SnackBarUtils {
     required IconData icon,
     required Color backgroundColor,
   }) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(_buildSnackBar(message: message, icon: icon, backgroundColor: backgroundColor));

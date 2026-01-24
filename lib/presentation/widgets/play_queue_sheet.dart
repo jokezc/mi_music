@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
+import 'package:mi_music/core/utils/song_utils.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 
@@ -56,6 +57,8 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
     final playlist = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.playlist ?? const []));
     final currentIndex = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentIndex ?? -1));
     final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+    final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
+    final isCustomPlaylist = SongUtils.isCustomPlaylist(ref, currentPlaylistName ?? '');
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
@@ -109,7 +112,17 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
           // 播放队列列表
           Expanded(
             child: hasValue
-                ? _buildQueueList(context, ref, playlist, currentIndex, currentSong, theme, isDark)
+                ? _buildQueueList(
+                    context,
+                    ref,
+                    playlist,
+                    currentIndex,
+                    currentSong,
+                    theme,
+                    isDark,
+                    isCustomPlaylist,
+                    currentPlaylistName,
+                  )
                 : const Center(child: CircularProgressIndicator()),
           ),
         ],
@@ -125,6 +138,8 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
     String? currentSong,
     ThemeData theme,
     bool isDark,
+    bool isCustomPlaylist,
+    String? currentPlaylistName,
   ) {
     if (playlist.isEmpty) {
       return Center(
@@ -186,6 +201,45 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                   padding: EdgeInsets.only(right: 8),
                   child: Icon(Icons.volume_up_rounded, size: 20, color: AppColors.primary),
                 ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                ),
+                tooltip: '更多',
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    SongUtils.deleteSong(context, ref, song);
+                  } else if (value == 'remove') {
+                    if (currentPlaylistName != null) {
+                      SongUtils.removeSongFromPlaylist(context, ref, song, currentPlaylistName);
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (isCustomPlaylist)
+                    const PopupMenuItem(
+                      value: 'remove',
+                      child: Row(
+                        children: [
+                          Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Text('从歌单移除'),
+                        ],
+                      ),
+                    ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_rounded, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           onTap: () {
