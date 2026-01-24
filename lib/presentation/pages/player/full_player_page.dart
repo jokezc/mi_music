@@ -143,10 +143,7 @@ class _PlayerAppBar extends ConsumerWidget {
           // 更多菜单
           if (currentSong != null)
             PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert_rounded,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
+              icon: Icon(Icons.ac_unit_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
               tooltip: '更多',
               onSelected: (value) {
                 if (value == 'delete') {
@@ -756,14 +753,13 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                   },
                   tooltip: S.playQueue,
                 ),
-                // 定时关机按钮（仅远程模式显示）
-                if (isRemote)
-                  IconButton(
-                    icon: const Icon(Icons.timer_rounded),
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                    onPressed: () => _showShutdownDialog(context, ref),
-                    tooltip: '定时关机',
-                  ),
+                // 定时关机按钮（现在本地和远程模式都支持）
+                IconButton(
+                  icon: const Icon(Icons.timer_rounded),
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  onPressed: () => _showShutdownDialog(context, ref),
+                  tooltip: '定时关机',
+                ),
                 // 下载按钮
                 IconButton(
                   icon: _isDownloading

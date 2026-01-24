@@ -505,7 +505,13 @@ class LocalPlayerControllerImpl implements IPlayerController {
       final songChanged = oldState?.currentSong != newState.currentSong;
       final indexChanged = oldState?.currentIndex != newState.currentIndex;
 
-      if (songChanged || indexChanged) {
+      // 修复：当从 durationStream 获取到真实时长时（例如从0变为实际值），
+      // 即使歌曲名没变，也需要更新 MediaItem 以显示进度条
+      final oldDuration = oldState?.duration ?? Duration.zero;
+      final newDuration = newState.duration;
+      final durationChanged = newDuration > Duration.zero && newDuration != oldDuration;
+
+      if (songChanged || indexChanged || durationChanged) {
         // 从 PlayerState 获取当前歌曲信息（唯一真实数据源）
         final currentSong = newState.currentSong;
         if (currentSong != null && currentSong.isNotEmpty) {
@@ -615,6 +621,10 @@ class LocalPlayerControllerImpl implements IPlayerController {
     // 创建副本以避免并发修改异常
     final subsCopy = List<StreamSubscription<dynamic>>.from(_subs);
     _subs.clear();
+
+    // 取消定时关闭计时器
+    _shutdownTimer?.cancel();
+    _shutdownTimer = null;
 
     // 遍历副本取消订阅
     for (final sub in subsCopy) {
@@ -897,8 +907,32 @@ class LocalPlayerControllerImpl implements IPlayerController {
     // 本地播放器不支持设置音量
   }
 
+  Timer? _shutdownTimer;
+
   @override
   Future<void> sendShutdownCommand(int minutes) async {
-    // 本地播放器不支持定时关机
+    // 1. 取消旧的定时器（如果存在）
+    _shutdownTimer?.cancel();
+    _shutdownTimer = null;
+
+    if (minutes <= 0) {
+      _logger.i("取消定时暂停");
+      return;
+    }
+
+    _logger.i("设置定时暂停: $minutes 分钟后");
+
+    // 2. 创建新的定时器
+    _shutdownTimer = Timer(Duration(minutes: minutes), () {
+      if (_disposed) return;
+      _logger.i("定时暂停生效");
+
+      // 检查当前是否在播放，如果是则暂停
+      if (_handler?.player.playing ?? false) {
+        _handler?.pause();
+      }
+
+      _shutdownTimer = null;
+    });
   }
 }
