@@ -2,7 +2,7 @@ name: mi_music
 description: "xiaomusic项目app端"
 publish_to: "none"
 
-version: 1.1.0+1
+version: 1.1.1+1
 
 environment:
   sdk: ^3.10.4
