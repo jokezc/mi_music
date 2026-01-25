@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
 import 'package:mi_music/data/cache/music_cache.dart';
@@ -23,6 +24,7 @@ Future<AudioSource> createCachedAudioSource({
   required String songName,
   required MusicCacheManager cacheManager,
   required Dio dio,
+  Duration? duration,
 }) async {
   try {
     // 1. 尝试使用 LockCachingAudioSource (官方推荐的边下边播方案)
@@ -63,7 +65,7 @@ Future<AudioSource> createCachedAudioSource({
     return LockCachingAudioSource(
       Uri.parse(url),
       cacheFile: file,
-      tag: MediaItem(id: songName, title: songName, artUri: artUri), // 附带元数据（包含封面）
+      tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration), // 附带元数据（包含封面和时长）
     );
   } catch (e) {
     _logger.e("LockCachingAudioSource 失败，降级为在线播放: $e");
@@ -73,7 +75,7 @@ Future<AudioSource> createCachedAudioSource({
 }
 
 /// 本地播放控制器实现
-class LocalPlayerControllerImpl implements IPlayerController {
+class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerController {
   final MyAudioHandler? _handler;
   final Ref _ref;
   final List<StreamSubscription<dynamic>> _subs = [];
@@ -82,15 +84,89 @@ class LocalPlayerControllerImpl implements IPlayerController {
   bool _disposed = false; // 标记控制器是否已被销毁
 
   LocalPlayerControllerImpl(this._handler, this._ref, {PlayerState? initialState}) {
-    _currentState = initialState;
+    // 注册生命周期监听
+    WidgetsBinding.instance.addObserver(this);
+
+    // 修复：初始化时强制设为暂停状态，防止 App 被杀后重启时 UI 显示正在播放但实际已停止（僵尸UI问题）
+    _currentState = initialState?.copyWith(isPlaying: false);
     _logger.i('LocalPlayerControllerImpl: initialState: ${initialState?.toJsonIgnorePlaylist()}');
-    // 不再在构造函数中调用 _initializeHandler()，改为通过 initialize() 方法显式调用
-    // 也不在构造函数中启动监听，推迟到 initialize 中模式恢复之后
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _logger.i("App回到前台，检查并同步播放器状态");
+      // 延迟一点执行，确保 AudioService 也有时间恢复
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!_disposed && _handler != null) {
+          _syncFromHandler(_handler, fallbackState: _currentState);
+
+          // 额外检查：如果 UI 显示正在播放，但播放器实际位置没变（僵死），则强制暂停
+          // 这解决了"进度条还在动但没声音"的问题（UI 根据 playing=true 自动推演进度，但底层已死）
+          if (_currentState?.isPlaying == true && !_handler.player.playing) {
+            _logger.w("检测到 UI 状态与底层不一致（UI:Playing, Player:Stopped），强制修正为暂停");
+            _updateState(_currentState!.copyWith(isPlaying: false));
+          }
+        }
+      });
+    }
   }
 
   /// 初始化控制器（必须在创建后调用，确保 setRemoteMode 完成）
   Future<void> initialize() async {
     await _initializeHandler();
+  }
+
+  /// 从缓存获取歌曲时长（辅助方法）
+  Duration _getSongDuration(String songName) {
+    try {
+      final cacheManager = _ref.read(cacheManagerProvider);
+      final info = cacheManager.getSongInfo(songName);
+      if (info != null && info.tags.containsKey('duration')) {
+        final durVal = info.tags['duration'];
+        if (durVal is int) {
+          return Duration(seconds: durVal);
+        } else if (durVal is String) {
+          final durInt = int.tryParse(durVal);
+          if (durInt != null) {
+            return Duration(seconds: durInt);
+          }
+        }
+      }
+    } catch (e) {
+      // ignore parsing error
+    }
+    return Duration.zero;
+  }
+
+  /// 构建音频源（辅助方法）
+  Future<AudioSource> _buildAudioSource(String songName, {MusicCacheManager? cacheManager, Dio? dio}) async {
+    final MusicCacheManager cache = cacheManager ?? _ref.read(cacheManagerProvider);
+    final Dio dioClient = dio ?? _ref.read(dioProvider);
+
+    // 获取缓存信息
+    final cachedInfo = cache.getSongInfo(songName);
+    final duration = _getSongDuration(songName);
+
+    if (cachedInfo != null && cachedInfo.url.isNotEmpty) {
+      return createCachedAudioSource(
+        url: cachedInfo.url,
+        songName: songName,
+        cacheManager: cache,
+        dio: dioClient,
+        duration: duration,
+      );
+    }
+
+    // 如果缓存没有，尝试从网络获取
+    // 注意：这里为了简化，不进行网络请求，因为调用方通常已经确保了缓存或者有其他处理逻辑
+    // 如果必须支持无缓存播放，可以在这里加 api 请求逻辑，或者保持现状让上层处理
+    // 为了保持 playPlaylist 等方法的原子性，这里假设信息已存在或上层已处理
+    // 如果确实需要兜底，返回一个空的 AudioSource 或者抛异常
+    // 但鉴于 createCachedAudioSource 需要 url，这里如果拿不到 url 只能返回 null 或 dummy
+
+    // 复用原有的 _fetchAudioSource 逻辑，但简化参数
+    return (await _fetchAudioSource(songName, cacheManager: cache, dio: dioClient))!;
   }
 
   Future<void> _initializeHandler() async {
@@ -112,13 +188,16 @@ class LocalPlayerControllerImpl implements IPlayerController {
         if (_currentState != null && index >= 0) {
           final playlist = _currentState!.playlist;
           if (index < playlist.length) {
+            final nextSong = playlist[index];
+            final nextDuration = _getSongDuration(nextSong);
+
             // 切歌时重置时长，防止 UI 显示上一首的时长
             _updateState(
               _currentState!.copyWith(
                 currentIndex: index,
-                currentSong: playlist[index],
-                position: Duration.zero, // 重置进度
-                duration: Duration.zero,
+                currentSong: nextSong,
+                // 仅当获取到有效时长时才更新 duration，否则保留旧值等待播放器更新
+                duration: nextDuration > Duration.zero ? nextDuration : null,
               ),
             );
           }
@@ -166,7 +245,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
           final stateAtStart = _currentState!.copyWith(isPlaying: false);
 
           // 立即更新本地状态，确保后续逻辑（如 _syncFromHandler）能感知到我们期望是暂停的
-          _currentState = stateAtStart;
+          // 使用 _updateState 确保 UI 立即刷新为暂停状态，解决"掉后台后进度条还在动"的问题
+          _updateState(stateAtStart);
 
           // 必须 await：否则 _isRestoring 可能长时间为 true，导致 UI 监听被抑制
           await _restoreCurrentSong(handler, stateAtStart);
@@ -434,7 +514,30 @@ class LocalPlayerControllerImpl implements IPlayerController {
     // 尝试缓存
     final cachedInfo = cache.getSongInfo(songName);
     if (cachedInfo != null && cachedInfo.url.isNotEmpty) {
-      return createCachedAudioSource(url: cachedInfo.url, songName: songName, cacheManager: cache, dio: dioClient);
+      Duration? duration;
+      try {
+        if (cachedInfo.tags.containsKey('duration')) {
+          final durVal = cachedInfo.tags['duration'];
+          if (durVal is int) {
+            duration = Duration(seconds: durVal);
+          } else if (durVal is String) {
+            final durInt = int.tryParse(durVal);
+            if (durInt != null) {
+              duration = Duration(seconds: durInt);
+            }
+          }
+        }
+      } catch (e) {
+        /*ignore*/
+      }
+
+      return createCachedAudioSource(
+        url: cachedInfo.url,
+        songName: songName,
+        cacheManager: cache,
+        dio: dioClient,
+        duration: duration,
+      );
     }
 
     if (allowNetworkFallback) {
@@ -443,7 +546,29 @@ class LocalPlayerControllerImpl implements IPlayerController {
         final infos = await client.getMusicInfos([songName], false);
         final url = infos.firstOrNull?.url;
         if (url != null && url.isNotEmpty) {
-          return createCachedAudioSource(url: url, songName: songName, cacheManager: cache, dio: dioClient);
+          Duration? duration;
+          try {
+            if (infos.first.tags.containsKey('duration')) {
+              final durVal = infos.first.tags['duration'];
+              if (durVal is int) {
+                duration = Duration(seconds: durVal);
+              } else if (durVal is String) {
+                final durInt = int.tryParse(durVal);
+                if (durInt != null) {
+                  duration = Duration(seconds: durInt);
+                }
+              }
+            }
+          } catch (e) {
+            /*ignore*/
+          }
+          return createCachedAudioSource(
+            url: url,
+            songName: songName,
+            cacheManager: cache,
+            dio: dioClient,
+            duration: duration,
+          );
         }
       } catch (e) {
         _logger.e("从接口获取歌曲信息失败: $e");
@@ -482,8 +607,19 @@ class LocalPlayerControllerImpl implements IPlayerController {
     _subs.add(
       handler.player.durationStream.listen((duration) {
         if (_shouldSuppressRealtimeUpdates()) return;
-        // 允许更新为 0，确保切歌时 UI 能够感知时长变化
-        final d = duration ?? Duration.zero;
+
+        var d = duration ?? Duration.zero;
+
+        // 如果播放器报告的时长为 0（可能是加载中），但我们已经有了非零时长（来自缓存或之前状态），则保留旧时长
+        // 这避免了播放器在 Loading -> Ready 转换期间短暂报告 0 时长导致的 UI 闪烁
+        if (d == Duration.zero && (_currentState?.duration ?? Duration.zero) > Duration.zero) {
+          // 检查播放器是否真的处于空闲或停止状态，如果是，则允许重置为 0
+          final processingState = handler.player.processingState;
+          if (processingState != ProcessingState.idle && processingState != ProcessingState.completed) {
+            d = _currentState!.duration;
+          }
+        }
+
         _updateState((_currentState ?? const PlayerState()).copyWith(duration: d));
       }),
     );
@@ -651,6 +787,9 @@ class LocalPlayerControllerImpl implements IPlayerController {
 
   @override
   Future<void> dispose() async {
+    // 移除生命周期监听
+    WidgetsBinding.instance.removeObserver(this);
+
     // 标记为已销毁，防止异步操作继续更新状态
     _disposed = true;
     // 清空回调，避免已销毁的控制器继续更新状态
@@ -694,6 +833,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
       }
 
       // 回退到原有的单曲播放逻辑
+      final initialDuration = _getSongDuration(songName);
+
       _updateState(
         (_currentState ?? const PlayerState()).copyWith(
           currentSong: songName,
@@ -701,8 +842,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
           playlist: [songName],
           currentIndex: 0,
           isPlaying: true, // 预期开始播放，先行更新UI
-          position: Duration.zero, // 重置进度
-          duration: Duration.zero, // 重置时长
+          // 仅当获取到有效时长时才更新 duration，否则保留旧值等待播放器更新
+          duration: initialDuration > Duration.zero ? initialDuration : null,
         ),
       );
 
@@ -722,13 +863,6 @@ class LocalPlayerControllerImpl implements IPlayerController {
       final apiClient = _ref.read(apiClientProvider);
       final musicInfos = await apiClient.getMusicInfos([songName], false);
       if (musicInfos.isNotEmpty && musicInfos.first.url.isNotEmpty) {
-        // 获取到信息后，同样走 playPlaylist 逻辑
-        // 我们需要先把信息存入临时缓存或者让 playPlaylist 内部能获取到
-        // 由于 playPlaylist 内部也会查缓存或补调API，我们只需再次确保能获取到
-        // 这里最简单的做法是：不用单独调 playUrl，直接调 playPlaylist
-        // 但为了防止 playPlaylist 内部查不到缓存又去调 API (多一次请求)，
-        // 我们最好先把结果存入缓存 (虽然 cacheManager.saveSongInfos 是异步的，但内存通常很快)
-
         // 简单策略：直接调用 playPlaylist，它内部有补充逻辑
         await playPlaylist([songName], playlistName: playlistName, initialIndex: 0);
       }
@@ -806,14 +940,15 @@ class LocalPlayerControllerImpl implements IPlayerController {
     for (var name in songNames) {
       final info = cachedInfos[name];
       if (info != null && info.url.isNotEmpty) {
-        // 统一走 createCachedAudioSource：
-        // - 若本地缓存文件已完整存在 -> 优先 AudioSource.file（更容易拿到 duration）
-        // - 否则使用 LockCachingAudioSource 边下边播
+        final duration = _getSongDuration(name);
+
+        // 统一走 createCachedAudioSource
         final source = await createCachedAudioSource(
           url: info.url,
           songName: name,
           cacheManager: cacheManager,
           dio: dio,
+          duration: duration,
         );
         audioSources.add(source);
         validSongs.add(name);
@@ -825,6 +960,12 @@ class LocalPlayerControllerImpl implements IPlayerController {
       return;
     }
 
+    // 计算当前歌曲的 duration
+    Duration initialDuration = Duration.zero;
+    if (validSongs.isNotEmpty && initialIndex < validSongs.length) {
+      initialDuration = _getSongDuration(validSongs[initialIndex]);
+    }
+
     // 更新状态（使用 validSongs，排除无效歌曲）
     _updateState(
       (_currentState ?? const PlayerState()).copyWith(
@@ -833,8 +974,8 @@ class LocalPlayerControllerImpl implements IPlayerController {
         currentIndex: initialIndex,
         currentSong: validSongs.isNotEmpty ? validSongs[initialIndex] : null,
         isPlaying: true,
-        position: Duration.zero, // 重置进度
-        duration: Duration.zero, // 重置时长
+        // 仅当获取到有效时长时才更新 duration，否则保留旧值等待播放器更新
+        duration: initialDuration > Duration.zero ? initialDuration : null,
       ),
     );
 
@@ -852,12 +993,15 @@ class LocalPlayerControllerImpl implements IPlayerController {
       if (_currentState != null) {
         final playlist = _currentState!.playlist;
         if (index >= 0 && index < playlist.length) {
+          final nextSong = playlist[index];
+          final nextDuration = _getSongDuration(nextSong);
+
           _updateState(
             _currentState!.copyWith(
               currentIndex: index,
-              currentSong: playlist[index],
-              position: Duration.zero,
-              duration: Duration.zero, // 重置时长
+              currentSong: nextSong,
+              // 仅当获取到有效时长时才更新 duration，否则保留旧值等待播放器更新
+              duration: nextDuration > Duration.zero ? nextDuration : null,
             ),
           );
         }

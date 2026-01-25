@@ -13,7 +13,7 @@ final _logger = Logger();
 class MyAudioHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
   final List<StreamSubscription> _playerSubscriptions = [];
-  bool _interrupted = false;
+  final bool _interrupted = false;
 
   // 核心：使用 List<AudioSource> 管理播放列表（列表模式启用时非空）
   List<AudioSource>? _playlistSources;
@@ -173,8 +173,14 @@ class MyAudioHandler extends BaseAudioHandler {
   Future<void> _initAudioSession() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
+    // 显式激活 AudioSession，这对 iOS 后台播放至关重要
+    await session.setActive(true);
 
     // 监听音频打断事件 (如电话呼入、其他App占用音频焦点)
+    // 修复：just_audio 默认会自动处理打断（暂停和恢复），iOS上同时存在手动处理会导致逻辑冲突
+    // 导致"后台播放突然重新开始"或"突然暂停又开始"等怪异行为
+    // 因此注释掉手动处理逻辑，全权交给 just_audio
+    /*
     session.interruptionEventStream.listen((event) {
       // 远程模式下，手机端的音频焦点变化不应影响远程设备
       if (_isRemoteMode) return;
@@ -216,6 +222,7 @@ class MyAudioHandler extends BaseAudioHandler {
         }
       }
     });
+    */
 
     // 监听耳机拔出等变得“嘈杂”的事件 (Becoming Noisy)
     // 通常在拔出耳机时触发，标准行为是暂停播放
@@ -279,6 +286,31 @@ class MyAudioHandler extends BaseAudioHandler {
         }
       }),
     );
+
+    // 监听播放错误（通过 playerStateStream 无法直接获取错误，但可通过 playbackEventStream 获取）
+    _playerSubscriptions.add(
+      _player.playbackEventStream.listen(
+        (event) {},
+        onError: (Object e, StackTrace st) {
+          _logger.e('播放器发生错误: $e');
+          // 关键修复：发生错误时，必须更新 playbackState，否则 UI 会认为还在播放
+          playbackState.add(
+            playbackState.value.copyWith(
+              processingState: AudioProcessingState.error,
+              playing: false, // 强制标记为停止
+            ),
+          );
+
+          // 尝试自动恢复或跳过
+          if (_player.playing && _playlistSources != null) {
+            _logger.i('尝试跳过错误歌曲...');
+            if (_player.hasNext) {
+              _player.seekToNext();
+            }
+          }
+        },
+      ),
+    );
   }
 
   /// 取消所有流订阅，防止内存泄漏
@@ -306,9 +338,9 @@ class MyAudioHandler extends BaseAudioHandler {
       currentIndex = _getCurrentIndex!();
     }
 
-    _logger.d(
-      '广播状态: \n _playlistSources: ${_playlistSources?.length}\n _player.currentIndex: ${_player.currentIndex}\n _getCurrentIndex: ${_getCurrentIndex?.call()} \n currentIndex: $currentIndex',
-    );
+    // _logger.d(
+    //   '广播状态: \n _playlistSources: ${_playlistSources?.length}\n _player.currentIndex: ${_player.currentIndex}\n _getCurrentIndex: ${_getCurrentIndex?.call()} \n currentIndex: $currentIndex',
+    // );
     playbackState.add(
       playbackState.value.copyWith(
         controls: [
@@ -392,6 +424,11 @@ class MyAudioHandler extends BaseAudioHandler {
       if (_isRemoteMode) {
         await _remotePlay?.call();
       } else {
+        // 修复：如果播放器由于各种原因（如被系统打断后未正确恢复）处于 completed 状态
+        // 直接调用 play() 可能无效，需要先 seek 到开头
+        if (_player.processingState == ProcessingState.completed) {
+          await _player.seek(Duration.zero);
+        }
         await _player.play();
       }
     } catch (e, stackTrace) {
