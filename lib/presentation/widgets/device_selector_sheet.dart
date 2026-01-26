@@ -279,9 +279,10 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                   final isPlaying = playingStatus?.isPlaying ?? false;
                   final currentMusic = playingStatus?.curMusic ?? '';
 
-                  // 确定 subtitle 显示内容
+                  // 确定 subtitle 显示内容和播放状态
                   String subtitleText;
                   bool showEqualizer = false;
+                  bool isDevicePlaying = false; // 设备是否正在播放（用于 trailing 显示）
 
                   if (isLocalDevice) {
                     String? displaySong;
@@ -297,6 +298,8 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       isLocalPlaying = localCache?.isPlaying ?? false;
                     }
 
+                    isDevicePlaying = isLocalPlaying;
+
                     if (displaySong != null && displaySong.isNotEmpty) {
                       subtitleText = displaySong;
                       if (isLocalPlaying) showEqualizer = true;
@@ -305,14 +308,19 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                     }
                   } else {
                     subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;
+                    isDevicePlaying = isPlaying;
                     if (isPlaying) showEqualizer = true;
                   }
 
                   // 确定 trailing 显示内容
                   Widget? trailingWidget;
                   if (isSelected) {
-                    trailingWidget = const Icon(Icons.check_rounded, color: AppColors.primary);
-                  } else if (showEqualizer && !isSelected) {
+                    // 选中的设备：如果正在播放显示播放图标，否则显示勾选图标
+                    trailingWidget = isDevicePlaying
+                        ? const Icon(Icons.graphic_eq_rounded, color: AppColors.primary, size: 20)
+                        : const Icon(Icons.check_rounded, color: AppColors.primary);
+                  } else if (showEqualizer) {
+                    // 未选中但正在播放的设备显示播放图标
                     trailingWidget = const Icon(Icons.graphic_eq_rounded, color: AppColors.primary, size: 20);
                   }
 
