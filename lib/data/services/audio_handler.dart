@@ -13,7 +13,6 @@ final _logger = Logger();
 class MyAudioHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
   final List<StreamSubscription> _playerSubscriptions = [];
-  final bool _interrupted = false;
 
   // 核心：使用 List<AudioSource> 管理播放列表（列表模式启用时非空）
   List<AudioSource>? _playlistSources;
@@ -177,58 +176,41 @@ class MyAudioHandler extends BaseAudioHandler {
     await session.setActive(true);
 
     // 监听音频打断事件 (如电话呼入、其他App占用音频焦点)
-    // 修复：just_audio 默认会自动处理打断（暂停和恢复），iOS上同时存在手动处理会导致逻辑冲突
-    // 导致"后台播放突然重新开始"或"突然暂停又开始"等怪异行为
-    // 因此注释掉手动处理逻辑，全权交给 just_audio
-    /*
+    // 核心原则：
+    // 1. just_audio 会自动处理播放暂停/恢复，我们不需要手动干预
+    // 2. 只需要监听并更新状态栏显示，确保状态栏与实际播放状态一致
+    // 3. 不手动调用 pause()/play()，避免与 just_audio 的内部逻辑冲突
     session.interruptionEventStream.listen((event) {
       // 远程模式下，手机端的音频焦点变化不应影响远程设备
       if (_isRemoteMode) return;
 
       if (event.begin) {
-        // 打断开始
-        switch (event.type) {
-          case AudioInterruptionType.duck:
-            // 降低音量 (Duck) - 许多系统会自动处理，但为了保险可以手动降低
-            if (_player.playing) {
-              _player.setVolume(0.5);
-            }
-            break;
-          case AudioInterruptionType.pause:
-          case AudioInterruptionType.unknown:
-            // 暂停播放
-            if (_player.playing) {
-              pause();
-              _interrupted = true; // 标记为因打断而暂停，以便恢复
-            }
-            break;
-        }
+        // 打断开始：just_audio 会自动暂停，我们只需要更新状态栏
+        _logger.d('音频被打断，just_audio 会自动处理，更新状态栏');
+        // 延迟一点更新，确保 just_audio 已经处理完暂停
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!_isRemoteMode) {
+            _broadcastState();
+          }
+        });
       } else {
-        // 打断结束
-        switch (event.type) {
-          case AudioInterruptionType.duck:
-            // 恢复音量
-            _player.setVolume(1.0);
-            break;
-          case AudioInterruptionType.pause:
-            // 只有当是因为被打断而暂停时，才自动恢复播放
-            if (_interrupted) {
-              play();
-              _interrupted = false;
-            }
-            break;
-          case AudioInterruptionType.unknown:
-            break;
-        }
+        // 打断结束：just_audio 可能会自动恢复，也可能不会（取决于配置）
+        // 我们只更新状态栏，不手动恢复播放（避免冲突）
+        _logger.d('音频打断结束，更新状态栏');
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!_isRemoteMode) {
+            _broadcastState();
+          }
+        });
       }
     });
-    */
 
     // 监听耳机拔出等变得“嘈杂”的事件 (Becoming Noisy)
     // 通常在拔出耳机时触发，标准行为是暂停播放
     session.becomingNoisyEventStream.listen((_) {
-      if (_player.playing) {
-        pause();
+      if (!_isRemoteMode && _player.playing) {
+        _logger.d('检测到 Becoming Noisy 事件，暂停播放并更新状态栏');
+        pause(); // pause() 内部会调用 _broadcastState()
       }
     });
   }
@@ -238,9 +220,12 @@ class MyAudioHandler extends BaseAudioHandler {
     // 使用 distinct() 过滤重复状态，避免不必要的更新
     // 参考 local_player_controller.dart 的做法
 
-    // 1. 监听播放状态变化（playing）
+    // 1. 监听播放状态变化（playing）- 立即更新状态栏
     _playerSubscriptions.add(
-      _player.playerStateStream.map((s) => s.playing).distinct().listen((_) => _broadcastState()),
+      _player.playerStateStream.map((s) => s.playing).distinct().listen((playing) {
+        _logger.d('播放状态变化: $playing，立即更新状态栏');
+        _broadcastState();
+      }),
     );
 
     // 2. 监听处理状态变化（processingState）
@@ -323,6 +308,11 @@ class MyAudioHandler extends BaseAudioHandler {
     _player.dispose();
   }
 
+  /// 广播播放状态到系统通知栏（状态栏）
+  /// 核心原则：
+  /// 1. 本地模式：从播放器读取真实状态并广播
+  /// 2. 远程模式：禁止本地广播，状态由 updateStateFromExternal 注入
+  /// 3. 确保状态栏显示与实际播放状态完全一致
   void _broadcastState() {
     // 托管模式下，状态由外部注入，禁止本地广播覆盖
     if (_isRemoteMode) return;
@@ -418,6 +408,9 @@ class MyAudioHandler extends BaseAudioHandler {
 
   AudioPlayer get player => _player;
 
+  /// 播放控制：响应状态栏播放按钮点击
+  /// 本地模式：调用播放器 play() 并立即更新状态栏
+  /// 远程模式：转发给远程回调
   @override
   Future<void> play() async {
     try {
@@ -430,6 +423,8 @@ class MyAudioHandler extends BaseAudioHandler {
           await _player.seek(Duration.zero);
         }
         await _player.play();
+        // 立即更新状态栏，确保通知栏按钮状态正确（从播放变为暂停按钮）
+        _broadcastState();
       }
     } catch (e, stackTrace) {
       _logger.e('播放失败: $e');
@@ -439,6 +434,9 @@ class MyAudioHandler extends BaseAudioHandler {
     }
   }
 
+  /// 暂停控制：响应状态栏暂停按钮点击
+  /// 本地模式：调用播放器 pause() 并立即更新状态栏
+  /// 远程模式：转发给远程回调
   @override
   Future<void> pause() async {
     try {
@@ -446,6 +444,8 @@ class MyAudioHandler extends BaseAudioHandler {
         await _remotePause?.call();
       } else {
         await _player.pause();
+        // 立即更新状态栏，确保通知栏按钮状态正确（从暂停变为播放按钮）
+        _broadcastState();
       }
     } catch (e, stackTrace) {
       _logger.e('暂停失败: $e');
@@ -460,6 +460,8 @@ class MyAudioHandler extends BaseAudioHandler {
         await _remoteStop?.call();
       } else {
         await _player.stop();
+        // 立即更新状态栏，确保通知栏按钮状态正确
+        _broadcastState();
       }
       await super.stop();
     } catch (e, stackTrace) {

@@ -106,79 +106,89 @@ class _PlayerAppBar extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down_rounded),
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-            onPressed: () => Navigator.pop(context),
-            tooltip: '关闭',
-          ),
-          // 中间显示设备名称（仅远程设备显示）
-          Expanded(
-            child: currentDevice?.name != null
-                ? Center(
-                    child: Text(
-                      currentDevice!.name!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          // 左右按钮行
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                onPressed: () => Navigator.pop(context),
+                tooltip: '关闭',
+              ),
+              // 右侧按钮组
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 设备切换按钮
+                  IconButton(
+                    icon: Icon(
+                      isLocalMode ? Icons.smartphone_rounded : Icons.speaker_rounded,
+                      color: !isLocalMode
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
                     ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          // 设备切换按钮
-          IconButton(
-            icon: Icon(
-              isLocalMode ? Icons.smartphone_rounded : Icons.speaker_rounded,
-              color: !isLocalMode
-                  ? AppColors.primary
-                  : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-            ),
-            onPressed: () => _showDeviceSelector(context, ref),
-            tooltip: '切换设备',
-          ),
-          // 更多菜单
-          if (currentSong != null)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.ac_unit_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-              tooltip: '更多',
-              offset: const Offset(0, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onSelected: (value) {
-                if (value == 'delete') {
-                  SongUtils.deleteSong(context, ref, currentSong);
-                } else if (value == 'remove') {
-                  if (currentPlaylistName != null) {
-                    SongUtils.removeSongFromPlaylist(context, ref, currentSong, currentPlaylistName);
-                  }
-                }
-              },
-              itemBuilder: (context) => [
-                if (isCustomPlaylist)
-                  const PopupMenuItem(
-                    value: 'remove',
-                    child: Row(
-                      children: [
-                        Icon(Icons.remove_circle_rounded, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text('从歌单移除'),
+                    onPressed: () => _showDeviceSelector(context, ref),
+                    tooltip: '切换设备',
+                  ),
+                  // 更多菜单
+                  if (currentSong != null)
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.ac_unit_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                      tooltip: '更多',
+                      offset: const Offset(0, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      onSelected: (value) {
+                        if (value == 'delete') {
+                          SongUtils.deleteSong(context, ref, currentSong);
+                        } else if (value == 'remove') {
+                          if (currentPlaylistName != null) {
+                            SongUtils.removeSongFromPlaylist(context, ref, currentSong, currentPlaylistName);
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        if (isCustomPlaylist)
+                          const PopupMenuItem(
+                            value: 'remove',
+                            child: Row(
+                              children: [
+                                Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Text('从歌单移除'),
+                              ],
+                            ),
+                          ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_rounded, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_rounded, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
+                ],
+              ),
+            ],
+          ),
+          // 中间显示设备名称（仅远程设备显示，绝对居中）
+          if (currentDevice?.name != null)
+            Center(
+              child: Text(
+                currentDevice!.name!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                 ),
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
         ],
       ),
@@ -273,19 +283,13 @@ class _PlayerInfo extends ConsumerWidget {
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
-          // 歌曲名称滚动显示
-          SizedBox(
-            height: (theme.textTheme.headlineSmall?.fontSize ?? 24) * 1.5,
-            child: (currentSong ?? S.notPlaying).length > 20
-                ? _MarqueeText(
-                    text: currentSong ?? S.notPlaying,
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                  )
-                : Text(
-                    currentSong ?? S.notPlaying,
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
+          // 歌曲名称显示（超出部分显示省略号）
+          Text(
+            currentSong ?? S.notPlaying,
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           // 只在有歌单名称时显示
           if (displayText != null) ...[
@@ -949,71 +953,6 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
             }),
             const SizedBox(height: 24),
           ],
-        );
-      },
-    );
-  }
-}
-
-/// 滚动文本组件
-class _MarqueeText extends StatefulWidget {
-  final String text;
-  final TextStyle? style;
-
-  const _MarqueeText({required this.text, this.style});
-
-  @override
-  State<_MarqueeText> createState() => _MarqueeTextState();
-}
-
-class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: const Duration(seconds: 10), vsync: this)..repeat();
-    _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final textPainter = TextPainter(
-          text: TextSpan(text: widget.text, style: widget.style),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout();
-        final textWidth = textPainter.size.width;
-        final needsScroll = textWidth > constraints.maxWidth;
-
-        if (!needsScroll) {
-          return Text(widget.text, style: widget.style, textAlign: TextAlign.center);
-        }
-
-        return AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return ClipRect(
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  Transform.translate(
-                    offset: Offset(-_animation.value * (textWidth - constraints.maxWidth + 50), 0),
-                    child: Text(widget.text, style: widget.style, textAlign: TextAlign.left),
-                  ),
-                ],
-              ),
-            );
-          },
         );
       },
     );
