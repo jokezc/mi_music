@@ -55,3 +55,7 @@ android/key.properties
 /.trae/skills
 /.claude
 /.shared
+
+# Umeng configuration files (DO NOT COMMIT - contains AppKey)
+android/app/src/main/assets/umeng_config.properties
+ios/Runner/umeng_config.plist

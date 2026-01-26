@@ -6,6 +6,7 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
+import 'package:mi_music/data/services/umeng_service.dart';
 
 final _logger = Logger();
 
@@ -63,6 +64,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (authResult.isAuthenticated) {
         // 认证成功，更新认证状态并显示版本信息
         ref.read(authStateProvider.notifier).setAuthorized();
+        
+        // 统计登录成功事件（不包含敏感信息）
+        UmengService.onEvent('login_success', properties: {
+          // 只记录服务器版本，不记录URL和用户名等隐私信息
+          'version': authResult.version ?? 'unknown',
+        });
         // 显示版本信息并跳转
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -75,6 +82,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
       } else {
         // 认证失败或其他错误，显示错误信息（不跳转，因为已经在登录页）
+        // 统计登录失败事件（不包含敏感信息）
+        UmengService.onEvent('login_failed', properties: {
+          // 只记录错误类型，不记录具体错误信息和URL
+          'error_type': authResult.isAuthenticated == false ? 'auth_failed' : 'connection_error',
+        });
+        
+        // 上报登录错误，包含服务器URL以便追溯问题（不包含用户名密码等敏感信息）
+        // 目的：当用户登录失败时，通过上报服务器URL可以帮助开发者快速定位是哪个服务器出现问题
+        UmengService.reportErrorString(
+          '登录失败: ${authResult.errorMessage ?? "未知错误"}',
+          StackTrace.current.toString(),
+          context: {
+            'error_type': authResult.isAuthenticated == false ? 'auth_failed' : 'connection_error',
+            'server_url': url, // 上报服务器URL，方便追溯问题
+            'has_username': username.isNotEmpty ? 'true' : 'false', // 只记录是否有用户名，不记录具体用户名
+          },
+        );
+        
         if (mounted) {
           final errorMessage =
               authResult.errorMessage ??
@@ -86,8 +111,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: Colors.red));
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.e("登录/连接服务器失败: $e");
+      
+      // 上报登录异常，包含服务器URL以便追溯问题（不包含用户名密码等敏感信息）
+      // 目的：当登录过程中发生未预期的异常时，通过上报服务器URL可以帮助开发者快速定位问题
+      UmengService.reportError(
+        e,
+        stackTrace,
+        context: {
+          'server_url': url, // 上报服务器URL，方便追溯问题
+          'has_username': username.isNotEmpty ? 'true' : 'false', // 只记录是否有用户名，不记录具体用户名
+        },
+      );
+      
       if (mounted) {
         ScaffoldMessenger.of(
           context,

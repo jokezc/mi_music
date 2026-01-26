@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/utils/umeng_page_observer.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
@@ -20,12 +21,17 @@ import 'package:mi_music/presentation/pages/search/search_page.dart';
 import 'package:mi_music/presentation/pages/settings/about_page.dart';
 import 'package:mi_music/presentation/pages/settings/appearance_page.dart';
 import 'package:mi_music/presentation/pages/settings/client_settings_page.dart';
+import 'package:mi_music/presentation/pages/settings/disclaimer_page.dart';
+import 'package:mi_music/presentation/pages/settings/privacy_policy_page.dart';
 import 'package:mi_music/presentation/pages/settings/settings_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'router.g.dart';
 
 final _logger = Logger();
+
+/// 友盟页面统计观察者实例（单例）
+final _umengPageObserver = UmengPageObserver();
 
 @riverpod
 GoRouter router(Ref ref) {
@@ -37,6 +43,7 @@ GoRouter router(Ref ref) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/',
+    observers: [_umengPageObserver], // 注册友盟页面统计观察者
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
@@ -50,6 +57,16 @@ GoRouter router(Ref ref) {
         builder: (context, state) => const ClientSettingsPage(),
       ),
       GoRoute(path: '/about', parentNavigatorKey: rootNavigatorKey, builder: (context, state) => const AboutPage()),
+      GoRoute(
+        path: '/privacy-policy',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/disclaimer',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const DisclaimerPage(),
+      ),
       GoRoute(
         path: '/appearance',
         parentNavigatorKey: rootNavigatorKey,

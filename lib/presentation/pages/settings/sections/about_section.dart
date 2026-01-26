@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/data/services/umeng_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<Map<String, dynamic>> fetchUpdateInfo() async {
@@ -186,6 +188,24 @@ class AboutSection extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.privacy_tip_rounded),
+                  title: const Text(S.privacyPolicy),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    context.push('/privacy-policy');
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.gavel_rounded),
+                  title: const Text(S.disclaimer),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    context.push('/disclaimer');
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.article_rounded),
                   title: const Text(S.openSourceLicense),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -205,6 +225,14 @@ class AboutSection extends ConsumerWidget {
                       ),
                     );
                   },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.bug_report_rounded, color: Colors.orange),
+                  title: const Text('测试错误上报'),
+                  subtitle: const Text('主动上报一个测试错误，用于验证友盟错误监听功能'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _testErrorReport(context),
                 ),
               ],
             ),
@@ -335,6 +363,106 @@ class AboutSection extends ConsumerWidget {
             title: const Text('检查更新'),
             content: const Text('当前已是最新版本！'),
             actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('确定'))],
+          ),
+        );
+      }
+    }
+  }
+
+  /// 测试错误上报
+  void _testErrorReport(BuildContext context) {
+    // 显示确认对话框
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('测试错误上报'),
+        content: const Text('这将主动上报一个测试错误到友盟，用于验证错误监听功能是否正常工作。\n\n确定要继续吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _doTestErrorReport(context);
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 执行测试错误上报
+  void _doTestErrorReport(BuildContext context) {
+    try {
+      // 检查友盟是否已初始化
+      if (!UmengService.isEnabled) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('测试错误上报'),
+              content: const Text('友盟SDK未初始化，无法上报错误。\n\n请确保：\n1. 已同意隐私协议\n2. 已配置友盟AppKey'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('确定'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // 创建一个测试错误，使用当前的堆栈跟踪
+      final testError = Exception('这是一个测试错误，用于验证友盟错误上报功能');
+      final testStackTrace = StackTrace.current;
+
+      // 上报错误，附带一些测试上下文信息
+      UmengService.reportError(
+        testError,
+        testStackTrace,
+        context: {
+          'test_type': 'manual_test',
+          'test_purpose': '验证友盟错误上报功能',
+          'test_timestamp': DateTime.now().toIso8601String(),
+          'test_location': 'AboutSection',
+        },
+      );
+
+      // 显示成功提示
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('测试错误上报'),
+            content: const Text('测试错误已成功上报到友盟！\n\n您可以在友盟U-APM后台查看错误详情。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('确定'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // 如果上报过程中出错，显示错误提示
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('测试错误上报'),
+            content: Text('上报测试错误时发生异常：$e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('确定'),
+              ),
+            ],
           ),
         );
       }

@@ -47,6 +47,10 @@ dependencies:
   device_info_plus: ^12.3.0
   permission_handler: ^12.0.1
 
+  # Analytics & Crash Reporting
+  umeng_common_sdk: ^1.3.0
+  umeng_apm_sdk: ^2.3.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -61,11 +65,20 @@ dev_dependencies:
   # App Icon Generator
   flutter_launcher_icons: ^0.13.1
 
+# 依赖覆盖：解决 umeng_apm_sdk 和 flutter_cache_manager 的 http 版本冲突
+# umeng_apm_sdk 需要 http ^0.13.1，但 flutter_cache_manager 需要 http ^1.2.2
+# 强制使用 http ^1.2.2，通常向后兼容
+dependency_overrides:
+  http: ^1.2.2
+
 flutter:
   uses-material-design: true
 
   assets:
     - assets/
+    - android/app/src/main/assets/
+    - docs/隐私协议.md
+    - docs/免责声明.md
 
 # 应用图标配置
 # 使用方法：

@@ -139,36 +139,6 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
     return Duration.zero;
   }
 
-  /// 构建音频源（辅助方法）
-  Future<AudioSource> _buildAudioSource(String songName, {MusicCacheManager? cacheManager, Dio? dio}) async {
-    final MusicCacheManager cache = cacheManager ?? _ref.read(cacheManagerProvider);
-    final Dio dioClient = dio ?? _ref.read(dioProvider);
-
-    // 获取缓存信息
-    final cachedInfo = cache.getSongInfo(songName);
-    final duration = _getSongDuration(songName);
-
-    if (cachedInfo != null && cachedInfo.url.isNotEmpty) {
-      return createCachedAudioSource(
-        url: cachedInfo.url,
-        songName: songName,
-        cacheManager: cache,
-        dio: dioClient,
-        duration: duration,
-      );
-    }
-
-    // 如果缓存没有，尝试从网络获取
-    // 注意：这里为了简化，不进行网络请求，因为调用方通常已经确保了缓存或者有其他处理逻辑
-    // 如果必须支持无缓存播放，可以在这里加 api 请求逻辑，或者保持现状让上层处理
-    // 为了保持 playPlaylist 等方法的原子性，这里假设信息已存在或上层已处理
-    // 如果确实需要兜底，返回一个空的 AudioSource 或者抛异常
-    // 但鉴于 createCachedAudioSource 需要 url，这里如果拿不到 url 只能返回 null 或 dummy
-
-    // 复用原有的 _fetchAudioSource 逻辑，但简化参数
-    return (await _fetchAudioSource(songName, cacheManager: cache, dio: dioClient))!;
-  }
-
   Future<void> _initializeHandler() async {
     final handler = _handler;
     if (handler == null || _disposed) return;

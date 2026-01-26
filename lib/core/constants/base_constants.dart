@@ -1,8 +1,10 @@
 /// 基础常量
 class BaseConstants {
   BaseConstants._();
-  // 当前版本
+  // 当前版本,github版本
   static const String currentVersion = 'v1.1.1';
+  // 当前版本（与 pubspec.yaml 中的 version 保持一致）
+  static const String apkVersion = '1.1.1+1';
   // 本地设备默认ID
   static const String webDevice = 'web_device';
   // 收藏歌单名称

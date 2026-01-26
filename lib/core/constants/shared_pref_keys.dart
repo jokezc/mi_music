@@ -57,6 +57,17 @@ class SharedPrefKeys {
   /// 用途: 控制快速设备切换栏是否固定在顶部（false=随列表滚动，true=固定）
   static const String pinQuickDeviceSwitcher = 'pin_quick_device_switcher';
 
+  /// 隐私协议已同意
+  /// 类型: Bool
+  /// 默认值: false
+  /// 用途: 记录用户是否已同意隐私协议
+  static const String privacyAgreementAccepted = 'privacy_agreement_accepted';
+
+  /// 后端版本
+  /// 类型: String
+  /// 用途: 存储最近一次查询到的后端版本号
+  static const String backendVersion = 'backend_version';
+
   // ========== 应用偏好 ==========
 
   /// 主题模式

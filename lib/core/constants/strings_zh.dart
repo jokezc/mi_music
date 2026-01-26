@@ -99,6 +99,8 @@ class S {
   static const String appVersion = 'App 版本';
   static const String openSourceLicense = '开源许可';
   static const String projectLink = '项目主页';
+  static const String privacyPolicy = '隐私协议';
+  static const String disclaimer = '免责声明';
 
   // 下载
   static const String download = '下载';

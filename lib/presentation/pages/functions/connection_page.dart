@@ -104,6 +104,7 @@ class _ConnectionPageState extends ConsumerState<ConnectionPage> {
     );
 
     if (confirmed == true) {
+      // 退出登录（设备ID保持不变，不泄露隐私）
       await ref.read(settingsProvider.notifier).setServerUrl('');
       await ref.read(settingsProvider.notifier).setCredentials('', '');
       if (mounted) {

@@ -6,6 +6,7 @@ import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/data/providers/player/player_state.dart' as app_state;
+import 'package:mi_music/data/services/umeng_service.dart';
 
 final _logger = Logger();
 
@@ -278,6 +279,20 @@ class MyAudioHandler extends BaseAudioHandler {
         (event) {},
         onError: (Object e, StackTrace st) {
           _logger.e('播放器发生错误: $e');
+          
+          // 上报播放器错误到友盟
+          // 目的：监控音频播放过程中的错误（如文件损坏、网络中断、解码失败等），帮助开发者快速定位播放问题
+          final currentMediaItem = mediaItem.value;
+          UmengService.reportError(
+            e,
+            st,
+            context: {
+              'current_song': currentMediaItem?.title ?? 'unknown',
+              'is_remote_mode': _isRemoteMode.toString(),
+              'has_playlist': (_playlistSources != null && _playlistSources!.isNotEmpty).toString(),
+            },
+          );
+          
           // 关键修复：发生错误时，必须更新 playbackState，否则 UI 会认为还在播放
           playbackState.add(
             playbackState.value.copyWith(
@@ -425,6 +440,15 @@ class MyAudioHandler extends BaseAudioHandler {
         await _player.play();
         // 立即更新状态栏，确保通知栏按钮状态正确（从播放变为暂停按钮）
         _broadcastState();
+        
+        // 统计播放事件
+        final currentSong = mediaItem.value?.title ?? '';
+        if (currentSong.isNotEmpty) {
+          UmengService.onEvent('music_play', properties: {
+            'song': currentSong,
+            'mode': 'local',
+          });
+        }
       }
     } catch (e, stackTrace) {
       _logger.e('播放失败: $e');
@@ -446,6 +470,15 @@ class MyAudioHandler extends BaseAudioHandler {
         await _player.pause();
         // 立即更新状态栏，确保通知栏按钮状态正确（从暂停变为播放按钮）
         _broadcastState();
+        
+        // 统计暂停事件
+        final currentSong = mediaItem.value?.title ?? '';
+        if (currentSong.isNotEmpty) {
+          UmengService.onEvent('music_pause', properties: {
+            'song': currentSong,
+            'mode': 'local',
+          });
+        }
       }
     } catch (e, stackTrace) {
       _logger.e('暂停失败: $e');

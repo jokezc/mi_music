@@ -1,0 +1,9 @@
+# 友盟配置文件模板
+# 复制此文件为 umeng_config.properties 并填入实际的AppKey
+# 注意：umeng_config.properties 已添加到 .gitignore，不会被提交到代码仓库
+
+# Android AppKey（从友盟后台获取）
+umeng.appkey=YOUR_ANDROID_APP_KEY
+
+# 渠道标识（可选，默认为空）
+umeng.channel=

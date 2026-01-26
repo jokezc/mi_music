@@ -478,7 +478,7 @@ packages:
     source: hosted
     version: "4.3.0"
   http:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -1186,6 +1186,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.4.0"
+  umeng_apm_sdk:
+    dependency: "direct main"
+    description:
+      name: umeng_apm_sdk
+      sha256: a1d1afa3fbcc71079fec2acdf9189a24c9d5350c30f3048b17b729c169ff0e0f
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.3.5"
+  umeng_common_sdk:
+    dependency: "direct main"
+    description:
+      name: umeng_common_sdk
+      sha256: "8374ced1ab1d89f596ff71c0eff044d5395337145c9a69a6be02f5d8a678e42c"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.3.0"
   url_launcher:
     dependency: "direct main"
     description:

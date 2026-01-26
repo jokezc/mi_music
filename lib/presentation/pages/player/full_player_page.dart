@@ -18,6 +18,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
+import 'package:mi_music/data/services/umeng_service.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
 import 'package:path/path.dart' as path;
@@ -907,6 +908,12 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
       final dio = ref.read(dioProvider);
       await dio.download(musicUrl, filePath);
 
+      // 统计下载成功事件
+      UmengService.onEvent('music_download_success', properties: {
+        'song': currentSong,
+        'platform': Platform.isAndroid ? 'android' : 'ios',
+      });
+
       if (context.mounted) {
         SnackBarUtils.showMessage(
           context,
@@ -916,6 +923,13 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
       }
     } catch (e) {
       _logger.e("下载歌曲失败: $e");
+      
+      // 统计下载失败事件
+      UmengService.onEvent('music_download_failed', properties: {
+        'song': currentSong,
+        'error': e.toString(),
+      });
+      
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.downloadFailed}: $e')));
       }

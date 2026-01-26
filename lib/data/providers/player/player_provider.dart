@@ -20,6 +20,7 @@ import 'package:mi_music/data/providers/settings_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
+import 'package:mi_music/data/services/umeng_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'player_provider.g.dart';
@@ -33,9 +34,16 @@ Future<MyAudioHandler> _getAudioHandler() async {
   if (_audioHandlerSingleton != null) {
     try {
       return await _audioHandlerSingleton!;
-    } catch (e) {
+    } catch (e, st) {
       // 如果之前的初始化失败了，清空单例以便重试
       _logger.e("获取 AudioHandler 单例失败: $e");
+      
+      // 上报AudioHandler单例获取失败错误
+      // 目的：监控音频服务初始化过程中的关键错误，帮助开发者快速定位音频服务问题
+      UmengService.reportError(e, st, context: {
+        'error_phase': 'get_audio_handler_singleton',
+      });
+      
       _audioHandlerSingleton = null;
     }
   }
@@ -52,8 +60,15 @@ Future<MyAudioHandler> _getAudioHandler() async {
 
   try {
     return await _audioHandlerSingleton!;
-  } catch (e) {
+  } catch (e, st) {
     _logger.e("初始化 AudioHandler 失败: $e");
+    
+    // 上报AudioHandler初始化失败错误
+    // 目的：监控音频服务初始化过程中的关键错误，帮助开发者快速定位音频服务问题
+    UmengService.reportError(e, st, context: {
+      'error_phase': 'audio_handler_init',
+    });
+    
     _audioHandlerSingleton = null; // 初始化失败，允许下次调用重试
     rethrow;
   }
@@ -71,6 +86,13 @@ Future<MyAudioHandler> audioHandler(Ref ref) async {
     );
   } catch (e, st) {
     _logger.e('audioHandler init failed: $e stackTrace: $st');
+    
+    // 上报AudioHandler Provider初始化失败错误（包括超时）
+    // 目的：监控音频服务Provider初始化过程中的关键错误，帮助开发者快速定位音频服务问题
+    UmengService.reportError(e, st, context: {
+      'error_phase': 'audio_handler_provider_init',
+    });
+    
     rethrow;
   }
 }
@@ -834,6 +856,14 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
     // 获取之前的设备
     final prevDevice = currentDevice;
+
+    // 统计设备切换事件
+    UmengService.onEvent('device_switch', properties: {
+      'from_device': prevDevice?.name ?? prevDevice?.did ?? 'unknown',
+      'from_type': prevDevice?.type.toString() ?? 'unknown',
+      'to_device': device.name ?? device.did,
+      'to_type': device.type.toString(),
+    });
 
     // 处理设备切换（统一逻辑，内部会更新状态）
     await _handleDeviceSwitch(prevDevice, device);

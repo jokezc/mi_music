@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iOS AppKey（从友盟后台获取） -->
+	<key>UMAppKey</key>
+	<string>YOUR_IOS_APP_KEY</string>
+	<!-- 渠道标识（可选，默认为空） -->
+	<key>UMChannel</key>
+	<string></string>
+</dict>
+</plist>

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/data/network/api_client.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
+import 'package:mi_music/data/services/umeng_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_provider.g.dart';
@@ -102,6 +103,25 @@ class SimpleLogInterceptor extends Interceptor {
     }
 
     _logger.e(buffer.toString());
+
+    // 上报关键网络错误到友盟（排除401认证错误，因为这是正常的认证流程）
+    // 目的：监控API调用中的网络错误、服务器错误等，帮助开发者快速定位问题
+    // 401错误不上报，因为这是正常的认证失败流程，不是异常错误
+    if (err.response?.statusCode != 401) {
+      final statusCode = err.response?.statusCode ?? 0;
+      final errorType = err.type.toString();
+      
+      UmengService.reportErrorString(
+        'API请求失败: ${err.message ?? "未知错误"}',
+        err.stackTrace.toString(),
+        context: {
+          'api_path': path,
+          'status_code': statusCode.toString(),
+          'error_type': errorType,
+          'base_url': err.requestOptions.baseUrl, // 上报服务器地址，方便追溯问题
+        },
+      );
+    }
 
     handler.next(err);
   }
@@ -235,6 +255,9 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
     final versionResp = await apiClient.getVersion();
 
     // 成功返回版本信息，表示认证成功
+    // 顺便更新后端版本到 UmengService
+    await UmengService.updateBackendVersion(versionResp.version);
+
     // 注意：这里不自动更新 authStateProvider，由调用方决定何时更新
     // 因为 verifyAuth 可能用于登录验证，此时应该由登录逻辑控制状态更新
     return AuthResult.authenticated(versionResp.version);
@@ -265,5 +288,23 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
   } catch (e) {
     _logger.e("验证认证失败: $e");
     return AuthResult.error(e.toString());
+  }
+}
+
+/// 检查后端版本并更新到 UmengService
+/// 失败时不抛出异常，只是记录日志
+@riverpod
+Future<void> checkBackendVersion(Ref ref) async {
+  final config = ref.read(apiConfigProvider);
+  // 如果没有配置服务器地址，跳过
+  if (config.serverUrl.isEmpty) return;
+
+  final apiClient = ref.read(apiClientProvider);
+  try {
+    final response = await apiClient.getVersion();
+    await UmengService.updateBackendVersion(response.version);
+  } catch (e) {
+    // 忽略错误，仅记录日志，不影响应用流程
+    _logger.w('检查后端版本失败: $e');
   }
 }
