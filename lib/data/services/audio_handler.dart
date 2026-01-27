@@ -143,6 +143,13 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   // -------------------------
   // 原有逻辑
   // -------------------------
+  int _currentRequestId = 0; // 内部请求ID，用于防止并发竞争
+
+  /// 获取并递增请求 ID
+  int _getNextRequestId() => ++_currentRequestId;
+
+  /// 检查请求是否仍然有效
+  bool _isRequestValid(int requestId) => requestId == _currentRequestId;
 
   // 懒加载播放列表支持 - 通过回调从外部获取，不再内部维护
   Future<AudioSource?> Function(String song)? _audioSourceFetcher;
@@ -287,6 +294,25 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
       _player.playbackEventStream.listen(
         (event) {},
         onError: (Object e, StackTrace st) {
+          final msg = e.toString();
+
+          // 1. 忽略预期的网络中断（切歌/停止时常见）
+          if (msg.contains('SocketException') ||
+              msg.contains('Socket closed') ||
+              msg.contains('Connection aborted') ||
+              msg.contains('Broken pipe')) {
+            _logger.i('忽略预期的网络中断 (切歌/停止时常见): $msg');
+            return;
+          }
+
+          // 2. 检测到缓存代理失败，尝试降级到在线播放
+          // "Proxy request failed: 200" 是 just_audio_background 或 LockCachingAudioSource 的典型错误
+          if (msg.contains('Proxy request failed') || msg.contains('502 Bad Gateway')) {
+            _logger.w('检测到缓存代理失败，尝试降级到在线播放: $msg');
+            _attemptFallbackForCurrentItem();
+            return;
+          }
+
           _logger.e('播放器发生错误: $e');
           // 关键修复：发生错误时，必须更新 playbackState，否则 UI 会认为还在播放
           playbackState.add(
@@ -306,6 +332,52 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         },
       ),
     );
+  }
+
+  /// 尝试为当前出错的歌曲降级播放（从缓存源降级为普通URL源）
+  Future<void> _attemptFallbackForCurrentItem() async {
+    try {
+      if (_playlistSources == null) return;
+      final index = _player.currentIndex;
+      if (index == null || index < 0 || index >= _playlistSources!.length) return;
+
+      final source = _playlistSources![index];
+      // 检查是否为缓存源
+      if (source is LockCachingAudioSource) {
+        _logger.i('尝试将第 $index 首歌曲 (${source.tag?.title}) 降级为在线播放...');
+
+        // 创建降级源（直接使用 URL，绕过缓存代理）
+        final fallbackSource = AudioSource.uri(
+          source.uri,
+          tag: source.tag, // 保留元数据
+        );
+
+        // 更新本地列表
+        _playlistSources![index] = fallbackSource;
+
+        // 重新加载播放列表，保持当前进度
+        // 注意：这会重建播放列表，可能会有短暂的停顿
+        final position = _player.position;
+        // 既然发生错误了，我们通常希望自动恢复播放
+        const shouldPlay = true;
+
+        // 使用 ConcatenatingAudioSource 重新设置播放源
+        await _player.setAudioSource(
+          ConcatenatingAudioSource(children: _playlistSources!),
+          initialIndex: index,
+          initialPosition: position,
+        );
+
+        if (shouldPlay) {
+          _player.play();
+        }
+        _logger.i('已成功降级并恢复播放');
+      }
+    } catch (e) {
+      _logger.e('降级重试失败: $e');
+      // 如果降级也失败了，那就真的失败了，让 error listener 处理（或者手动设置 error 状态）
+      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+    }
   }
 
   /// 取消所有流订阅，防止内存泄漏
@@ -600,44 +672,49 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
 
   /// 播放 AudioSource (支持缓存等高级特性)
   Future<void> playSource(AudioSource source, {String? title, String? id}) async {
-    // 托管模式下禁止驱动本地播放器
+    final requestId = _getNextRequestId();
+    // 托管模式下拦截
     if (_isRemoteMode) {
       _logger.w('托管模式下拦截了本地 playSource 调用');
       return;
     }
     try {
-      // 在播放新歌前，先停止当前播放，确保 MediaCodec 资源完全释放
-      try {
-        await _player.stop();
-        // 等待一小段时间，确保 MediaCodec 完全释放
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        _logger.w('停止播放器时出错（可忽略）: $e');
+      // 在播放新歌前，先停止当前播放
+      if (_player.playing || _player.processingState != ProcessingState.idle) {
+        try {
+          await _player.stop();
+          if (!_isRequestValid(requestId)) return;
+          await Future.delayed(const Duration(milliseconds: 50));
+        } catch (e) {
+          _logger.w('停止播放器时出错: $e');
+        }
       }
+
+      if (!_isRequestValid(requestId)) return;
 
       // 切换到单曲模式，清空播放列表引用
       switchToQueueMode();
 
       // 在播放新歌时，确保 LoopMode 正确
-      // 如果当前逻辑模式是列表循环，底层必须是 off
       if (_currentRepeatMode == AudioServiceRepeatMode.all) {
         await _player.setLoopMode(LoopMode.off);
       }
 
       await _player.setAudioSource(source);
+      if (!_isRequestValid(requestId)) return;
 
-      // 设置媒体项信息（包含封面）
+      // 设置媒体项信息
       final songName = title ?? 'unknown';
       final artUri = _getArtUri?.call(songName);
       mediaItem.add(MediaItem(id: id ?? 'unknown', title: title ?? 'Unknown', artUri: artUri));
 
       await _player.play();
     } catch (e, stackTrace) {
-      _logger.e('播放 AudioSource 失败: $e');
-      _logger.e('堆栈: $stackTrace');
-      // 更新状态为错误
-      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
-      // 不重新抛出异常，避免上层崩溃
+      if (_isRequestValid(requestId)) {
+        _logger.e('播放 AudioSource 失败: $e');
+        _logger.e('堆栈: $stackTrace');
+        playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+      }
     }
   }
 
@@ -674,6 +751,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
     Duration? initialPosition,
     bool autoPlay = true,
   }) async {
+    final requestId = _getNextRequestId();
     // 托管模式下禁止驱动本地播放器
     if (_isRemoteMode) {
       _logger.w('托管模式下拦截了本地 loadPlaylist 调用');
@@ -682,17 +760,21 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
     _playlistSources = sources;
     try {
       // 在加载新列表前，先停止当前播放，确保 MediaCodec 资源完全释放
-      try {
-        await _player.stop();
-        // 等待一小段时间，确保 MediaCodec 完全释放
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        _logger.w('停止播放器时出错（可忽略）: $e');
+      // 注意：如果是快速切歌，这里的 stop 可能已经在之前的请求中执行过了
+      if (_player.playing || _player.processingState != ProcessingState.idle) {
+        try {
+          await _player.stop();
+          if (!_isRequestValid(requestId)) return;
+          // 仅在必要时才等待，减少切换延迟
+          await Future.delayed(const Duration(milliseconds: 50));
+        } catch (e) {
+          _logger.w('停止播放器时出错（可忽略）: $e');
+        }
       }
 
-      // 确保 LoopMode 正确（初始为顺序播放，或继承之前的状态）
-      // 如果当前逻辑是 LoopMode.all，底层设为 all（原生支持）
-      // 如果当前逻辑是 LoopMode.one，底层设为 one
+      if (!_isRequestValid(requestId)) return;
+
+      // 确保 LoopMode 正确
       switch (_currentRepeatMode) {
         case AudioServiceRepeatMode.none:
           await _player.setLoopMode(LoopMode.off);
@@ -701,12 +783,12 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
           await _player.setLoopMode(LoopMode.one);
           break;
         case AudioServiceRepeatMode.all:
-          await _player.setLoopMode(LoopMode.all);
-          break;
         case AudioServiceRepeatMode.group:
           await _player.setLoopMode(LoopMode.all);
           break;
       }
+
+      if (!_isRequestValid(requestId)) return;
 
       await _player.setAudioSources(
         sources,
@@ -714,48 +796,38 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         initialPosition: initialPosition ?? Duration.zero,
       );
 
-      if (autoPlay) {
+      if (autoPlay && _isRequestValid(requestId)) {
         await _player.play();
       }
     } catch (e, stackTrace) {
-      _logger.e('加载播放列表失败: $e');
-      _logger.e('堆栈: $stackTrace');
-      // 更新状态为错误
-      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
-      // 不重新抛出异常，避免上层崩溃
+      if (_isRequestValid(requestId)) {
+        _logger.e('加载播放列表失败: $e');
+        _logger.e('堆栈: $stackTrace');
+        playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+      }
     }
   }
 
   /// 核心播放逻辑：播放指定索引的歌曲
   Future<void> _playByContext(int index, List<String> playlist) async {
     if (index < 0 || index >= playlist.length) return;
-
-    // 托管模式下禁止驱动本地播放器
     if (_isRemoteMode) return;
 
+    final requestId = _getNextRequestId();
     final songName = playlist[index];
 
     // 1. 立即更新外部索引，确保 UI 响应
     _onIndexChanged?.call(index);
 
-    // 2. 更新 MediaItem 占位（重置时长等信息，避免显示上一首的时长）
-    // 获取封面URL
+    // 2. 更新 MediaItem 占位
     final artUri = _getArtUri?.call(songName);
-    mediaItem.add(
-      MediaItem(
-        id: songName,
-        title: songName,
-        duration: null,
-        artUri: artUri, // 设置封面URI
-      ),
-    );
+    mediaItem.add(MediaItem(id: songName, title: songName, duration: null, artUri: artUri));
 
     // 3. 广播加载状态
     playbackState.add(
       playbackState.value.copyWith(
         processingState: AudioProcessingState.loading,
         queueIndex: index,
-        // 此时位置归零
         updatePosition: Duration.zero,
         bufferedPosition: Duration.zero,
       ),
@@ -764,16 +836,21 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
     try {
       // 4. 获取音频源
       final source = await _audioSourceFetcher?.call(songName);
+      if (!_isRequestValid(requestId)) return;
 
       if (source != null) {
-        // 在播放新歌前，先停止当前播放，确保 MediaCodec 资源完全释放
-        try {
-          await _player.stop();
-          // 等待一小段时间，确保 MediaCodec 完全释放
-          await Future.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          _logger.w('停止播放器时出错（可忽略）: $e');
+        // 在播放新歌前，先停止当前播放
+        if (_player.playing || _player.processingState != ProcessingState.idle) {
+          try {
+            await _player.stop();
+            if (!_isRequestValid(requestId)) return;
+            await Future.delayed(const Duration(milliseconds: 50));
+          } catch (e) {
+            _logger.w('停止播放器时出错: $e');
+          }
         }
+
+        if (!_isRequestValid(requestId)) return;
 
         // 确保单曲模式下的 LoopMode 设置
         if (_currentRepeatMode == AudioServiceRepeatMode.all) {
@@ -781,18 +858,20 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         }
 
         await _player.setAudioSource(source);
+        if (!_isRequestValid(requestId)) return;
+
         await _player.play();
       } else {
         _logger.e('获取歌曲 AudioSource 失败: $songName');
-        // 播放失败是否自动切下一首？暂时停止防止死循环
         await stop();
       }
     } catch (e, stackTrace) {
-      _logger.e('播放出错 ($songName): $e');
-      _logger.e('堆栈: $stackTrace');
-      // 更新状态为错误
-      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
-      await stop();
+      if (_isRequestValid(requestId)) {
+        _logger.e('播放出错 ($songName): $e');
+        _logger.e('堆栈: $stackTrace');
+        playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+        await stop();
+      }
     }
   }
 

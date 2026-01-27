@@ -70,7 +70,22 @@ Future<AudioSource> createCachedAudioSource({
   } catch (e) {
     _logger.e("LockCachingAudioSource 失败，降级为在线播放: $e");
     // 降级策略：仅在线播放
-    return AudioSource.uri(Uri.parse(url));
+    // 注意：运行时如果代理失败，AudioHandler 中还有二次降级策略 (_attemptFallbackForCurrentItem)
+    
+    // 尝试获取封面以便在降级时也能显示
+    Uri? artUri;
+    try {
+      final songInfo = cacheManager.getSongInfo(songName);
+      final pictureUrl = songInfo?.pictureUrl;
+      if (pictureUrl != null && pictureUrl.isNotEmpty) {
+        artUri = Uri.parse(pictureUrl);
+      }
+    } catch (_) {}
+
+    return AudioSource.uri(
+      Uri.parse(url),
+      tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration),
+    );
   }
 }
 
@@ -82,6 +97,13 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
   void Function(PlayerState)? _stateUpdateCallback;
   PlayerState? _currentState;
   bool _disposed = false; // 标记控制器是否已被销毁
+  int _currentRequestId = 0; // 用于追踪最新的播放请求，防止并发竞态
+
+  /// 获取并递增请求 ID
+  int _getNextRequestId() => ++_currentRequestId;
+
+  /// 检查请求是否仍然有效
+  bool _isRequestValid(int requestId) => !_disposed && requestId == _currentRequestId;
 
   LocalPlayerControllerImpl(this._handler, this._ref, {PlayerState? initialState}) {
     // 注册生命周期监听
@@ -292,11 +314,13 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
   }
 
   Future<void> _restoreCurrentSong(MyAudioHandler handler, PlayerState state) async {
+    final requestId = _getNextRequestId();
     try {
       final savedSong = state.currentSong;
       if (savedSong == null || savedSong.isEmpty || _disposed) return;
 
-      // 1. 初始竞态检查：如果当前状态已被用户操作改变（例如用户刚进App就切了歌），直接放弃恢复
+      // 1. 初始竞态检查
+      if (!_isRequestValid(requestId)) return;
       if (_currentState != null && _currentState!.currentSong != savedSong) {
         _logger.w('恢复中断：检测到新的播放状态');
         return;
@@ -319,7 +343,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       }
       final correctSong = playlist[index]; // 此时一定是有效的
 
-      if (_disposed) return;
+      if (!_isRequestValid(requestId)) return;
 
       // 3. 立即更新 UI 显示旧状态（让用户看到上次听的歌）
       _updateState(
@@ -338,40 +362,45 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       // 如果有播放列表，使用列表模式恢复（保持正确的索引）
       // 如果只有一首歌，使用单个音频源
       if (playlist.length > 1) {
-        // 列表模式：构建所有音频源
-        final List<AudioSource> audioSources = [];
+        // 列表模式：并行构建所有音频源
+        final List<Future<AudioSource?>> sourceFutures = [];
         final List<String> validSongs = [];
 
         for (var name in playlist) {
-          if (_disposed) return;
-          final source = await _fetchAudioSource(
+          sourceFutures.add(_fetchAudioSource(
             name,
             cacheManager: cacheManager,
             dio: dio,
             allowNetworkFallback: true,
-          );
-          if (source != null) {
-            audioSources.add(source);
-            validSongs.add(name);
+          ));
+        }
+
+        final List<AudioSource?> sources = await Future.wait(sourceFutures);
+        if (!_isRequestValid(requestId)) return;
+
+        final List<AudioSource> audioSources = [];
+        for (int i = 0; i < sources.length; i++) {
+          if (sources[i] != null) {
+            audioSources.add(sources[i]!);
+            validSongs.add(playlist[i]);
           }
         }
 
         // 5. 二次竞态检查：异步操作期间，用户可能切歌了
-        if (_disposed || (_currentState != null && _currentState!.currentSong != correctSong)) {
+        if (!_isRequestValid(requestId) || (_currentState != null && _currentState!.currentSong != correctSong)) {
           _logger.w('恢复中断：异步加载期间检测到新的播放状态');
           return;
         }
 
         // 6. 使用列表模式设置播放器（保持正确的索引）
         if (audioSources.isNotEmpty) {
-          // 在 validSongs 中查找 correctSong 的索引（因为 validSongs 可能和 playlist 不同）
+          // 在 validSongs 中查找 correctSong 的索引
           int validIndex = validSongs.indexOf(correctSong);
           if (validIndex == -1) {
-            // 如果找不到，使用原始索引（如果有效）
             validIndex = index < validSongs.length ? index : 0;
           }
 
-          if (_disposed) return;
+          if (!_isRequestValid(requestId)) return;
           await handler.loadPlaylist(
             audioSources,
             validIndex,
@@ -393,7 +422,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
             MediaItem(id: correctSong, title: correctSong, duration: state.duration, artUri: artUri),
           );
 
-          if (_disposed) return;
+          if (!_isRequestValid(requestId)) return;
           // 更新状态，使用 validSongs 和 validIndex
           _updateState(
             (_currentState ?? state).copyWith(
@@ -416,15 +445,15 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
           allowNetworkFallback: true,
         );
 
-        // 5. 二次竞态检查：异步操作期间，用户可能切歌了
-        if (_disposed || (_currentState != null && _currentState!.currentSong != correctSong)) {
+        // 5. 二次竞态检查
+        if (!_isRequestValid(requestId) || (_currentState != null && _currentState!.currentSong != correctSong)) {
           _logger.d('恢复中断：异步加载期间检测到新的播放状态');
           return;
         }
 
         // 6. 设置播放器（单曲模式）
         if (source != null) {
-          if (_disposed) return;
+          if (!_isRequestValid(requestId)) return;
           await handler.player.setAudioSource(source, initialPosition: state.position, preload: false);
           // 从缓存获取封面URL
           Uri? artUri;
@@ -442,18 +471,20 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
           );
 
           if (state.isPlaying) {
-            if (_disposed) return;
+            if (!_isRequestValid(requestId)) return;
             await handler.player.play();
           }
 
-          if (_disposed) return;
+          if (!_isRequestValid(requestId)) return;
           await _syncFromHandler(handler, fallbackState: state);
         } else {
           _updateState((_currentState ?? state).copyWith(isPlaying: false));
         }
       }
     } catch (e) {
-      _logger.e("恢复当前歌曲失败: $e");
+      if (_isRequestValid(requestId)) {
+        _logger.e("恢复当前歌曲失败: $e");
+      }
     }
   }
 
@@ -819,15 +850,18 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
   @override
   Future<void> playSong(String songName, {String? playlistName}) async {
+    final requestId = _getNextRequestId();
     try {
       if (playlistName != null && playlistName.isNotEmpty) {
         // 如果提供了歌单名称，则加载整个歌单并播放指定歌曲
         final songsResp = await _ref.read(cachedPlaylistMusicsProvider(playlistName).future);
+        if (!_isRequestValid(requestId)) return;
+
         final songs = songsResp.musics;
         final index = songs.indexOf(songName);
 
         if (songs.isNotEmpty) {
-          await playPlaylist(songs, playlistName: playlistName, initialIndex: index >= 0 ? index : 0);
+          await _playPlaylistInternal(songs, playlistName: playlistName, initialIndex: index >= 0 ? index : 0, requestId: requestId);
           return;
         }
       }
@@ -855,24 +889,29 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       if (cachedInfo != null && cachedInfo.url.isNotEmpty) {
         // 复用 playPlaylist 逻辑，把它当作只有一个歌曲的列表
         // 这样可以统一使用列表模式管理
-        await playPlaylist([songName], playlistName: playlistName, initialIndex: 0);
+        await _playPlaylistInternal([songName], playlistName: playlistName, initialIndex: 0, requestId: requestId);
         return;
       }
 
       // 缓存中没有，从 API 获取
       final apiClient = _ref.read(apiClientProvider);
       final musicInfos = await apiClient.getMusicInfos([songName], false);
+      if (!_isRequestValid(requestId)) return;
+
       if (musicInfos.isNotEmpty && musicInfos.first.url.isNotEmpty) {
         // 简单策略：直接调用 playPlaylist，它内部有补充逻辑
-        await playPlaylist([songName], playlistName: playlistName, initialIndex: 0);
+        await _playPlaylistInternal([songName], playlistName: playlistName, initialIndex: 0, requestId: requestId);
       }
     } catch (e) {
-      _logger.e("本地播放失败: $e");
+      if (_isRequestValid(requestId)) {
+        _logger.e("本地播放失败: $e");
+      }
     }
   }
 
   @override
   Future<void> playPlaylistByName(String playlistName) async {
+    final requestId = _getNextRequestId();
     try {
       // 从缓存获取歌单内容
       final cacheManager = _ref.read(cacheManagerProvider);
@@ -884,42 +923,42 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       } else {
         // 如果缓存没有，尝试异步加载
         final songsResp = await _ref.read(cachedPlaylistMusicsProvider(playlistName).future);
+        if (!_isRequestValid(requestId)) return;
         songs = songsResp.musics;
       }
 
       if (songs.isNotEmpty) {
-        await playPlaylist(songs, playlistName: playlistName);
+        await _playPlaylistInternal(songs, playlistName: playlistName, requestId: requestId);
       }
     } catch (e) {
-      _logger.e("本地播放歌单失败: $e");
+      if (_isRequestValid(requestId)) {
+        _logger.e("本地播放歌单失败: $e");
+      }
     }
   }
 
+  @override
   Future<void> playPlaylist(List<String> songNames, {String? playlistName, int initialIndex = 0}) async {
-    // 优先从缓存获取歌曲信息，如果缓存中没有，才去请求API
-    // 但根据需求1，getMusicInfos在打开app的时候已经初始化到缓存中了，不需要再调用接口查询
-    // 可以批量从hive中拉取
-    final cacheManager = _ref.read(cacheManagerProvider);
-    // dio 用于后续可能的下载，这里暂时保留引用，以免需要时再 read
-    // final dio = _ref.read(dioProvider);
+    final requestId = _getNextRequestId();
+    await _playPlaylistInternal(songNames, playlistName: playlistName, initialIndex: initialIndex, requestId: requestId);
+  }
 
+  /// 内部播放列表逻辑，支持 requestId 校验和并行构建
+  Future<void> _playPlaylistInternal(List<String> songNames, {String? playlistName, int initialIndex = 0, required int requestId}) async {
     // 1. 批量获取歌曲信息
-    // 直接从缓存获取所有歌曲信息
+    final cacheManager = _ref.read(cacheManagerProvider);
     final cachedInfos = cacheManager.getSongInfos(songNames);
 
-    // 检查是否有缺失信息的歌曲（可能初始化未完成，或新添加的歌曲）
-    // 虽然需求说不需要调用接口，但为了健壮性，如果真没有，还是得处理一下
+    // 检查是否有缺失信息的歌曲
     final missingSongs = songNames.where((name) => !cachedInfos.containsKey(name)).toList();
     if (missingSongs.isNotEmpty) {
       _logger.d('警告: 发现 ${missingSongs.length} 首歌曲未在缓存中，将尝试从API获取: ${missingSongs.take(3)}...');
       try {
         final apiClient = _ref.read(apiClientProvider);
-        // 尝试补充获取缺失的歌曲信息
         final newInfos = await apiClient.getMusicInfos(missingSongs, false);
+        if (!_isRequestValid(requestId)) return;
+
         for (var info in newInfos) {
-          // 临时放入 map 中使用，不强制写入缓存以免影响流程速度
-          // 或者也可以选择 cacheManager.saveSongInfos([SongInfoCache.fromApi(...)])
-          // 这里简单起见，直接构造 SongInfoCache
           cachedInfos[info.name] = SongInfoCache(
             name: info.name,
             url: info.url,
@@ -932,26 +971,39 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       }
     }
 
-    // 2. 构建列表音源
-    final List<AudioSource> audioSources = [];
-    final List<String> validSongs = [];
+    if (!_isRequestValid(requestId)) return;
+
+    // 2. 并行构建列表音源
     final dio = _ref.read(dioProvider);
+    
+    // 使用 Future.wait 并行处理，提高大歌单加载速度
+    final List<Future<AudioSource?>> sourceFutures = [];
+    final List<String> potentialSongs = [];
 
     for (var name in songNames) {
       final info = cachedInfos[name];
       if (info != null && info.url.isNotEmpty) {
         final duration = _getSongDuration(name);
-
-        // 统一走 createCachedAudioSource
-        final source = await createCachedAudioSource(
+        potentialSongs.add(name);
+        sourceFutures.add(createCachedAudioSource(
           url: info.url,
           songName: name,
           cacheManager: cacheManager,
           dio: dio,
           duration: duration,
-        );
-        audioSources.add(source);
-        validSongs.add(name);
+        ));
+      }
+    }
+
+    final List<AudioSource?> sources = await Future.wait(sourceFutures);
+    if (!_isRequestValid(requestId)) return;
+
+    final List<AudioSource> audioSources = [];
+    final List<String> validSongs = [];
+    for (int i = 0; i < sources.length; i++) {
+      if (sources[i] != null) {
+        audioSources.add(sources[i]!);
+        validSongs.add(potentialSongs[i]);
       }
     }
 
@@ -974,20 +1026,21 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         currentIndex: initialIndex,
         currentSong: validSongs.isNotEmpty ? validSongs[initialIndex] : null,
         isPlaying: true,
-        // 仅当获取到有效时长时才更新 duration，否则保留旧值等待播放器更新
         duration: initialDuration > Duration.zero ? initialDuration : null,
       ),
     );
 
-    // 3. 传递给 Handler（使用 setAudioSources）
+    // 3. 传递给 Handler
     await _handler?.loadPlaylist(audioSources, initialIndex);
   }
 
   @override
   Future<void> playFromQueueIndex(int index) async {
+    final requestId = _getNextRequestId();
     // 委托给 Handler 的 skipToIndex，支持列表模式的无缝跳转
     if (_handler != null) {
       await _handler.skipToIndex(index);
+      if (!_isRequestValid(requestId)) return;
 
       // 更新状态 (虽然 Handler 的事件流也会更新，但立即更新 UI 更流畅)
       if (_currentState != null) {
