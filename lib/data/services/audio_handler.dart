@@ -10,7 +10,7 @@ import 'package:mi_music/data/providers/player/player_state.dart' as app_state;
 final _logger = Logger();
 
 /// 音频处理服务，用于后台播放
-class MyAudioHandler extends BaseAudioHandler {
+class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer();
   final List<StreamSubscription> _playerSubscriptions = [];
 
@@ -116,7 +116,17 @@ class MyAudioHandler extends BaseAudioHandler {
           MediaControl.skipToNext,
           // 远程模式下通常不显示 stop，或者视需求而定
         ],
-        systemActions: const {MediaAction.seek, MediaAction.seekForward, MediaAction.seekBackward},
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+          MediaAction.play,
+          MediaAction.pause,
+          MediaAction.stop,
+          MediaAction.skipToNext,
+          MediaAction.skipToPrevious,
+          MediaAction.playPause,
+        },
         androidCompactActionIndices: const [0, 1, 2],
         processingState: AudioProcessingState.ready, // 远程模式默认为 ready
         playing: state.isPlaying,
@@ -327,7 +337,8 @@ class MyAudioHandler extends BaseAudioHandler {
       if (_getCurrentIndex == null) return; // 队列模式必须要有回调
       currentIndex = _getCurrentIndex!();
     }
-
+    // 调试日志：确认播放按钮状态
+    final isPlaying = _player.playing;
     // _logger.d(
     //   '广播状态: \n _playlistSources: ${_playlistSources?.length}\n _player.currentIndex: ${_player.currentIndex}\n _getCurrentIndex: ${_getCurrentIndex?.call()} \n currentIndex: $currentIndex',
     // );
@@ -335,11 +346,21 @@ class MyAudioHandler extends BaseAudioHandler {
       playbackState.value.copyWith(
         controls: [
           MediaControl.skipToPrevious,
-          if (_player.playing) MediaControl.pause else MediaControl.play,
+          if (isPlaying) MediaControl.pause else MediaControl.play,
           MediaControl.skipToNext,
           MediaControl.stop,
         ],
-        systemActions: const {MediaAction.seek, MediaAction.seekForward, MediaAction.seekBackward},
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+          MediaAction.play,
+          MediaAction.pause,
+          MediaAction.stop,
+          MediaAction.skipToNext,
+          MediaAction.skipToPrevious,
+          MediaAction.playPause,
+        },
         androidCompactActionIndices: const [0, 1, 2],
         processingState: const {
           ProcessingState.idle: AudioProcessingState.idle,
@@ -348,7 +369,7 @@ class MyAudioHandler extends BaseAudioHandler {
           ProcessingState.ready: AudioProcessingState.ready,
           ProcessingState.completed: AudioProcessingState.completed,
         }[_player.processingState]!,
-        playing: _player.playing,
+        playing: isPlaying,
         updatePosition: _player.position,
         bufferedPosition: _player.bufferedPosition,
         speed: _player.speed,
@@ -450,6 +471,36 @@ class MyAudioHandler extends BaseAudioHandler {
     } catch (e, stackTrace) {
       _logger.e('暂停失败: $e');
       _logger.e('堆栈: $stackTrace');
+    }
+  }
+
+  @override
+  Future<void> click([MediaButton button = MediaButton.media]) async {
+    _logger.d('收到媒体按键点击: $button');
+    switch (button) {
+      case MediaButton.media:
+        // 处理耳机线控或蓝牙耳机的播放/暂停键
+        if (playbackState.value.playing) {
+          await pause();
+        } else {
+          await play();
+        }
+        break;
+      case MediaButton.next:
+        await skipToNext();
+        break;
+      case MediaButton.previous:
+        await skipToPrevious();
+        break;
+    }
+  }
+
+  Future<void> playPause() async {
+    _logger.d('收到 playPause 请求');
+    if (playbackState.value.playing) {
+      await pause();
+    } else {
+      await play();
     }
   }
 
