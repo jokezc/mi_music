@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/cmd_commands.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
+import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/data/cache/music_cache.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
@@ -21,7 +22,7 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:mi_music/core/constants/strings_zh.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'player_provider.g.dart';
 
@@ -50,7 +51,7 @@ Future<MyAudioHandler> _getAudioHandler() async {
       // 注意：当 androidStopForegroundOnPause: false 时，服务保持前台，通知默认就是常驻的。
       // 此时必须设为 false 以通过断言检查 (!androidNotificationOngoing || androidStopForegroundOnPause)
       androidNotificationOngoing: false,
-      
+
       // 暂停时是否停止前台服务（保持前台以防止在 MIUI 上被杀）
       // 虽然理论上 false 更保活，但在某些设备上（如 MIUI），如果强制前台可能导致通知行为异常或被系统特殊处理。
       androidStopForegroundOnPause: true,
@@ -87,6 +88,11 @@ Future<MyAudioHandler> audioHandler(Ref ref) async {
 class UnifiedPlayerController extends _$UnifiedPlayerController {
   IPlayerController? _playerController;
   Timer? _playSongDebounceTimer;
+  // 使用 Subject 处理设备切换，配合 debounceTime 实现优雅防抖
+  final _deviceSwitchSubject = PublishSubject<Device>();
+  StreamSubscription? _deviceSwitchSubscription;
+  Device? _lastStableDevice; // 记录上一个稳定连接的设备，用于快速切换时的状态清理
+
   String? _pendingSongName;
   String? _pendingPlaylistName;
   Timer? _saveStateDebounceTimer;
@@ -123,6 +129,8 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       }
 
       _playSongDebounceTimer?.cancel();
+      _deviceSwitchSubscription?.cancel();
+      _deviceSwitchSubject.close();
       _saveStateDebounceTimer?.cancel();
 
       // 重要：dispose 走异步，但 onDispose 不会 await；这里用 unawaited 丢到后台收尾
@@ -231,7 +239,31 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   Future<PlayerState> build() async {
     _ensureDisposeHook();
 
+    // 初始化设备切换监听
+    _deviceSwitchSubscription ??= _deviceSwitchSubject.debounceTime(const Duration(milliseconds: 500)).listen((
+      device,
+    ) async {
+      try {
+        // 这里的 _lastStableDevice 是切换开始前的设备
+        // 如果用户点击 A -> B -> C，_lastStableDevice 始终是 A，直到 C 真正切换成功
+        final prevDevice = _lastStableDevice;
+
+        // 更新本地缓存当前设备ID
+        final prefs = ref.read(sharedPreferencesProvider);
+        await prefs.setString(SharedPrefKeys.currentDeviceId, device.did);
+
+        // 执行切换
+        await _handleDeviceSwitch(prevDevice, device);
+
+        // 切换成功后，更新稳定设备记录
+        _lastStableDevice = device;
+      } catch (e) {
+        _logger.e("切换设备任务执行失败: $e");
+      }
+    });
+
     final currentDevice = await _getCurrentDevice();
+    _lastStableDevice = currentDevice; // 初始化稳定设备
     _logger.i("初始化 UnifiedPlayerController 当前设备: ${jsonEncode(currentDevice.toJson())}");
 
     // 先尝试恢复播放状态（在初始化控制器之前）
@@ -835,15 +867,17 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       return;
     }
 
-    // 更新本地缓存当前设备ID
-    final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(SharedPrefKeys.currentDeviceId, device.did);
+    // 1. 立即乐观更新 UI 状态，让用户感觉“秒切”
+    if (state.hasValue) {
+      // 保留原有播放状态，仅更新设备信息，避免 UI 闪烁或清空
+      state = AsyncData(state.value!.copyWith(currentDevice: device));
+    }
 
-    // 获取之前的设备
-    final prevDevice = currentDevice;
+    // 2. 如果 _lastStableDevice 为空（异常情况），尝试使用切换前的 currentDevice 补救
+    _lastStableDevice ??= currentDevice;
 
-    // 处理设备切换（统一逻辑，内部会更新状态）
-    await _handleDeviceSwitch(prevDevice, device);
+    // 3. 将切换请求发送到流中，由 RxDart 处理防抖和实际的连接逻辑
+    _deviceSwitchSubject.add(device);
   }
 
   /// 发送命令（远程模式）
