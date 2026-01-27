@@ -21,6 +21,7 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mi_music/core/constants/strings_zh.dart';
 
 part 'player_provider.g.dart';
 
@@ -42,10 +43,16 @@ Future<MyAudioHandler> _getAudioHandler() async {
 
   _audioHandlerSingleton = AudioService.init(
     builder: () => MyAudioHandler(),
-    config: const AudioServiceConfig(
+    config: AudioServiceConfig(
       androidNotificationChannelId: 'cn.jokeo.mi_music.channel.audio',
-      androidNotificationChannelName: '小米音乐播放',
-      androidNotificationOngoing: true,
+      androidNotificationChannelName: S.appName,
+      // 通知是否常驻
+      // 注意：当 androidStopForegroundOnPause: false 时，服务保持前台，通知默认就是常驻的。
+      // 此时必须设为 false 以通过断言检查 (!androidNotificationOngoing || androidStopForegroundOnPause)
+      androidNotificationOngoing: false,
+      
+      // 暂停时是否停止前台服务（保持前台以防止在 MIUI 上被杀）
+      // 虽然理论上 false 更保活，但在某些设备上（如 MIUI），如果强制前台可能导致通知行为异常或被系统特殊处理。
       androidStopForegroundOnPause: true,
     ),
   );
