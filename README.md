@@ -6,8 +6,8 @@
 
 ## 下载
 
-- **Android**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest) (v1.1.1)
-- **iOS**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest) (v1.1.1)
+- **Android**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest)
+- **iOS**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest)
 - **蓝奏云**: [下载最新版本](https://wwbts.lanzoue.com/b038zq3psf) (密码: 3rq9)
 
 ## ✨ 功能特性
