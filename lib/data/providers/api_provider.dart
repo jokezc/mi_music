@@ -159,6 +159,95 @@ class AuthInterceptor extends Interceptor {
   }
 }
 
+/// URL 修复拦截器，将后端返回的内网 URL 替换为当前配置的服务器地址
+class UrlFixInterceptor extends Interceptor {
+  final Ref ref;
+
+  UrlFixInterceptor(this.ref);
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    try {
+      final path = response.requestOptions.uri.path;
+
+      // 优化：只解析一次 Server URL
+      final serverUrl = ref.read(settingsProvider).serverUrl;
+      if (serverUrl.isEmpty) {
+        handler.next(response);
+        return;
+      }
+
+      final serverUri = Uri.tryParse(serverUrl);
+      if (serverUri == null || !serverUri.hasScheme || !serverUri.hasAuthority) {
+        handler.next(response);
+        return;
+      }
+
+      // 针对特定接口进行特定的字段修复，避免全量递归，提高性能
+      // 主要是这两个接口: /musicinfos, /musicinfo
+      if (path.endsWith('/musicinfos')) {
+        // List<MusicInfoItem>
+        if (response.data is List) {
+          final list = response.data as List;
+          for (var item in list) {
+            if (item is Map) {
+              _fixMusicInfoMap(item, serverUri);
+            }
+          }
+        }
+      } else if (path.endsWith('/musicinfo')) {
+        // MusicInfoResp (Map)
+        if (response.data is Map) {
+          _fixMusicInfoMap(response.data as Map, serverUri);
+        }
+      }
+    } catch (e) {
+      _logger.e("URL 修复失败: $e");
+    }
+    handler.next(response);
+  }
+
+  // 针对 MusicInfo 结构的修复 (url 和 tags.picture)
+  void _fixMusicInfoMap(Map item, Uri serverUri) {
+    // 修复 url
+    if (item['url'] is String) {
+      item['url'] = _fixUrl(item['url'], serverUri);
+    }
+    // 修复 tags.picture
+    if (item['tags'] is Map) {
+      final tags = item['tags'] as Map;
+      if (tags['picture'] is String) {
+        tags['picture'] = _fixUrl(tags['picture'], serverUri);
+      }
+    }
+  }
+
+  String _fixUrl(String url, Uri serverUri) {
+    if (url.isEmpty) return url;
+    // 性能优化：如果 URL 已经包含目标 host，则直接返回，避免昂贵的解析操作
+    // 这是一个启发式检查，假设文件名或路径中极少包含与 host 完全相同的字符串
+    // 这对于长列表（如 /musicinfos）的性能提升非常显著
+    if (url.contains(serverUri.host)) return url;
+
+    try {
+      // 快速检查：如果不是 http/https 开头，直接返回（可能是相对路径或文件路径）
+      if (!url.startsWith('http')) return url;
+
+      final uri = Uri.parse(url);
+
+      // 判断逻辑：
+      // 比较 URL 中的 host 与用户设置的 serverUrl host 是否一致
+      // 如果不一致（例如后端返回了内网IP 192.168.x.x，而用户设置的是域名），则进行替换
+      if (uri.host != serverUri.host) {
+        return uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString();
+      }
+    } catch (e) {
+      // ignore
+    }
+    return url;
+  }
+}
+
 /// API 配置（从 settingsProvider 中 select 需要的字段）
 /// 只包含与 API 相关的字段：serverUrl、username、password
 @riverpod
@@ -189,6 +278,8 @@ Dio dio(Ref ref) {
   // 先添加认证拦截器（在日志拦截器之前），确保 401 错误能被正确处理
   // 传入 ref 以便更新认证状态
   dio.interceptors.add(AuthInterceptor(ref));
+  // 添加 URL 修复拦截器，确保所有 API 返回的 URL 都指向当前配置的服务器
+  dio.interceptors.add(UrlFixInterceptor(ref));
   // 使用自定义的简单日志拦截器
   dio.interceptors.add(SimpleLogInterceptor());
 
