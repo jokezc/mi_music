@@ -109,6 +109,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   String? _boundDid; // 当前控制器绑定的 did（remote: 设备 did；local: web_device）
   DeviceType? _boundDeviceType; // 当前控制器绑定的设备类型
 
+  // 切换保护标志，用于在 UI 乐观更新后但控制器尚未就绪的“分裂期”拦截操作
+  bool _isSwitching = false;
+
   void _ensureDisposeHook() {
     if (_disposeHookRegistered) return;
     _disposeHookRegistered = true;
@@ -240,7 +243,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     _ensureDisposeHook();
 
     // 初始化设备切换监听
-    _deviceSwitchSubscription ??= _deviceSwitchSubject.debounceTime(const Duration(milliseconds: 500)).listen((
+    _deviceSwitchSubscription ??= _deviceSwitchSubject.debounceTime(const Duration(milliseconds: 200)).listen((
       device,
     ) async {
       try {
@@ -259,6 +262,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         _lastStableDevice = device;
       } catch (e) {
         _logger.e("切换设备任务执行失败: $e");
+      } finally {
+        // 切换完成（无论成功失败），解除操作锁定
+        _isSwitching = false;
       }
     });
 
@@ -532,7 +538,10 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       // 仅保存本地设备的状态
       if (previousState != null && prevDevice.type == DeviceType.local) {
         final deviceKey = _getDeviceKey(prevDevice);
-        unawaited(_savePlayerStateForDevice(previousState, deviceKey));
+        // 切换设备时，旧设备应当被视为“暂停/非活跃”状态
+        // 强制将 isPlaying 设为 false 保存，防止下次恢复时（如冷启动 fallback）误显示为播放中
+        final stateToSave = previousState.copyWith(isPlaying: false);
+        unawaited(_savePlayerStateForDevice(stateToSave, deviceKey));
       }
     }
 
@@ -648,6 +657,10 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
   /// 统一播放歌曲方法
   Future<void> playSong(String songName, {String? playlistName}) async {
+    if (_isSwitching) {
+      _logger.i('设备切换中，忽略 playSong 操作');
+      return;
+    }
     // 防抖处理
     _playSongDebounceTimer?.cancel();
     _pendingSongName = songName;
@@ -662,56 +675,67 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
   /// 播放整个歌单
   Future<void> playPlaylistByName(String playlistName) async {
+    if (_isSwitching) return;
     await _playerController?.playPlaylistByName(playlistName);
   }
 
   /// 在当前播放队列中切换歌曲
   Future<void> playFromQueueIndex(int index) async {
+    if (_isSwitching) return;
     await _playerController?.playFromQueueIndex(index);
   }
 
   /// 播放/暂停
   Future<void> playPause() async {
+    if (_isSwitching) return;
     await _playerController?.playPause();
   }
 
   /// 下一首
   Future<void> skipNext() async {
+    if (_isSwitching) return;
     await _playerController?.skipNext();
   }
 
   /// 上一首
   Future<void> skipPrevious() async {
+    if (_isSwitching) return;
     await _playerController?.skipPrevious();
   }
 
   /// 跳转到指定位置
   Future<void> seek(Duration position) async {
+    if (_isSwitching) return;
     await _playerController?.seek(position);
   }
 
   /// 切换循环模式
   Future<void> toggleLoopMode() async {
+    if (_isSwitching) return;
     await _playerController?.toggleLoopMode();
   }
 
   /// 切换随机模式
   Future<void> toggleShuffleMode() async {
+    if (_isSwitching) return;
     await _playerController?.toggleShuffleMode();
   }
 
   /// 切换播放模式（顺序、单曲、全部、随机）
   Future<void> togglePlayMode() async {
+    if (_isSwitching) return;
     await _playerController?.togglePlayMode();
   }
 
   /// 设置音量
   Future<void> setVolume(int volume) async {
+    if (_isSwitching) return;
     await _playerController?.setVolume(volume);
   }
 
   /// 定时关机
   Future<void> sendShutdownCommand(int minutes) async {
+    if (_isSwitching) return;
     await _playerController?.sendShutdownCommand(minutes);
   }
 
@@ -840,7 +864,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
           currentIndex: stateCache.currentIndex >= 0 ? stateCache.currentIndex : 0,
           position: Duration(seconds: stateCache.positionSeconds),
           duration: Duration(seconds: stateCache.durationSeconds),
-          isPlaying: stateCache.isPlaying,
+          // 恢复状态时强制设为暂停，因为 AudioPlayer 初始化时肯定是不播放的
+          // 避免 App 冷启动或切换回本地时，UI 显示播放中但实际没声音的错乱
+          isPlaying: false,
           loopMode: loopMode,
           shuffleMode: stateCache.shuffleMode,
           currentPlaylistName: stateCache.currentPlaylistName,
@@ -875,6 +901,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
     // 2. 如果 _lastStableDevice 为空（异常情况），尝试使用切换前的 currentDevice 补救
     _lastStableDevice ??= currentDevice;
+
+    // 标记为切换中，拦截后续操作，防止在防抖期或初始化期操作旧设备
+    _isSwitching = true;
 
     // 3. 将切换请求发送到流中，由 RxDart 处理防抖和实际的连接逻辑
     _deviceSwitchSubject.add(device);
