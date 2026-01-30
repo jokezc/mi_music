@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
+import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 
@@ -28,7 +29,11 @@ class PlaylistCover extends ConsumerWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: borderRadius ?? BorderRadius.circular(8),
+          // 统一圆角半径，与默认歌单图标保持一致
+          borderRadius: borderRadius ?? BorderRadius.circular(size * 0.22),
+          boxShadow: [
+            BoxShadow(color: Colors.redAccent.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
         ),
         child: Icon(Icons.favorite_rounded, color: Colors.white, size: size * 0.5),
       );
@@ -64,14 +69,50 @@ class PlaylistCover extends ConsumerWidget {
   /// 构建默认歌单图标
   Widget _buildDefaultPlaylistIcon(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 方案 A (流光渐变)：大众审美，现代音乐App主流风格
+    // 使用高饱和度的渐变色，营造音乐的律动感和活力
+    // 渐变色：从主色调(Indigo)流向强调色(Pink/Purple)
+    final gradient = LinearGradient(
+      colors: isDark
+          ? [AppColors.primaryDark, AppColors.secondaryDark]
+          : [AppColors.primaryLight, AppColors.accentLight],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.grey[200],
-        borderRadius: borderRadius ?? BorderRadius.circular(8),
+        gradient: gradient,
+        borderRadius: borderRadius ?? BorderRadius.circular(size * 0.22), // 更加圆润的圆角 (Squircle-ish)
+        boxShadow: [
+          // 添加轻微的投影，增加立体感
+          BoxShadow(
+            color: (isDark ? AppColors.primary : AppColors.primaryLight).withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Icon(Icons.queue_music_rounded, color: isDark ? Colors.grey[400] : Colors.grey[600], size: size * 0.5),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 背景装饰纹理 (半透明的大图标)
+          Positioned(
+            right: -size * 0.2,
+            bottom: -size * 0.2,
+            child: Icon(Icons.album_rounded, color: Colors.white.withValues(alpha: 0.1), size: size * 0.8),
+          ),
+          // 中心主图标
+          Icon(
+            Icons.album_rounded, // 使用唱片图标，最具音乐代表性
+            color: Colors.white.withValues(alpha: 0.95), // 纯白图标，在渐变上对比度最好
+            size: size * 0.45,
+          ),
+        ],
+      ),
     );
   }
 }
