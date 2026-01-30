@@ -110,6 +110,15 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   // 切换保护标志，用于在 UI 乐观更新后但控制器尚未就绪的“分裂期”拦截操作
   bool _isSwitching = false;
 
+  /// 更新持久化基准状态（用于重置变更检测）
+  void _updatePersistenceBaseline(PlayerState state) {
+    _lastPersistedSong = state.currentSong;
+    _lastPersistedIsPlaying = state.isPlaying;
+    _lastPersistedLoopMode = state.loopMode;
+    _lastPersistedShuffleMode = state.shuffleMode;
+    _lastPersistedPositionSeconds = state.position.inSeconds;
+  }
+
   void _ensureDisposeHook() {
     if (_disposeHookRegistered) return;
     _disposeHookRegistered = true;
@@ -269,11 +278,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         if (controllerState.currentSong != null && controllerState.currentSong!.isNotEmpty) {
           final finalState = controllerState.copyWith(currentDevice: currentDevice);
           // 初始化跟踪变量
-          _lastPersistedSong = finalState.currentSong;
-          _lastPersistedIsPlaying = finalState.isPlaying;
-          _lastPersistedLoopMode = finalState.loopMode;
-          _lastPersistedShuffleMode = finalState.shuffleMode;
-          _lastPersistedPositionSeconds = finalState.position.inSeconds;
+          _updatePersistenceBaseline(finalState);
           return finalState;
         }
       }
@@ -282,11 +287,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     // 如果有恢复的状态，使用它；否则从控制器获取当前状态
     if (restoredState != null) {
       // 初始化跟踪变量，避免恢复后的第一次状态更新被误判为变化
-      _lastPersistedSong = restoredState.currentSong;
-      _lastPersistedIsPlaying = restoredState.isPlaying;
-      _lastPersistedLoopMode = restoredState.loopMode;
-      _lastPersistedShuffleMode = restoredState.shuffleMode;
-      _lastPersistedPositionSeconds = restoredState.position.inSeconds;
+      _updatePersistenceBaseline(restoredState);
       return restoredState;
     }
 
@@ -295,11 +296,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     final finalState =
         currentState?.copyWith(currentDevice: currentDevice) ?? PlayerState(currentDevice: currentDevice);
     // 初始化跟踪变量
-    _lastPersistedSong = finalState.currentSong;
-    _lastPersistedIsPlaying = finalState.isPlaying;
-    _lastPersistedLoopMode = finalState.loopMode;
-    _lastPersistedShuffleMode = finalState.shuffleMode;
-    _lastPersistedPositionSeconds = finalState.position.inSeconds;
+    _updatePersistenceBaseline(finalState);
     return finalState;
   }
 
@@ -545,6 +542,16 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     final initialState = newIsLocal ? await _restorePlayerState(newDevice) : null;
     if (switchGen != _switchGen) return;
 
+    // 优化：提前更新持久化跟踪变量，避免初始化控制器时的状态回调触发多余的保存
+    // 因为 restorePlayerState 刚从磁盘读取，与 initialState 一致，无需再次保存
+    if (initialState != null) {
+      _lastPersistedSong = initialState.currentSong;
+      _lastPersistedIsPlaying = initialState.isPlaying;
+      _lastPersistedLoopMode = initialState.loopMode;
+      _lastPersistedShuffleMode = initialState.shuffleMode;
+      _lastPersistedPositionSeconds = initialState.position.inSeconds;
+    }
+
     // 4. 重新初始化控制器（确保控制器与新设备匹配）
     // 这对于远程设备之间的切换尤其重要，需要更新轮询目标
     await _initializePlayerController(newDevice, initialState: initialState);
@@ -565,11 +572,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
             })();
         state = AsyncData(finalState);
         // 初始化跟踪变量，避免恢复后的第一次状态更新被误判为变化
-        _lastPersistedSong = finalState.currentSong;
-        _lastPersistedIsPlaying = finalState.isPlaying;
-        _lastPersistedLoopMode = finalState.loopMode;
-        _lastPersistedShuffleMode = finalState.shuffleMode;
-        _lastPersistedPositionSeconds = finalState.position.inSeconds;
+        _updatePersistenceBaseline(finalState);
       }
     } catch (e) {
       _logger.e('同步状态失败: $e');
@@ -578,11 +581,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         final emptyState = PlayerState(currentDevice: newDevice);
         state = AsyncData(emptyState);
         // 初始化跟踪变量
-        _lastPersistedSong = emptyState.currentSong;
-        _lastPersistedIsPlaying = emptyState.isPlaying;
-        _lastPersistedLoopMode = emptyState.loopMode;
-        _lastPersistedShuffleMode = emptyState.shuffleMode;
-        _lastPersistedPositionSeconds = emptyState.position.inSeconds;
+        _updatePersistenceBaseline(emptyState);
       }
     }
 
