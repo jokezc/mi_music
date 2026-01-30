@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/cmd_commands.dart';
@@ -166,7 +167,8 @@ class CacheRefreshController extends _$CacheRefreshController {
   /// 4. 更新状态，触发依赖此 Provider 的下游 UI 刷新
   /// 5. 如果播放队列关联了歌单，自动刷新播放队列（通过延迟导入避免循环依赖）
   Future<void> refresh() async {
-    state = const AsyncLoading();
+    // ignore: invalid_use_of_internal_member
+    state = AsyncLoading<DateTime?>().copyWithPrevious(state);
 
     try {
       // 先调用刷新列表接口（发送刷新列表指令）
@@ -211,7 +213,8 @@ class CacheRefreshController extends _$CacheRefreshController {
   /// 3. 更新歌单缓存（保留歌曲信息缓存）
   /// 4. 更新状态，触发依赖此 Provider 的下游 UI 刷新
   Future<void> refreshPlaylistsOnly({String? playlistName}) async {
-    state = const AsyncLoading();
+    // ignore: invalid_use_of_internal_member
+    state = AsyncLoading<DateTime?>().copyWithPrevious(state);
 
     try {
       // 先调用刷新列表接口（发送刷新列表指令）
@@ -283,7 +286,8 @@ class CacheRefreshController extends _$CacheRefreshController {
 @riverpod
 Future<List<String>> cachedPlaylistNames(Ref ref) async {
   // 监听刷新控制器，当刷新完成后自动重新获取
-  ref.watch(cacheRefreshControllerProvider);
+  // 使用 select 只监听 value 变化，避免在 loading 状态（refresh 开始时）触发重建导致 UI 闪烁
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
 
   // 确保缓存已初始化
   await ref.watch(initCacheProvider.future);
@@ -307,7 +311,8 @@ Future<List<String>> cachedPlaylistNames(Ref ref) async {
 @Riverpod(keepAlive: true)
 Future<List<String>> cachedPlaylistSongs(Ref ref, String playlistName) async {
   // 监听刷新控制器，当刷新完成后自动重新获取
-  ref.watch(cacheRefreshControllerProvider);
+  // 使用 select 只监听 value 变化，避免在 loading 状态（refresh 开始时）触发重建导致 UI 闪烁
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
 
   // 确保缓存已初始化
   await ref.watch(initCacheProvider.future);
@@ -332,7 +337,7 @@ Future<List<String>> cachedPlaylistSongs(Ref ref, String playlistName) async {
 /// 从缓存搜索歌曲
 @riverpod
 Future<List<String>> cachedSearchSongs(Ref ref, String query, {String? playlistName}) async {
-  ref.watch(cacheRefreshControllerProvider);
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
 
   await ref.watch(initCacheProvider.future);
   final cacheManager = ref.watch(cacheManagerProvider);
@@ -343,7 +348,7 @@ Future<List<String>> cachedSearchSongs(Ref ref, String query, {String? playlistN
 /// 从缓存获取歌曲信息
 @riverpod
 SongInfoCache? cachedSongInfo(Ref ref, String songName) {
-  ref.watch(cacheRefreshControllerProvider);
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
 
   final cacheManager = ref.watch(cacheManagerProvider);
   return cacheManager.getSongInfo(songName);
@@ -352,7 +357,7 @@ SongInfoCache? cachedSongInfo(Ref ref, String songName) {
 /// 批量从缓存获取歌曲信息
 @riverpod
 Map<String, SongInfoCache> cachedSongInfos(Ref ref, List<String> songNames) {
-  ref.watch(cacheRefreshControllerProvider);
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
 
   final cacheManager = ref.watch(cacheManagerProvider);
   return cacheManager.getSongInfos(songNames);

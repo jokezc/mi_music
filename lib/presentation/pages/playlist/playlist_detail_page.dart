@@ -124,6 +124,7 @@ class PlaylistDetailPage extends ConsumerWidget {
         ],
       ),
       body: musicsAsync.when(
+        skipLoadingOnRefresh: true,
         data: (data) {
           final songs = data.musics;
           if (songs.isEmpty) {

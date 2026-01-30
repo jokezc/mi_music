@@ -6,6 +6,8 @@ alwaysApply: true
 
 我本地已经运行`dart run build_runner watch --delete-conflicting-outputs`命令会实时监测改动并重新生成代码,你不需要在执行生成代码的命令.
 
+每次编码完成`flutter analyze`命令检查代码是否符合规范.
+
 ## 依赖控制
 
 使用最新的依赖版本且需要和 flutter3.38.2 版本保持兼容

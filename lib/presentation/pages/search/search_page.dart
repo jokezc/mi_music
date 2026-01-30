@@ -100,6 +100,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     return ref
         .watch(cachedSearchSongsProvider(_query, playlistName: displayPlaylistName))
         .when(
+          skipLoadingOnRefresh: true,
           data: (songs) {
             if (songs.isEmpty) {
               return Center(

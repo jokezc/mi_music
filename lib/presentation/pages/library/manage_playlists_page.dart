@@ -65,6 +65,7 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
         ],
       ),
       body: playlistAsync.when(
+        skipLoadingOnRefresh: true,
         data: (playlists) {
           if (playlists.isEmpty) {
             return const Center(child: Text('暂无歌单'));
