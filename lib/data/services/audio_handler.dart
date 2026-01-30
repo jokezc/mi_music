@@ -36,25 +36,25 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
     _isRemoteMode = isRemote;
 
     if (_isRemoteMode) {
-      // 进入托管模式：
-      // 1. 先停止播放器，确保 MediaCodec 资源完全释放，避免向已死亡的线程发送消息
-      // 2. 停止本地状态广播（后续状态由 updateStateFromExternal 注入）
+      // 进入托管模式（远程控制模式）：
+      // 仅暂停本地播放器实现“热挂起”，不再释放底层资源（不调用 stop 或 setAudioSource(null)）。
+      // 这样可以彻底消除 MediaCodec 释放时的竞态报错，并实现切回本地时的秒开。
       try {
-        await _player.stop();
-        // 等待一小段时间，确保 MediaCodec 完全释放
-        await Future.delayed(const Duration(milliseconds: 150));
+        if (_player.playing) {
+          await _player.pause();
+        }
       } catch (e) {
-        _logger.e('停止播放器时出错: $e');
+        _logger.w('热挂起本地播放器失败: $e');
       }
 
-      // 3. 清除本地模式特有的回调，防止旧控制器干扰
+      // 清除本地模式特有的回调，防止旧控制器干扰
       _audioSourceFetcher = null;
       _getPlaylist = null;
       _getCurrentIndex = null;
       _onIndexChanged = null;
     } else {
       // 回到本地模式：
-      // 1. 立即广播一次本地状态
+      // 1. 立即广播一次本地状态（此时播放器很可能已经处于 ready/paused 状态，直接同步即可）
       _broadcastState();
     }
   }
@@ -362,11 +362,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         const shouldPlay = true;
 
         // 使用 setAudioSources 替代 ConcatenatingAudioSource
-        await _player.setAudioSources(
-          _playlistSources!,
-          initialIndex: index,
-          initialPosition: position,
-        );
+        await _player.setAudioSources(_playlistSources!, initialIndex: index, initialPosition: position);
 
         if (shouldPlay) {
           _player.play();

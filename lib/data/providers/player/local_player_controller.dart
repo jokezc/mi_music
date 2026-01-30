@@ -97,6 +97,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
   void Function(PlayerState)? _stateUpdateCallback;
   PlayerState? _currentState;
   bool _disposed = false; // 标记控制器是否已被销毁
+  bool _isListening = false; // 是否已经启动状态监听
   int _currentRequestId = 0; // 用于追踪最新的播放请求，防止并发竞态
 
   /// 获取并递增请求 ID
@@ -135,7 +136,12 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
   }
 
   /// 初始化控制器（必须在创建后调用，确保 setRemoteMode 完成）
-  Future<void> initialize() async {
+  Future<void> initialize({PlayerState? initialState}) async {
+    if (initialState != null) {
+      // 修复：初始化时强制设为暂停状态，防止 App 被杀后重启时 UI 显示正在播放但实际已停止（僵尸UI问题）
+      _currentState = initialState.copyWith(isPlaying: false);
+      _logger.i('LocalPlayerControllerImpl: reset state to: ${initialState.toJsonIgnorePlaylist()}');
+    }
     await _initializeHandler();
   }
 
@@ -194,7 +200,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
   Future<void> _initializeHandler() async {
     final handler = _handler;
-    if (handler == null || _disposed) return;
+    if (handler == null) return;
 
     // 确保回到本地模式
     await handler.setRemoteMode(false);
@@ -230,7 +236,6 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
     // 恢复播放状态（循环模式、随机模式、当前歌曲）
     if (_currentState != null) {
-      if (_disposed) return;
       // 1. 恢复循环和随机模式
       // 注意：setRepeatMode 内部会把 LoopMode.all 转换为内部状态并把底层设为 off
       final repeatMode = _mapLoopMode(_currentState!.loopMode);
@@ -240,38 +245,30 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       await handler.setShuffleMode(shuffleMode);
     }
 
-    // 2. 模式设置完成后，立即启动状态监听
-    // 这样可以确保监听器接收到的初始状态是我们刚刚设置好的正确状态
-    // 避免了监听器先接收到默认状态从而覆盖掉 _currentState 的问题
+    // 2. 模式设置完成后，立即启动状态监听（仅需订阅一次）
     _setupStateListeners();
 
     // 3. 恢复当前歌曲（如果不加载，点击播放会无效）
     if (_currentState != null) {
-      if (_disposed) return;
-
       // 智能判断：
-      // 如果 Handler 已经在播放或已加载资源（说明是热重载或从后台切回，且服务存活），则信任 Handler 状态，不要强制暂停，也不要重新加载
-      // 如果 Handler 是空闲状态（说明是冷启动），则执行恢复逻辑并强制暂停
+      // 如果 Handler 已经在播放或已加载资源（说明是热重载、从后台切回、或从远程切换回本地且处于“热挂起”状态），则信任 Handler 状态。
+      // 注意：由于我们现在切换到远程时仅 pause 不 stop，所以此时 processingState 通常是 ready 或 buffered。
       final isServiceActive =
           handler.player.playing ||
           (handler.player.processingState != ProcessingState.idle && handler.player.duration != null);
 
       if (isServiceActive) {
-        _logger.i("检测到 AudioHandler 正在运行，跳过恢复逻辑，直接同步状态");
+        _logger.i("检测到 AudioHandler 处于活跃或热挂起状态，直接同步状态");
         await _syncFromHandler(handler, fallbackState: _currentState);
       } else {
         // 冷启动场景：
-        // 注意：如果恢复过程耗时较长，此时用户可能已经发起了新的播放请求（如 playPlaylistByName）
-        // 因此在恢复完成后，需要检查 _currentState 是否已经被新的操作更新，避免用旧状态覆盖新状态
         if (_currentState!.currentSong != null && _currentState!.currentSong!.isNotEmpty) {
           // 记录开始恢复时的状态版本，并强制设为暂停，防止重启自动播放
           final stateAtStart = _currentState!.copyWith(isPlaying: false);
 
           // 立即更新本地状态，确保后续逻辑（如 _syncFromHandler）能感知到我们期望是暂停的
-          // 使用 _updateState 确保 UI 立即刷新为暂停状态，解决"掉后台后进度条还在动"的问题
           _updateState(stateAtStart);
 
-          // 必须 await：否则 _isRestoring 可能长时间为 true，导致 UI 监听被抑制
           await _restoreCurrentSong(handler, stateAtStart);
         }
       }
@@ -318,7 +315,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
     final requestId = _getNextRequestId();
     try {
       final savedSong = state.currentSong;
-      if (savedSong == null || savedSong.isEmpty || _disposed) return;
+      if (savedSong == null || savedSong.isEmpty) return;
 
       // 1. 初始竞态检查
       if (!_isRequestValid(requestId)) return;
@@ -607,15 +604,8 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
   void _setupStateListeners() {
     final handler = _handler;
-    if (handler == null) return;
-
-    // 防止重复订阅
-    if (_subs.isNotEmpty) {
-      for (final sub in _subs) {
-        sub.cancel();
-      }
-      _subs.clear();
-    }
+    if (handler == null || _isListening) return;
+    _isListening = true;
 
     _subs.add(
       handler.player.playerStateStream.map((s) => s.playing).distinct().listen((playing) {
@@ -834,13 +824,18 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
     _shutdownTimer = null;
 
     // 遍历副本取消订阅
-    for (final sub in subsCopy) {
-      try {
-        await sub.cancel();
-      } catch (e) {
-        // 忽略取消订阅时的错误
-        _logger.e("取消订阅时出错: $e");
-      }
+    // 必须等待所有订阅完全取消，确保不再有新的事件进入
+    if (subsCopy.isNotEmpty) {
+      await Future.wait(
+        subsCopy.map((sub) async {
+          try {
+            await sub.cancel();
+          } catch (e) {
+            // 忽略取消订阅时的错误
+            _logger.e("取消订阅时出错: $e");
+          }
+        }),
+      );
     }
   }
 
