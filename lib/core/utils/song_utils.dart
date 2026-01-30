@@ -9,6 +9,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
+import 'package:mi_music/presentation/widgets/add_to_playlist_sheet.dart';
 
 final _logger = Logger();
 
@@ -47,6 +48,16 @@ class SongUtils {
         // 如果是最后一首，尝试暂停（目前没有直接停止接口，先不做额外处理，API删除后播放器自然会报错或停止）
       }
     }
+  }
+
+  /// 添加歌曲到歌单
+  static Future<void> addToPlaylist(BuildContext context, WidgetRef ref, String song) async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allow full height control
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => AddToPlaylistSheet(song: song),
+    );
   }
 
   /// 删除歌曲

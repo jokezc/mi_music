@@ -361,9 +361,9 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         // 既然发生错误了，我们通常希望自动恢复播放
         const shouldPlay = true;
 
-        // 使用 ConcatenatingAudioSource 重新设置播放源
-        await _player.setAudioSource(
-          ConcatenatingAudioSource(children: _playlistSources!),
+        // 使用 setAudioSources 替代 ConcatenatingAudioSource
+        await _player.setAudioSources(
+          _playlistSources!,
           initialIndex: index,
           initialPosition: position,
         );

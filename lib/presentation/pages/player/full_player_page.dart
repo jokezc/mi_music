@@ -148,9 +148,21 @@ class _PlayerAppBar extends ConsumerWidget {
                           if (currentPlaylistName != null) {
                             SongUtils.removeSongFromPlaylist(context, ref, currentSong, currentPlaylistName);
                           }
+                        } else if (value == 'add_to_playlist') {
+                          SongUtils.addToPlaylist(context, ref, currentSong);
                         }
                       },
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'add_to_playlist',
+                          child: Row(
+                            children: [
+                              Icon(Icons.playlist_add_rounded),
+                              SizedBox(width: 8),
+                              Text('添加到歌单'),
+                            ],
+                          ),
+                        ),
                         if (isCustomPlaylist)
                           const PopupMenuItem(
                             value: 'remove',

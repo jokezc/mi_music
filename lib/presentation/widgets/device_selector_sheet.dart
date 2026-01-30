@@ -307,9 +307,17 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       subtitleText = device.did == BaseConstants.webDevice ? '本机' : device.did;
                     }
                   } else {
-                    subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;
-                    isDevicePlaying = isPlaying;
-                    if (isPlaying) showEqualizer = true;
+                    if (isSelected) {
+                      subtitleText = (currentPlayerSong != null && currentPlayerSong.isNotEmpty)
+                          ? currentPlayerSong
+                          : (currentMusic.isNotEmpty ? currentMusic : device.did);
+                      isDevicePlaying = isPlayerPlaying;
+                    } else {
+                      subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;
+                      isDevicePlaying = isPlaying;
+                    }
+
+                    if (isDevicePlaying) showEqualizer = true;
                   }
 
                   // 确定 trailing 显示内容
