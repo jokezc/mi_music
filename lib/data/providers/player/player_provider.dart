@@ -98,6 +98,8 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   String? _pendingSongName;
   String? _pendingPlaylistName;
   Timer? _saveStateDebounceTimer;
+  // 添加这个标志位，用于在关键状态保存等待期间拦截位置更新的防抖重置
+  bool _isCriticalTimerPending = false;
   int _lastPersistedPositionSeconds = -1;
   bool? _lastPersistedIsPlaying;
   String? _lastPersistedSong;
@@ -784,27 +786,57 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       return;
     }
 
-    _saveStateDebounceTimer?.cancel();
-
-    // 如果歌曲变化、播放状态变化或播放模式变化，立即保存（不等待防抖），确保切换歌曲、暂停/播放或切换播放模式时状态能及时保存
     if (songChanged || playingChanged || loopModeChanged || shuffleModeChanged) {
-      unawaited(
-        savePlayerState().then((_) {
-          // 以落盘时的最新 state 为准，确保 _lastPersisted* 与实际保存的状态一致
-          final latest = state.value;
-          if (latest != null) {
-            _lastPersistedPositionSeconds = latest.position.inSeconds;
-            _lastPersistedIsPlaying = latest.isPlaying;
-            _lastPersistedSong = latest.currentSong;
-            _lastPersistedLoopMode = latest.loopMode;
-            _lastPersistedShuffleMode = latest.shuffleMode;
-          }
-        }),
+      _logger.d(
+        '触发关键状态保存: songChanged=$songChanged ($_lastPersistedSong->${s.currentSong}), '
+        'playingChanged=$playingChanged ($_lastPersistedIsPlaying->${s.isPlaying}), '
+        'loopModeChanged=$loopModeChanged, shuffleModeChanged=$shuffleModeChanged',
       );
+
+      _saveStateDebounceTimer?.cancel();
+
+      // 立即更新关键状态的跟踪变量（乐观更新）
+      // 防止在防抖等待期间（200ms），后续的高频状态流（如位置更新）携带相同的 playing/song 状态进来，
+      // 导致与旧的 _lastPersisted* 对比一直为 true，从而不断重置 Timer，导致“饿死”。
+      _lastPersistedSong = s.currentSong;
+      _lastPersistedIsPlaying = s.isPlaying;
+      _lastPersistedLoopMode = s.loopMode;
+      _lastPersistedShuffleMode = s.shuffleMode;
+
+      // 标记有关键 Timer 正在排队
+      _isCriticalTimerPending = true;
+
+      _saveStateDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+        _isCriticalTimerPending = false;
+
+        unawaited(
+          savePlayerState()
+              .then((_) {
+                // 保存成功后更新位置跟踪变量（位置不使用乐观更新，因为它需要真实的防抖/节流）
+                final latest = state.value;
+                if (latest != null) {
+                  _lastPersistedPositionSeconds = latest.position.inSeconds;
+                }
+              })
+              .catchError((e) {
+                _logger.e("保存播放状态失败: $e");
+              }),
+        );
+      });
     } else if (positionChanged) {
-      // 只有位置变化时使用防抖（统一500ms，减少频繁写入）
-      _saveStateDebounceTimer = Timer(const Duration(milliseconds: 500), () {
-        // 以落盘时的最新 state 为准，确保 _lastPersisted* 与实际保存的状态一致
+      // 如果当前有一个关键状态的 Timer 正在排队（比如刚切歌），
+      // 我们不应该因为位置变化而重置它（否则切歌保存会被无限推迟）。
+      // 位置变化可以直接“搭车”这次关键保存。
+      if (_isCriticalTimerPending) {
+        return;
+      }
+      // 如果已经有计时器在运行，则跳过（节流），防止高频更新导致计时器不断重置而无法触发
+      if (_saveStateDebounceTimer?.isActive ?? false) {
+        return;
+      }
+
+      // 只有位置变化时使用节流（统一1000ms，减少频繁写入）
+      _saveStateDebounceTimer = Timer(const Duration(milliseconds: 1000), () {
         unawaited(
           savePlayerState().then((_) {
             final latest = state.value;
