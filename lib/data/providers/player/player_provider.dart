@@ -54,7 +54,7 @@ Future<MyAudioHandler> _getAudioHandler() async {
 
       // 暂停时是否停止前台服务（保持前台以防止在 MIUI 上被杀）
       // 虽然理论上 false 更保活，但在某些设备上（如 MIUI），如果强制前台可能导致通知行为异常或被系统特殊处理。
-      androidStopForegroundOnPause: true,
+      androidStopForegroundOnPause: false,
     ),
   );
 
