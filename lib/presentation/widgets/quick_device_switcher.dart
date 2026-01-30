@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/cmd_commands.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/models/api_models.dart';
@@ -9,7 +10,6 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
-import 'package:mi_music/core/constants/base_constants.dart';
 
 final _logger = Logger();
 
@@ -292,11 +292,6 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
 
     try {
       await playerNotifier.setDevice(device);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('已切换到: ${device.name ?? '未知设备'}'), duration: const Duration(seconds: 1)));
-      }
     } catch (e) {
       _logger.e("切换设备失败: $e");
       if (mounted) {
@@ -343,14 +338,15 @@ class _DeviceCard extends ConsumerWidget {
         currentMusic = localCache?.currentSong ?? '';
       }
     } else {
-      // 远程设备：优先使用 API 获取的状态
-      isPlaying = playingStatus?.isPlaying ?? false;
-      currentMusic = playingStatus?.curMusic ?? '';
-
-      // 如果远程设备是当前选中设备，且 API 状态为空（可能尚未获取），尝试使用 PlayerState
-      if (isSelected && playingStatus == null) {
+      // 远程设备
+      if (isSelected) {
+        // 如果是当前选中设备，优先使用 PlayerState (实时状态)
         isPlaying = playerIsPlaying;
-        currentMusic = playerSong ?? '';
+        currentMusic = (playerSong != null && playerSong.isNotEmpty) ? playerSong : (playingStatus?.curMusic ?? '');
+      } else {
+        // 其他设备使用 API 获取的状态
+        isPlaying = playingStatus?.isPlaying ?? false;
+        currentMusic = playingStatus?.curMusic ?? '';
       }
     }
 

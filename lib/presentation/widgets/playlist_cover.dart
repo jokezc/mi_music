@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
-import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 
@@ -24,14 +23,14 @@ class PlaylistCover extends ConsumerWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.red.shade400, Colors.red.shade600],
+          gradient: const LinearGradient(
+            colors: [Colors.redAccent, Colors.pinkAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: borderRadius ?? BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 24),
+        child: Icon(Icons.favorite_rounded, color: Colors.white, size: size * 0.5),
       );
     }
 
@@ -39,7 +38,7 @@ class PlaylistCover extends ConsumerWidget {
     final systemPlaylistNames = {'临时搜索列表', '所有歌曲', '所有电台', '全部', '下载', '其他', '最近新增'};
 
     if (systemPlaylistNames.contains(playlistName)) {
-      return _buildDefaultPlaylistIcon();
+      return _buildDefaultPlaylistIcon(context);
     }
 
     // 用户歌单：尝试获取第一首歌曲的封面
@@ -59,19 +58,20 @@ class PlaylistCover extends ConsumerWidget {
     }
 
     // 没有歌曲或获取失败，显示默认图标
-    return _buildDefaultPlaylistIcon();
+    return _buildDefaultPlaylistIcon(context);
   }
 
   /// 构建默认歌单图标
-  Widget _buildDefaultPlaylistIcon() {
+  Widget _buildDefaultPlaylistIcon(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        color: isDark ? Colors.grey[800] : Colors.grey[200],
         borderRadius: borderRadius ?? BorderRadius.circular(8),
       ),
-      child: const Icon(Icons.playlist_play_rounded, color: Colors.white, size: 24),
+      child: Icon(Icons.queue_music_rounded, color: isDark ? Colors.grey[400] : Colors.grey[600], size: size * 0.5),
     );
   }
 }

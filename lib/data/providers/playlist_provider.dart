@@ -124,7 +124,6 @@ Future<List<PlaylistUiModel>> playlistUiList(Ref ref) async {
 @riverpod
 Future<PlaylistNamesResp> playlistNames(Ref ref) async {
   try {
-    // 手动制造异常
     return await ref.watch(apiClientProvider).getPlaylistNames();
   } catch (e, stackTrace) {
     _logger.e('获取歌单列表失败: $e', stackTrace: stackTrace);

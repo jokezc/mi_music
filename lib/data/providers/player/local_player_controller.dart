@@ -71,7 +71,7 @@ Future<AudioSource> createCachedAudioSource({
     _logger.e("LockCachingAudioSource 失败，降级为在线播放: $e");
     // 降级策略：仅在线播放
     // 注意：运行时如果代理失败，AudioHandler 中还有二次降级策略 (_attemptFallbackForCurrentItem)
-    
+
     // 尝试获取封面以便在降级时也能显示
     Uri? artUri;
     try {
@@ -162,6 +162,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
   }
 
   /// 构建音频源（辅助方法）
+  // ignore: unused_element
   Future<AudioSource> _buildAudioSource(String songName, {MusicCacheManager? cacheManager, Dio? dio}) async {
     final MusicCacheManager cache = cacheManager ?? _ref.read(cacheManagerProvider);
     final Dio dioClient = dio ?? _ref.read(dioProvider);
@@ -367,12 +368,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         final List<String> validSongs = [];
 
         for (var name in playlist) {
-          sourceFutures.add(_fetchAudioSource(
-            name,
-            cacheManager: cacheManager,
-            dio: dio,
-            allowNetworkFallback: true,
-          ));
+          sourceFutures.add(_fetchAudioSource(name, cacheManager: cacheManager, dio: dio, allowNetworkFallback: true));
         }
 
         final List<AudioSource?> sources = await Future.wait(sourceFutures);
@@ -861,7 +857,12 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         final index = songs.indexOf(songName);
 
         if (songs.isNotEmpty) {
-          await _playPlaylistInternal(songs, playlistName: playlistName, initialIndex: index >= 0 ? index : 0, requestId: requestId);
+          await _playPlaylistInternal(
+            songs,
+            playlistName: playlistName,
+            initialIndex: index >= 0 ? index : 0,
+            requestId: requestId,
+          );
           return;
         }
       }
@@ -937,14 +938,23 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
     }
   }
 
-  @override
   Future<void> playPlaylist(List<String> songNames, {String? playlistName, int initialIndex = 0}) async {
     final requestId = _getNextRequestId();
-    await _playPlaylistInternal(songNames, playlistName: playlistName, initialIndex: initialIndex, requestId: requestId);
+    await _playPlaylistInternal(
+      songNames,
+      playlistName: playlistName,
+      initialIndex: initialIndex,
+      requestId: requestId,
+    );
   }
 
   /// 内部播放列表逻辑，支持 requestId 校验和并行构建
-  Future<void> _playPlaylistInternal(List<String> songNames, {String? playlistName, int initialIndex = 0, required int requestId}) async {
+  Future<void> _playPlaylistInternal(
+    List<String> songNames, {
+    String? playlistName,
+    int initialIndex = 0,
+    required int requestId,
+  }) async {
     // 1. 批量获取歌曲信息
     final cacheManager = _ref.read(cacheManagerProvider);
     final cachedInfos = cacheManager.getSongInfos(songNames);
@@ -975,7 +985,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
     // 2. 并行构建列表音源
     final dio = _ref.read(dioProvider);
-    
+
     // 使用 Future.wait 并行处理，提高大歌单加载速度
     final List<Future<AudioSource?>> sourceFutures = [];
     final List<String> potentialSongs = [];
@@ -985,13 +995,15 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       if (info != null && info.url.isNotEmpty) {
         final duration = _getSongDuration(name);
         potentialSongs.add(name);
-        sourceFutures.add(createCachedAudioSource(
-          url: info.url,
-          songName: name,
-          cacheManager: cacheManager,
-          dio: dio,
-          duration: duration,
-        ));
+        sourceFutures.add(
+          createCachedAudioSource(
+            url: info.url,
+            songName: name,
+            cacheManager: cacheManager,
+            dio: dio,
+            duration: duration,
+          ),
+        );
       }
     }
 
