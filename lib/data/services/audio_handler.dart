@@ -131,7 +131,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         processingState: AudioProcessingState.ready, // 远程模式默认为 ready
         playing: state.isPlaying,
         updatePosition: state.position,
-        bufferedPosition: state.position, // 远程无法获取缓冲，暂设为当前位置
+        bufferedPosition: state.duration, // 远程无法获取缓冲，暂设为当前位置
         speed: 1.0,
         queueIndex: state.currentIndex,
         repeatMode: repeatMode,

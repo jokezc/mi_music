@@ -96,8 +96,8 @@
   "debug.showInStatusBar": "onFirstSessionStart", // 首次调试时在状态栏显示
   // ==================== Dart 调试相关设置 ====================
   // 调试范围控制
-  "dart.debugExternalPackageLibraries": false, // 不调试外部包代码
-  "dart.debugSdkLibraries": false, // 不调试 SDK 代码
+  "dart.debugExternalPackageLibraries": true, // 允许调试外部包代码
+  "dart.debugSdkLibraries": true, // 允许调试 SDK 代码
   "dart.maxLogLineLength": 2000, // 日志行最大长度
   // 警告设置
   "dart.warnWhenEditingFilesInBuildFolder": true, // 编辑 build 文件夹时警告

@@ -31,9 +31,6 @@ class PlaylistCover extends ConsumerWidget {
           ),
           // 统一圆角半径，与默认歌单图标保持一致
           borderRadius: borderRadius ?? BorderRadius.circular(size * 0.22),
-          boxShadow: [
-            BoxShadow(color: Colors.redAccent.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
         ),
         child: Icon(Icons.favorite_rounded, color: Colors.white, size: size * 0.5),
       );
@@ -87,14 +84,6 @@ class PlaylistCover extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: borderRadius ?? BorderRadius.circular(size * 0.22), // 更加圆润的圆角 (Squircle-ish)
-        boxShadow: [
-          // 添加轻微的投影，增加立体感
-          BoxShadow(
-            color: (isDark ? AppColors.primary : AppColors.primaryLight).withValues(alpha: 0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Stack(
         alignment: Alignment.center,
