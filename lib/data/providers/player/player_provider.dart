@@ -87,6 +87,8 @@ Future<MyAudioHandler> audioHandler(Ref ref) async {
 @riverpod
 class UnifiedPlayerController extends _$UnifiedPlayerController {
   IPlayerController? _playerController;
+  LocalPlayerControllerImpl? _localController;
+  RemotePlayerControllerImpl? _remoteController;
   Timer? _playSongDebounceTimer;
   // 使用 Subject 处理设备切换，配合 debounceTime 实现优雅防抖
   final _deviceSwitchSubject = PublishSubject<Device>();
@@ -104,11 +106,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
   // 生命周期/竞态控制
   bool _disposeHookRegistered = false;
-  int _controllerGen = 0; // 控制器绑定代际：重建/切换设备时递增，用于丢弃旧回调
   int _switchGen = 0; // 设备切换代际：防止并发切换时旧流程覆盖新流程
-  String? _boundDid; // 当前控制器绑定的 did（remote: 设备 did；local: web_device）
-  DeviceType? _boundDeviceType; // 当前控制器绑定的设备类型
-
   // 切换保护标志，用于在 UI 乐观更新后但控制器尚未就绪的“分裂期”拦截操作
   bool _isSwitching = false;
 
@@ -137,51 +135,22 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       _saveStateDebounceTimer?.cancel();
 
       // 重要：dispose 走异步，但 onDispose 不会 await；这里用 unawaited 丢到后台收尾
-      final controller = _playerController;
+      final local = _localController;
+      final remote = _remoteController;
+      _localController = null;
+      _remoteController = null;
       _playerController = null;
-      unawaited(controller?.dispose() ?? Future.value());
+
+      unawaited(local?.dispose() ?? Future.value());
+      unawaited(remote?.dispose() ?? Future.value());
     } catch (e) {
       _logger.e('UnifiedPlayerController dispose 错误: $e');
     }
   }
 
-  Future<void> _bindControllerCallback(Device? currentDevice) async {
-    // 每次初始化（包括 remote->remote 切换 did）都重新绑定一次回调，严格校验 did + 代际，防止串台
-    _controllerGen++;
-    final gen = _controllerGen;
-    _boundDid = currentDevice?.did;
-    _boundDeviceType = currentDevice?.type;
-
-    await _playerController?.setStateUpdateCallback((newState) {
-      if (!_shouldAcceptControllerUpdate(gen: gen, newState: newState)) return;
-      _applyControllerUpdate(newState);
-    });
-  }
-
-  bool _shouldAcceptControllerUpdate({required int gen, required PlayerState newState}) {
-    // 1) 丢弃旧控制器/旧设备的回调
-    if (gen != _controllerGen) return false;
-    // 2) build 未完成前 state 还没有值；避免在 AsyncLoading 阶段抢写
-    if (!state.hasValue) return false;
-
-    final activeDevice = state.value!.currentDevice;
-    final activeType = activeDevice?.type;
-    final activeDid = activeDevice?.did;
-
-    // 3) 类型不匹配：直接丢弃
-    if (_boundDeviceType != null && activeType != null && _boundDeviceType != activeType) return false;
-
-    // 4) remote 模式必须 did 匹配（彻底解决 remote↔remote 串台）
-    if (_boundDeviceType == DeviceType.remote) {
-      if (_boundDid != null && activeDid != null && _boundDid != activeDid) return false;
-      final newDid = newState.currentDevice?.did;
-      if (_boundDid != null && newDid != null && _boundDid != newDid) return false;
-    }
-
-    return true;
-  }
-
   void _applyControllerUpdate(PlayerState newState) {
+    if (!state.hasValue) return;
+
     final activeDevice = state.value!.currentDevice;
     final activeType = activeDevice?.type;
 
@@ -243,30 +212,42 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     _ensureDisposeHook();
 
     // 初始化设备切换监听
-    _deviceSwitchSubscription ??= _deviceSwitchSubject.debounceTime(const Duration(milliseconds: 200)).listen((
-      device,
-    ) async {
-      try {
-        // 这里的 _lastStableDevice 是切换开始前的设备
-        // 如果用户点击 A -> B -> C，_lastStableDevice 始终是 A，直到 C 真正切换成功
-        final prevDevice = _lastStableDevice;
+    // 使用 asyncMap 确保切换任务串行执行，避免并发导致的资源冲突（如 MediaCodec 未释放）
+    _deviceSwitchSubscription ??= _deviceSwitchSubject
+        .debounceTime(const Duration(milliseconds: 200))
+        .asyncMap((device) async {
+          // 确保在处理队列中的下一个任务时，状态仍为切换中
+          _isSwitching = true;
+          try {
+            // 优化：如果在排队期间用户已经切换到了更新的设备，则跳过当前这个中间状态的切换任务
+            // 这避免了"A->B->C"场景下，为了处理B而浪费时间，导致C的响应变慢
+            final latestTarget = state.hasValue ? state.value?.currentDevice : null;
+            if (latestTarget != null && latestTarget.did != device.did) {
+              _logger.i("跳过过期的设备切换任务: ${device.did} -> 最新目标: ${latestTarget.did}");
+              return;
+            }
 
-        // 更新本地缓存当前设备ID
-        final prefs = ref.read(sharedPreferencesProvider);
-        await prefs.setString(SharedPrefKeys.currentDeviceId, device.did);
+            // 这里的 _lastStableDevice 是切换开始前的设备
+            // 如果用户点击 A -> B -> C，_lastStableDevice 始终是 A，直到 C 真正切换成功
+            final prevDevice = _lastStableDevice;
 
-        // 执行切换
-        await _handleDeviceSwitch(prevDevice, device);
+            // 更新本地缓存当前设备ID
+            final prefs = ref.read(sharedPreferencesProvider);
+            await prefs.setString(SharedPrefKeys.currentDeviceId, device.did);
 
-        // 切换成功后，更新稳定设备记录
-        _lastStableDevice = device;
-      } catch (e) {
-        _logger.e("切换设备任务执行失败: $e");
-      } finally {
-        // 切换完成（无论成功失败），解除操作锁定
-        _isSwitching = false;
-      }
-    });
+            // 执行切换
+            await _handleDeviceSwitch(prevDevice, device);
+
+            // 切换成功后，更新稳定设备记录
+            _lastStableDevice = device;
+          } catch (e) {
+            _logger.e("切换设备任务执行失败: $e");
+          } finally {
+            // 切换完成（无论成功失败），解除操作锁定
+            _isSwitching = false;
+          }
+        })
+        .listen((_) {});
 
     final currentDevice = await _getCurrentDevice();
     _lastStableDevice = currentDevice; // 初始化稳定设备
@@ -326,43 +307,40 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     final isLocalMode = currentDevice.type == DeviceType.local;
     final isRemoteMode = currentDevice.type == DeviceType.remote;
 
-    // 判断是否需要重建控制器（类型不同时必须重建）
-    final needsRecreate =
-        _playerController == null ||
-        (isLocalMode && _playerController is! LocalPlayerControllerImpl) ||
-        (isRemoteMode && _playerController is! RemotePlayerControllerImpl);
+    final handler = await ref.read(audioHandlerProvider.future);
 
-    if (needsRecreate) {
-      // 记录旧控制器
-      final oldController = _playerController;
-      _playerController = null;
-
-      // 销毁旧控制器（确保在创建新控制器前完成销毁）
-      // 注意：不在这里停止播放器，因为 AudioPlayer 是共享单例
-      // 播放器的停止和模式切换由 setRemoteMode 统一管理
-      if (oldController != null) {
-        await oldController.dispose();
+    if (isLocalMode) {
+      // 获取或创建本地控制器
+      if (_localController == null) {
+        _localController = LocalPlayerControllerImpl(handler, ref, initialState: initialState);
+        // 绑定持久回调
+        await _localController!.setStateUpdateCallback((newState) {
+          if (_playerController == _localController) {
+            _applyControllerUpdate(newState);
+          }
+        });
       }
+      _playerController = _localController;
 
-      // 创建新控制器
-      final handler = await ref.read(audioHandlerProvider.future);
-
-      if (isLocalMode) {
-        final localController = LocalPlayerControllerImpl(handler, ref, initialState: initialState);
-        // 等待本地控制器初始化完成（确保 setRemoteMode(false) 执行完毕）
-        await localController.initialize();
-        _playerController = localController;
-      } else {
-        final remoteController = RemotePlayerControllerImpl(ref, handler);
-        // 等待远程控制器初始化完成（确保 setRemoteMode 执行完毕）
-        // setRemoteMode(true) 内部会停止播放器并等待 MediaCodec 释放
-        await remoteController.initialize();
-        _playerController = remoteController;
+      // 等待本地控制器初始化完成（确保 setRemoteMode(false) 执行完毕）
+      await _localController!.initialize(initialState: initialState);
+    } else {
+      // 获取或创建远程控制器
+      if (_remoteController == null) {
+        _remoteController = RemotePlayerControllerImpl(ref, handler);
+        // 绑定持久回调
+        await _remoteController!.setStateUpdateCallback((newState) {
+          if (_playerController == _remoteController) {
+            _applyControllerUpdate(newState);
+          }
+        });
       }
+      _playerController = _remoteController;
+
+      // 等待远程控制器初始化完成（确保 setRemoteMode 执行完毕）
+      // setRemoteMode(true) 内部会停止播放器并等待 MediaCodec 释放
+      await _remoteController!.initialize();
     }
-
-    // 绑定回调
-    await _bindControllerCallback(currentDevice);
 
     // 远程模式：更新轮询目标
     if (isRemoteMode && _playerController is RemotePlayerControllerImpl) {
@@ -552,8 +530,14 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       final shouldPause = typeChanged || (pauseCurrentDevice && previousState?.isPlaying == true);
 
       if (shouldPause) {
-        await _pauseCurrentDevice(prevDevice);
-        if (switchGen != _switchGen) return;
+        // 优化：如果是从本地切换到远程，不需要单独调用 pause，因为 setRemoteMode 会强制 stop
+        // 这样可以减少一次 IPC 调用，且避免两次连续的状态变更导致竞争
+        if (prevIsLocal && !newIsLocal) {
+          _logger.i("切换到远程设备，跳过单独的 pause 操作，交由 setRemoteMode 统一处理");
+        } else {
+          await _pauseCurrentDevice(prevDevice);
+          if (switchGen != _switchGen) return;
+        }
       }
     }
 
