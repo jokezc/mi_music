@@ -217,6 +217,7 @@ class _PlaylistsTab extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return playlistsAsync.when(
+      skipLoadingOnRefresh: true,
       data: (allPlaylists) {
         // 过滤掉隐藏的歌单
         final visiblePlaylists = allPlaylists.where((p) => !p.isHidden).toList();
@@ -397,6 +398,7 @@ class _AllSongsTabState extends ConsumerState<_AllSongsTab> {
           child: ref
               .watch(cachedPlaylistMusicsProvider('全部'))
               .when(
+                skipLoadingOnRefresh: true,
                 data: (data) {
                   // 所有歌曲 Tab 固定展示「全部」歌单内容
                   final songs = data.musics;

@@ -1,0 +1,4 @@
+storeFile = mi_music.jks
+keyAlias = mi_music
+storePassword =
+keyPassword =

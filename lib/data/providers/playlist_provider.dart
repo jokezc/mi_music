@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
@@ -123,6 +124,9 @@ Future<List<PlaylistUiModel>> playlistUiList(Ref ref) async {
 
 @riverpod
 Future<PlaylistNamesResp> playlistNames(Ref ref) async {
+  // 监听缓存刷新控制器，当触发刷新时自动重新获取自定义歌单列表
+  // 使用 select 只监听 value 变化，避免在 loading 状态（refresh 开始时）触发重建导致 UI 闪烁
+  ref.watch(cacheRefreshControllerProvider.select((v) => v.hasValue ? v.value : null));
   try {
     return await ref.watch(apiClientProvider).getPlaylistNames();
   } catch (e, stackTrace) {
@@ -155,19 +159,20 @@ class PlaylistController extends _$PlaylistController {
 
   Future<void> createPlaylist(String name) async {
     await ref.read(apiClientProvider).playlistAdd(PlayListObj(name: name));
-    ref.invalidate(playlistNamesProvider);
+    // 不需要手动 invalidate，因为 refreshPlaylistsOnly 会更新 cacheRefreshControllerProvider
+    // 而 playlistNamesProvider 监听了 cacheRefreshControllerProvider，会自动刷新
     await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly();
   }
 
   Future<void> deletePlaylist(String name) async {
     await ref.read(apiClientProvider).playlistDel(PlayListObj(name: name));
-    ref.invalidate(playlistNamesProvider);
+    // 同上，利用监听自动刷新
     await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly();
   }
 
   Future<void> renamePlaylist(String oldName, String newName) async {
     await ref.read(apiClientProvider).playlistUpdateName(PlayListUpdateObj(oldname: oldName, newname: newName));
-    ref.invalidate(playlistNamesProvider);
+    // 同上，利用监听自动刷新
     await ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly();
   }
 

@@ -49,6 +49,7 @@ class AddToPlaylistSheet extends ConsumerWidget {
           // List
           Expanded(
             child: playlistsAsync.when(
+              skipLoadingOnRefresh: true,
               data: (resp) {
                 // Manually construct the list: Like playlist + Custom playlists
                 final customNames = resp.names.where((name) => name != BaseConstants.likePlaylist).toList();
