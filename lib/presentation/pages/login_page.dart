@@ -6,6 +6,7 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
+import 'package:mi_music/presentation/widgets/setting_host_port_check_listener.dart';
 
 final _logger = Logger();
 
@@ -61,9 +62,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final authResult = await verifyAuth(ref, skipStateUpdate: true);
 
       if (authResult.isAuthenticated) {
+        // 登录成功不再清理：退出时已清理过；换地址在连接页测连时清理即可
         // 认证成功，更新认证状态并显示版本信息
         ref.read(authStateProvider.notifier).setAuthorized();
-        // 显示版本信息并跳转
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -71,7 +72,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               backgroundColor: Colors.green,
             ),
           );
-          context.go('/');
+          // 连接成功后立即检查 getSetting 与当前连接 host/port 是否一致，不一致则弹窗
+          final mismatch = await checkSettingHostPortMatch(ref);
+          if (mounted && mismatch != null) {
+            await showHostPortMismatchDialog(context, ref, mismatch);
+          }
+          if (mounted) context.go('/');
         }
       } else {
         // 认证失败或其他错误，显示错误信息（不跳转，因为已经在登录页）

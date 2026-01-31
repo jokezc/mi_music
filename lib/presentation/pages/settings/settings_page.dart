@@ -9,19 +9,53 @@ import 'package:mi_music/presentation/pages/settings/sections/voice_control_sect
 import 'package:mi_music/presentation/pages/settings/sections/dialog_tts_section.dart';
 
 /// 设置页面主页（支持响应式布局）
+/// [initialSection] 可选，用于从路由跳转时直接打开指定 section，如 'service' 表示服务配置
 class SettingsPage extends ConsumerStatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.initialSection});
+
+  /// 路由 query 的 section 名：account | directory | service | play | voice | dialog
+  final String? initialSection;
 
   @override
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  int _selectedIndex = 0;
+  static const _sectionToIndex = {
+    'account': 0,
+    'directory': 1,
+    'service': 2,
+    'play': 3,
+    'voice': 4,
+    'dialog': 5,
+  };
+
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialSection != null
+        ? (_sectionToIndex[widget.initialSection] ?? 0).clamp(0, 5)
+        : 0;
+    if (widget.initialSection != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openInitialSectionIfMobile());
+    }
+  }
+
+  void _openInitialSectionIfMobile() {
+    if (!mounted) return;
+    if (MediaQuery.sizeOf(context).width >= 600) return;
+    final index = _sectionToIndex[widget.initialSection!] ?? 0;
+    if (index < 0 || index >= _categories.length) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(_categories[index].title)),
+          body: _categories[index].widget,
+        ),
+      ),
+    );
   }
 
   final List<_SettingCategory> _categories = [

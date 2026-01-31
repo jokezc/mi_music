@@ -129,17 +129,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
   void _onDispose() {
     try {
-      // 销毁前：仅本地模式需要强制落盘（远程不做本地持久化）
-      final currentState = state.hasValue ? state.value : null;
-      if (currentState != null && currentState.currentDevice?.type == DeviceType.local) {
-        _saveStateDebounceTimer?.cancel();
-        try {
-          unawaited(savePlayerState());
-        } catch (e) {
-          _logger.e('保存播放状态失败: $e');
-        }
-      }
-
+      // 注意：不能在 onDispose 内调用 savePlayerState()，因 Riverpod 禁止在生命周期回调中使用 Ref。
+      // 正常使用期间状态已由 _schedulePersistPlayerState 防抖保存；销毁时仅做不依赖 ref 的收尾。
+      _saveStateDebounceTimer?.cancel();
       _playSongDebounceTimer?.cancel();
       _deviceSwitchSubscription?.cancel();
       _deviceSwitchSubject.close();
