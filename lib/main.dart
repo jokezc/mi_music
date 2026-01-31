@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/globals.dart';
 import 'package:mi_music/core/theme/app_theme.dart';
+import 'package:mi_music/core/utils/permission_utils.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
@@ -32,6 +33,10 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   @override
   void initState() {
     super.initState();
+    // 申请初始权限（通知、网络等）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PermissionUtils.requestInitialPermissions();
+    });
   }
 
   @override
