@@ -332,7 +332,7 @@ class HostPortMismatch {
     required this.settingPublicPort,
   });
 
-  /// 带协议的完整 hostname，用于快速修改保存（如 https://mi.jokeo.cn）
+  /// 带协议的完整 hostname，用于快速修改保存（如 https://baidu.com）
   String get connectionHostnameWithScheme => '$connectionScheme://$connectionHost';
 }
 
