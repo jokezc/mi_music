@@ -80,7 +80,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> updateStateFromExternal(app_state.PlayerState state, {Uri? artUri}) async {
     if (!_isRemoteMode) return;
 
-    // 1. 更新 MediaItem
+    // 1. 更新 MediaItem（每次均推送，不依赖 == 比较，否则同一首歌仅 duration 变化时可能不更新）
     if (state.currentSong != null && state.currentSong!.isNotEmpty) {
       final newItem = MediaItem(
         id: state.currentSong!,
@@ -89,11 +89,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
         duration: state.duration > Duration.zero ? state.duration : null,
         artUri: artUri, // 使用传入的封面URI
       );
-      // 仅当内容变化时才更新，避免闪烁
-      // 注意：MediaItem 的 == 操作符会比较所有字段（包括 artUri），所以如果封面从有变无，也会触发更新
-      if (mediaItem.value != newItem) {
-        mediaItem.add(newItem);
-      }
+      mediaItem.add(newItem);
     }
 
     // 2. 映射播放状态
