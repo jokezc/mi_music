@@ -42,7 +42,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: '/settings',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const SettingsPage(),
+        builder: (context, state) {
+          final section = state.uri.queryParameters['section'];
+          return SettingsPage(initialSection: section);
+        },
       ),
       GoRoute(
         path: '/client-settings',

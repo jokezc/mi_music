@@ -196,6 +196,7 @@ class UrlFixInterceptor extends Interceptor {
           }
         }
       } else if (path.endsWith('/musicinfo')) {
+        _logger.d("修复 /musicinfo");
         // MusicInfoResp (Map)
         if (response.data is Map) {
           _fixMusicInfoMap(response.data as Map, serverUri);
@@ -239,6 +240,7 @@ class UrlFixInterceptor extends Interceptor {
       // 比较 URL 中的 host 与用户设置的 serverUrl host 是否一致
       // 如果不一致（例如后端返回了内网IP 192.168.x.x，而用户设置的是域名），则进行替换
       if (uri.host != serverUri.host) {
+        _logger.d("修复 URL: $url -> ${uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString()}");
         return uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString();
       }
     } catch (e) {
@@ -306,6 +308,70 @@ class AuthResult {
   factory AuthResult.notAuthenticated(String errorMessage) =>
       AuthResult(isAuthenticated: false, errorMessage: errorMessage);
   factory AuthResult.error(String errorMessage) => AuthResult(isAuthenticated: false, errorMessage: errorMessage);
+}
+
+/// 服务端 getSetting 中的 hostname/public_port 与当前连接地址不一致时的信息
+/// 用于提示用户并支持「跳转服务配置」或「快速修改」（不检测内部 port）
+class HostPortMismatch {
+  /// serverUrl 的协议，如 'https' / 'http'，快速修改时拼到 hostname 前
+  final String connectionScheme;
+  /// 用户当前连接的 host（域名或 IP）
+  final String connectionHost;
+  /// 用户当前连接的 port（若 URL 未写端口则为标准端口 80/443）
+  final int connectionPort;
+  /// 服务端配置的 hostname
+  final String settingHostname;
+  /// 服务端配置的 public_port（对外端口）
+  final int settingPublicPort;
+
+  HostPortMismatch({
+    required this.connectionScheme,
+    required this.connectionHost,
+    required this.connectionPort,
+    required this.settingHostname,
+    required this.settingPublicPort,
+  });
+
+  /// 带协议的完整 hostname，用于快速修改保存（如 https://mi.jokeo.cn）
+  String get connectionHostnameWithScheme => '$connectionScheme://$connectionHost';
+}
+
+/// 检查当前连接的 serverUrl 与 getSetting 返回的 hostname/public_port 是否一致。
+/// 只检测对外地址（public_port），不检测内部 port。
+Future<HostPortMismatch?> checkSettingHostPortMatch(dynamic ref) async {
+  final serverUrl = ref.read(settingsProvider).serverUrl;
+  if (serverUrl.isEmpty) return null;
+
+  final uri = Uri.tryParse(serverUrl);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
+
+  final connectionScheme = uri.scheme;
+  final connectionHost = uri.host;
+  final connectionPort = uri.hasPort ? uri.port : connectionScheme == 'https' ? 443 : 80;
+
+  try {
+    final client = ref.read(apiClientProvider);
+    final setting = await client.getSetting(false);
+    final settingHostname = (setting.hostname ?? '').trim();
+    final settingPublicPort = setting.publicPort ?? (connectionScheme == 'https' ? 443 : 80);
+    // 比较时去掉服务端 hostname 可能带的前缀协议
+    final settingHostNormalized = settingHostname.replaceFirst(RegExp(r'^https?://'), '').trim();
+
+    final hostMatch = connectionHost == settingHostNormalized;
+    final portMatch = connectionPort == settingPublicPort;
+    if (hostMatch && portMatch) return null;
+
+    return HostPortMismatch(
+      connectionScheme: connectionScheme,
+      connectionHost: connectionHost,
+      connectionPort: connectionPort,
+      settingHostname: settingHostname.isEmpty ? '(未配置)' : settingHostname,
+      settingPublicPort: settingPublicPort,
+    );
+  } catch (e) {
+    _logger.w('检查 hostname/public_port 一致性失败: $e');
+    return null;
+  }
 }
 
 /// 验证认证状态（通过调用 /getversion 接口）
