@@ -139,6 +139,21 @@ flutter build apk --release
 flutter build apk --release --split-per-abi
 ```
 
+**构建 iOS 包:**
+
+```bash
+cd ./ios
+
+# 强制更新库定义，确保能下到作者新增的插件
+pod install --repo-update
+
+# 构建 iOS 发布版（生成 .app，可用于 Xcode 归档或真机运行）
+flutter build ios --release
+
+# 构建 IPA（用于 App Store 或 Ad Hoc 分发，需在 macOS 上且配置好签名）
+flutter build ipa --release --export-method=development
+```
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
