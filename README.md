@@ -45,73 +45,73 @@
 
 <!-- 电脑端一行三列等宽不错位，手机端一行一列；使用 flex + min-width 实现响应式，无需 media query -->
 <div style="display: flex; flex-wrap: wrap; gap: 8px; box-sizing: border-box;">
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/音乐库.jpg" alt="音乐库" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">音乐库</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/歌单详情.jpg" alt="歌单详情" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">歌单详情</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/歌单歌曲管理.jpg" alt="歌单歌曲管理" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">歌单歌曲管理</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/歌单管理.jpg" alt="歌单管理" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">歌单管理</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/播放页.png" alt="播放页" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">播放页</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/切换设备.jpg" alt="切换设备" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">切换设备</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/下载音乐.jpg" alt="下载音乐" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">下载音乐</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/功能界面.jpg" alt="功能界面" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">功能界面</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/软件设置.jpg" alt="软件设置" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">软件设置</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/系统设置.jpg" alt="系统设置" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">系统设置</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/关于.jpg" alt="关于" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
     <div style="text-align: center; margin-top: 4px; font-size: 14px;">关于</div>
   </div>
-  <div style="width: calc((100% - 16px) / 3); min-width: 260px; flex-shrink: 0; box-sizing: border-box;">
+  <div style="width: calc((100% - 16px) / 3); min-width: 200px; flex-shrink: 0; box-sizing: border-box;">
     <div style="width: 100%; height: 200px; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
       <img src="docs/img/登录.jpg" alt="登录" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
     </div>
