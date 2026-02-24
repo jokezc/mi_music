@@ -1,0 +1,213 @@
+# mi_music：推送 v* tag 自动构建多平台并创建 Release
+# 支持：Android、iOS、Windows、Linux、macOS
+name: Build on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore keystore and key properties
+        if: ${{ secrets.MI_MUSIC_KEYSTORE_BASE64 != '' }}
+        run: |
+          mkdir -p android/keys
+          echo "${{ secrets.MI_MUSIC_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/release.jks
+          cat <<'EOF' > android/key.properties
+          storeFile=keys/release.jks
+          storePassword=${{ secrets.MI_MUSIC_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.MI_MUSIC_KEY_ALIAS }}
+          keyPassword=${{ secrets.MI_MUSIC_KEY_PASSWORD }}
+          EOF
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no-codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Create iOS archive
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r ../../../mi_music-ios-unsigned.ipa Payload
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned
+          path: mi_music-ios-unsigned.ipa
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Zip Windows build
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath mi_music-windows-x64.zip
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: mi_music-windows-x64.zip
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Tar Linux bundle
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czvf ../../../../../../mi_music-linux-x64.tar.gz .
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: mi_music-linux-x64.tar.gz
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Zip macOS app
+        run: |
+          cd build/macos/Build/Release
+          zip -r ../../../../mi_music-macos.zip mi_music.app
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: mi_music-macos.zip
+
+  create-release:
+    name: Create Release
+    needs: [build-android, build-ios, build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: ${{ always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Determine release metadata
+        id: release_meta
+        run: |
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "target=$GITHUB_SHA" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          target_commitish: ${{ steps.release_meta.outputs.target }}
+          files: |
+            artifacts/android-apk/*.apk
+            artifacts/ios-unsigned/*.ipa
+            artifacts/windows-x64/*.zip
+            artifacts/linux-x64/*.tar.gz
+            artifacts/macos-app/*.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

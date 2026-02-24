@@ -8,6 +8,7 @@
 
 - **Android**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest)
 - **iOS**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest)
+- **Windows / Linux / macOS**: [下载最新版本](https://github.com/jokezc/mi_music/releases/latest)（Release 页中提供各桌面端安装包）
 - **蓝奏云**: [下载最新版本](https://wwbts.lanzoue.com/b038zq3psf) (密码: 3rq9)
 
 
@@ -147,7 +148,7 @@ lib/
 
 ### 1. 环境准备
 
-确保你已经安装了 Flutter SDK 并配置好了开发环境（Android/iOS）。
+确保你已经安装了 Flutter SDK 并配置好了开发环境（Android / iOS / Windows / Linux / macOS 按需选择）。
 检查环境状态：
 
 ```bash
@@ -207,6 +208,20 @@ flutter build ios --release
 # 构建 IPA（用于 App Store 或 Ad Hoc 分发，需在 macOS 上且配置好签名）
 flutter build ipa --release --export-method=development
 ```
+
+**桌面端 (Windows / Linux / macOS):**
+
+```bash
+# 运行（当前平台）
+flutter run -d windows   # 或 linux / macos
+
+# 构建发布版
+flutter build windows --release
+flutter build linux --release
+flutter build macos --release
+```
+
+构建产物位置：`build/windows/x64/runner/Release/`、`build/linux/x64/release/bundle/`、`build/macos/Build/Release/`。
 
 ## 🤝 贡献
 
