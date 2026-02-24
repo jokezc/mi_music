@@ -348,7 +348,7 @@ jobs:
               core.setOutput('target', context.sha);
             }
 
-      - name: Rename Android artifact with version
+      - name: Rename artifacts with version
         run: |
           TAG="${{ steps.release_meta.outputs.tag }}"
           RELEASE_MODE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_mode || 'none' }}"
@@ -369,6 +369,30 @@ jobs:
           fi
           if compgen -G "${APK_DIR}/*-x86_64-release.apk" > /dev/null; then
             mv "${APK_DIR}/"*"-x86_64-release.apk" "${APK_DIR}/mi_music-${VERSION_OR_PRE}-x86_64-release.apk"
+          fi
+
+          # Windows 压缩包重命名
+          WIN_DIR="artifacts/windows-x64"
+          if compgen -G "${WIN_DIR}/*.zip" > /dev/null; then
+            mv "${WIN_DIR}/"*.zip "${WIN_DIR}/mi_music-${VERSION_OR_PRE}-windows-x64.zip"
+          fi
+
+          # Linux DEB 包重命名
+          LINUX_DIR="artifacts/linux-deb"
+          if compgen -G "${LINUX_DIR}/*.deb" > /dev/null; then
+            mv "${LINUX_DIR}/"*.deb "${LINUX_DIR}/mi_music-${VERSION_OR_PRE}-linux-amd64.deb"
+          fi
+
+          # macOS DMG 重命名
+          MACOS_DIR="artifacts/macos"
+          if compgen -G "${MACOS_DIR}/*.dmg" > /dev/null; then
+            mv "${MACOS_DIR}/"*.dmg "${MACOS_DIR}/mi_music-${VERSION_OR_PRE}-macos.dmg"
+          fi
+
+          # iOS IPA 重命名
+          IOS_DIR="artifacts/ios-unsigned"
+          if compgen -G "${IOS_DIR}/*.ipa" > /dev/null; then
+            mv "${IOS_DIR}/"*.ipa "${IOS_DIR}/mi_music-${VERSION_OR_PRE}-ios-unsigned.ipa"
           fi
 
       - name: Create Pre-Release (auto notes)
