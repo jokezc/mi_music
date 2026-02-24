@@ -69,15 +69,33 @@ flutter:
 
 # 应用图标配置
 # 使用方法：
-# 1. 准备一个 1024x1024 像素的 PNG 图标文件，命名为 app_icon.png，放在项目根目录
+# 1. 准备一个 1024x1024 像素的 PNG 图标文件，命名为 app_icon.png，放在项目根目录或 assets 目录
 # 2. 运行命令：flutter pub get
-# 3. 运行命令：flutter pub run flutter_launcher_icons
+# 3. 运行命令：dart run flutter_launcher_icons
 flutter_launcher_icons:
+  image_path: "assets/app_icon.png"  # 通用图标文件路径，请根据实际情况修改
   android: true
   ios: true
-  image_path: "assets/app_icon.png"  # 图标文件路径，请根据实际情况修改
+  macos:
+    generate: true
+    image_path: "assets/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/app_icon.png"
+  linux:
+    generate: true
+    image_path: "assets/app_icon.png"
   # 如果需要为不同平台设置不同的图标，可以使用以下配置：
   # android: "assets/app_icon_android.png"
   # ios: "assets/app_icon_ios.png"
+  # macos:
+  #   generate: true
+  #   image_path: "assets/app_icon_macos.png"
+  # windows:
+  #   generate: true
+  #   image_path: "assets/app_icon_windows.png"
+  # linux:
+  #   generate: true
+  #   image_path: "assets/app_icon_linux.png"
   # 如果需要移除旧图标，可以添加：
   # remove_alpha_ios: true

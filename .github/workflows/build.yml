@@ -282,7 +282,7 @@ jobs:
         run: |
           cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
+          cp -r mi_music.app Payload/
           zip -r ../../../cyrene_music-ios-unsigned.ipa Payload
 
       - name: Upload iOS artifacts
