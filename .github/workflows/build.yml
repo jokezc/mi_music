@@ -53,7 +53,7 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push'
-        || (github.event_name == 'workflow_dispatch' && inputs.build_android)
+        || (github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_android))
         || (github.event_name == 'pull_request'
             && github.event.pull_request.merged == true
             && startsWith(github.event.pull_request.title, 'v')) }}
@@ -82,10 +82,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.38.5'
           cache: true
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi
@@ -102,7 +106,7 @@ jobs:
     name: Build Windows
     runs-on: windows-latest
     if: ${{ github.event_name == 'push'
-        || (github.event_name == 'workflow_dispatch' && inputs.build_windows)
+        || (github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_windows))
         || (github.event_name == 'pull_request'
             && github.event.pull_request.merged == true
             && startsWith(github.event.pull_request.title, 'v')) }}
@@ -121,6 +125,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows
         run: flutter build windows --release
@@ -141,7 +148,7 @@ jobs:
     name: Build Linux
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push'
-        || (github.event_name == 'workflow_dispatch' && inputs.build_linux)
+        || (github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_linux))
         || (github.event_name == 'pull_request'
             && github.event.pull_request.merged == true
             && startsWith(github.event.pull_request.title, 'v')) }}
@@ -163,6 +170,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.38.5'
           cache: true
 
       - name: Enable Linux desktop
@@ -170,6 +178,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Linux
         run: flutter build linux --release
@@ -228,7 +239,7 @@ jobs:
     name: Build macOS
     runs-on: macos-latest
     if: ${{ github.event_name == 'push'
-        || (github.event_name == 'workflow_dispatch' && inputs.build_macos)
+        || (github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_macos))
         || (github.event_name == 'pull_request'
             && github.event.pull_request.merged == true
             && startsWith(github.event.pull_request.title, 'v')) }}
@@ -240,6 +251,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.38.5'
           cache: true
 
       - name: Enable macOS desktop
@@ -247,6 +259,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build macOS
         run: flutter build macos --release
@@ -268,7 +283,7 @@ jobs:
     name: Build iOS
     runs-on: macos-latest
     if: ${{ github.event_name == 'push'
-        || (github.event_name == 'workflow_dispatch' && inputs.build_ios)
+        || (github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_ios))
         || (github.event_name == 'pull_request'
             && github.event.pull_request.merged == true
             && startsWith(github.event.pull_request.title, 'v')) }}
@@ -280,10 +295,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.38.5'
           cache: true
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build iOS (no-codesign)
         run: flutter build ios --release --no-codesign
