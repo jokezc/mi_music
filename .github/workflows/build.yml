@@ -53,7 +53,7 @@ jobs:
           mkdir -p android/keys
           echo "${{ secrets.CYRENE_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/cyrene-release.jks
           cat <<'EOF' > android/key.properties
-          storeFile=keys/cyrene-release.jks
+          storeFile=../keys/cyrene-release.jks
           storePassword=${{ secrets.CYRENE_KEYSTORE_PASSWORD }}
           keyAlias=${{ secrets.CYRENE_KEY_ALIAS }}
           keyPassword=${{ secrets.CYRENE_KEY_PASSWORD }}
@@ -176,11 +176,13 @@ jobs:
 
           # 复制构建物
           cp -r build/linux/x64/release/bundle/* $PACKAGE_DIR/usr/lib/cyrene_music/
-          # 复制图标
-          cp assets/icons/tray_icon.png $PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps/cyrene_music.png
+          # 复制图标（如果存在）
+          if [ -f assets/icons/tray_icon.png ]; then
+            cp assets/icons/tray_icon.png $PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps/cyrene_music.png
+          fi
           
           # 创建软链接
-          ln -s /usr/lib/cyrene_music/cyrene_music $PACKAGE_DIR/usr/bin/cyrene-music
+          ln -s /usr/lib/cyrene_music/mi_music $PACKAGE_DIR/usr/bin/cyrene-music
 
           # 创建 control 文件
           cat <<EOF > $PACKAGE_DIR/DEBIAN/control
@@ -244,7 +246,7 @@ jobs:
       - name: Create macOS DMG
         run: |
           cd build/macos/Build/Products/Release
-          hdiutil create -volname "Cyrene Music" -srcfolder cyrene_music.app -ov -format UDZO cyrene_music-macos.dmg
+          hdiutil create -volname "Cyrene Music" -srcfolder mi_music.app -ov -format UDZO cyrene_music-macos.dmg
           mv cyrene_music-macos.dmg ../../../../../
 
       - name: Upload macOS artifacts
