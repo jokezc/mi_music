@@ -1,31 +1,75 @@
-# mi_music：推送 v* tag 自动构建多平台并创建 Release
-# 支持：Android、iOS、Windows、Linux、macOS
-name: Build on Tag
+name: Multi-Platform Build
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: '构建 Android'
+        required: false
+        type: boolean
+        default: true
+      build_windows:
+        description: '构建 Windows'
+        required: false
+        type: boolean
+        default: true
+      build_linux:
+        description: '构建 Linux'
+        required: false
+        type: boolean
+        default: true
+      build_macos:
+        description: '构建 macOS'
+        required: false
+        type: boolean
+        default: true
+      build_ios:
+        description: '构建 iOS'
+        required: false
+        type: boolean
+        default: true
+      release_mode:
+        description: '发布类型：预览(pre) 或 正式(release)。在 main 上选 pre，在 tag 上选 release。'
+        required: false
+        type: choice
+        default: 'none'
+        options:
+          - 'none'
+          - 'pre'
+          - 'release'
 
 jobs:
+  # Android 构建
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && inputs.build_android)
+        || (github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.title, 'v')) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Restore keystore and key properties
-        if: ${{ secrets.MI_MUSIC_KEYSTORE_BASE64 != '' }}
         run: |
           mkdir -p android/keys
-          echo "${{ secrets.MI_MUSIC_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/release.jks
+          echo "${{ secrets.CYRENE_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/cyrene-release.jks
           cat <<'EOF' > android/key.properties
-          storeFile=keys/release.jks
-          storePassword=${{ secrets.MI_MUSIC_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.MI_MUSIC_KEY_ALIAS }}
-          keyPassword=${{ secrets.MI_MUSIC_KEY_PASSWORD }}
+          storeFile=keys/cyrene-release.jks
+          storePassword=${{ secrets.CYRENE_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.CYRENE_KEY_ALIAS }}
+          keyPassword=${{ secrets.CYRENE_KEY_PASSWORD }}
           EOF
 
       - name: Setup Java
@@ -50,11 +94,184 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          path: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
+  # Windows 构建
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    if: ${{ github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && inputs.build_windows)
+        || (github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.title, 'v')) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create Windows archive
+        run: |
+          cd build/windows/x64/runner/Release
+          Compress-Archive -Path * -DestinationPath ../../../../../cyrene_music-windows-x64.zip
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: cyrene_music-windows-x64.zip
+
+  # Linux 构建
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && inputs.build_linux)
+        || (github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.title, 'v')) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad gstreamer1.0-libav \
+            libayatana-appindicator3-dev \
+            libmpv-dev \
+            libasound2-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Create DEB Package
+        run: |
+          VERSION="1.3.0"
+          PACKAGE_DIR="cyrene_music_${VERSION}_amd64"
+          mkdir -p $PACKAGE_DIR/DEBIAN
+          mkdir -p $PACKAGE_DIR/usr/bin
+          mkdir -p $PACKAGE_DIR/usr/lib/cyrene_music
+          mkdir -p $PACKAGE_DIR/usr/share/applications
+          mkdir -p $PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps
+
+          # 复制构建物
+          cp -r build/linux/x64/release/bundle/* $PACKAGE_DIR/usr/lib/cyrene_music/
+          # 复制图标
+          cp assets/icons/tray_icon.png $PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps/cyrene_music.png
+          
+          # 创建软链接
+          ln -s /usr/lib/cyrene_music/cyrene_music $PACKAGE_DIR/usr/bin/cyrene-music
+
+          # 创建 control 文件
+          cat <<EOF > $PACKAGE_DIR/DEBIAN/control
+          Package: cyrene-music
+          Version: ${VERSION}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Depends: libgtk-3-0, liblzma5, libmpv2 | libmpv1, libasound2
+          Maintainer: Moraxs
+          Description: A smooth music player built with Flutter.
+          EOF
+
+          # 创建 .desktop 文件
+          cat <<EOF > $PACKAGE_DIR/usr/share/applications/cyrene-music.desktop
+          [Desktop Entry]
+          Name=Cyrene Music
+          Exec=/usr/bin/cyrene-music
+          Icon=cyrene_music
+          Type=Application
+          Categories=AudioVideo;Audio;Player;
+          EOF
+
+          dpkg-deb --build $PACKAGE_DIR
+          mv ${PACKAGE_DIR}.deb cyrene_music-linux-amd64.deb
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: cyrene_music-linux-amd64.deb
+
+  # macOS 构建
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    if: ${{ github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && inputs.build_macos)
+        || (github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.title, 'v')) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Create macOS DMG
+        run: |
+          cd build/macos/Build/Products/Release
+          hdiutil create -volname "Cyrene Music" -srcfolder cyrene_music.app -ov -format UDZO cyrene_music-macos.dmg
+          mv cyrene_music-macos.dmg ../../../../../
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: cyrene_music-macos.dmg
+
+  # iOS 构建
   build-ios:
     name: Build iOS
     runs-on: macos-latest
+    if: ${{ github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && inputs.build_ios)
+        || (github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.title, 'v')) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -76,138 +293,127 @@ jobs:
           cd build/ios/iphoneos
           mkdir -p Payload
           cp -r Runner.app Payload/
-          zip -r ../../../mi_music-ios-unsigned.ipa Payload
+          zip -r ../../../cyrene_music-ios-unsigned.ipa Payload
 
       - name: Upload iOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned
-          path: mi_music-ios-unsigned.ipa
+          path: cyrene_music-ios-unsigned.ipa
 
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build Windows
-        run: flutter build windows --release
-
-      - name: Zip Windows build
-        run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath mi_music-windows-x64.zip
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64
-          path: mi_music-windows-x64.zip
-
-  build-linux:
-    name: Build Linux
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build Linux
-        run: flutter build linux --release
-
-      - name: Tar Linux bundle
-        run: |
-          cd build/linux/x64/release/bundle
-          tar -czvf ../../../../../../mi_music-linux-x64.tar.gz .
-
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: mi_music-linux-x64.tar.gz
-
-  build-macos:
-    name: Build macOS
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build macOS
-        run: flutter build macos --release
-
-      - name: Zip macOS app
-        run: |
-          cd build/macos/Build/Release
-          zip -r ../../../../mi_music-macos.zip mi_music.app
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-app
-          path: mi_music-macos.zip
-
+  # 创建 Release
   create-release:
     name: Create Release
-    needs: [build-android, build-ios, build-windows, build-linux, build-macos]
+    needs: [build-android, build-windows, build-linux, build-macos, build-ios]
     runs-on: ubuntu-latest
-    if: ${{ always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ always() && (
+          (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+          || (github.event_name == 'pull_request'
+              && github.event.pull_request.merged == true
+              && startsWith(github.event.pull_request.title, 'v'))
+          || (github.event_name == 'workflow_dispatch'
+              && github.event.inputs.release_mode != 'none')
+        ) }}
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: Display structure
+        run: ls -R artifacts
+
       - name: Determine release metadata
         id: release_meta
-        run: |
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          echo "target=$GITHUB_SHA" >> $GITHUB_OUTPUT
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const inputs = (context.payload && context.payload.inputs) || {};
+            const releaseMode = inputs.release_mode || 'none';
 
-      - name: Create Release
+            const isPrRelease = context.eventName === 'pull_request'
+              && context.payload.pull_request.merged === true
+              && context.payload.pull_request.title.startsWith('v');
+
+            const isManualRelease = context.eventName === 'workflow_dispatch'
+              && releaseMode !== 'none';
+
+            if (isManualRelease) {
+              if (releaseMode === 'pre') {
+                // 手动在 main 上构建预览包：生成一个基于当前提交的预览 tag
+                const shortSha = context.sha.substring(0, 7);
+                const tag = `pre-${shortSha}`;
+                core.setOutput('tag', tag);
+                core.setOutput('target', context.sha);
+              } else {
+                // 手动在 tag 上构建正式包：直接使用当前 ref 中的 tag
+                const ref = context.ref;
+                const tag = ref.startsWith('refs/tags/') ? ref.replace('refs/tags/', '') : ref;
+                core.setOutput('tag', tag);
+                core.setOutput('target', context.sha);
+              }
+            } else if (isPrRelease) {
+              const title = context.payload.pull_request.title.trim();
+              const tag = title.startsWith('v') ? title : `v${title}`;
+              core.setOutput('tag', tag);
+              core.setOutput('target', context.payload.pull_request.merge_commit_sha);
+            } else {
+              const ref = context.ref;
+              const tag = ref.startsWith('refs/tags/') ? ref.replace('refs/tags/', '') : ref;
+              core.setOutput('tag', tag);
+              core.setOutput('target', context.sha);
+            }
+
+      - name: Rename Android artifact with version
+        run: |
+          TAG="${{ steps.release_meta.outputs.tag }}"
+          RELEASE_MODE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_mode || 'none' }}"
+
+          if [ "${RELEASE_MODE}" = "pre" ]; then
+            VERSION_OR_PRE="pre"
+          else
+            VERSION_OR_PRE="${TAG}"
+          fi
+
+          APK_DIR="artifacts/android-apk"
+          if compgen -G "${APK_DIR}/*.apk" > /dev/null; then
+            # 目前只构建 arm64-v8a，一个文件直接重命名
+            mv "${APK_DIR}/"*.apk "${APK_DIR}/mi_music-${VERSION_OR_PRE}-arm64-v8a-release.apk"
+          fi
+
+      - name: Create Pre-Release (auto notes)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_mode == 'pre' }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           target_commitish: ${{ steps.release_meta.outputs.target }}
           files: |
             artifacts/android-apk/*.apk
-            artifacts/ios-unsigned/*.ipa
             artifacts/windows-x64/*.zip
-            artifacts/linux-x64/*.tar.gz
-            artifacts/macos-app/*.zip
+            artifacts/linux-deb/*.deb
+            artifacts/macos/*.dmg
+            artifacts/ios-unsigned/*.ipa
+          draft: false
+          prerelease: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release (from docs)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.release_mode != 'pre' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          target_commitish: ${{ steps.release_meta.outputs.target }}
+          body_path: docs/RELEASE_NOTES.md
+          files: |
+            artifacts/android-apk/*.apk
+            artifacts/windows-x64/*.zip
+            artifacts/linux-deb/*.deb
+            artifacts/macos/*.dmg
+            artifacts/ios-unsigned/*.ipa
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

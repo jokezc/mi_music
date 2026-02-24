@@ -70,38 +70,43 @@ git push origin v1.0.4
 
 ### Windows
 
-- **文件**：`mi_music-windows-x64.zip`
+- **文件**：`cyrene_music-windows-x64.zip`
 - **内容**：包含可执行文件和所有依赖
-- **安装**：解压后运行 `mi_music.exe`
-- **大小**：约 50–80MB
+- **安装**：解压后运行 `cyrene_music.exe`
+- **大小**：~50MB
+
+**特性**：
+- 支持 Windows 系统媒体传输控制（SMTC）
+- 键盘媒体键控制
+- 系统托盘图标
 
 ### Linux
 
-- **文件**：`mi_music-linux-x64.tar.gz`
+- **文件**：`cyrene_music-linux-x64.tar.gz`
 - **内容**：包含可执行文件和所有依赖
 - **安装**：
   ```bash
   # 解压
-  tar -xzvf mi_music-linux-x64.tar.gz
-
-  # 运行（解压后当前目录即 bundle 内容）
-  ./mi_music
+  tar -xzvf cyrene_music-linux-x64.tar.gz
+  
+  # 运行
+  cd bundle
+  ./cyrene_music
   ```
 - **系统要求**：
   ```bash
   # Ubuntu/Debian
   sudo apt-get install libgtk-3-0
-
+  
   # Fedora
   sudo dnf install gtk3
   ```
 
 ### macOS
 
-- **文件**：`mi_music-macos.zip`
-- **内容**：`mi_music.app` 应用程序包
-- **安装**：解压后将 `mi_music.app` 拖拽到「应用程序」文件夹
-- **注意**：首次运行可能需要在「系统设置 > 隐私与安全性」中允许
+- **文件**：`cyrene_music-macos.dmg`
+- **安装**：双击打开 DMG，拖拽到应用程序文件夹
+- **注意**：首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
 
 ### iOS
 
@@ -308,4 +313,3 @@ base64 -i certificate.p12 -o certificate_base64.txt
 - **并行构建**：所有平台同时构建，节省时间
 - **增量构建**：GitHub Actions 会缓存依赖，加快构建速度
 - **构建日志**：保留 90 天，便于排查问题
-
