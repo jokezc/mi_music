@@ -70,9 +70,9 @@ git push origin v1.0.4
 
 ### Windows
 
-- **文件**：`cyrene_music-windows-x64.zip`
+- **文件**：`mi_music-windows-x64.zip`
 - **内容**：包含可执行文件和所有依赖
-- **安装**：解压后运行 `cyrene_music.exe`
+- **安装**：解压后运行 `mi_music.exe`
 - **大小**：~50MB
 
 **特性**：
@@ -82,16 +82,15 @@ git push origin v1.0.4
 
 ### Linux
 
-- **文件**：`cyrene_music-linux-x64.tar.gz`
+- **文件**：`mi_music-linux-amd64.deb`
 - **内容**：包含可执行文件和所有依赖
 - **安装**：
   ```bash
-  # 解压
-  tar -xzvf cyrene_music-linux-x64.tar.gz
+  # 安装 DEB 包
+  sudo dpkg -i mi_music-linux-amd64.deb
   
   # 运行
-  cd bundle
-  ./cyrene_music
+  mi-music
   ```
 - **系统要求**：
   ```bash
@@ -104,13 +103,13 @@ git push origin v1.0.4
 
 ### macOS
 
-- **文件**：`cyrene_music-macos.dmg`
+- **文件**：`mi_music-macos.dmg`
 - **安装**：双击打开 DMG，拖拽到应用程序文件夹
 - **注意**：首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
 
 ### iOS
 
-- **文件**：`cyrene_music-ios-unsigned.ipa`
+- **文件**：`mi_music-ios-unsigned.ipa`
 - **状态**：未签名，无法直接安装
 - **使用方法**：
   1. 需要 Apple 开发者账号

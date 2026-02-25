@@ -1,4 +1,4 @@
-## Cyrene Music 发行说明
+## 风花雪乐 发行说明
 
 > 在每次发版前，手动更新本文件的内容，然后打 tag / 合并带版本号的 PR，GitHub Actions 会把本文件作为 Release 的正文发布。
 

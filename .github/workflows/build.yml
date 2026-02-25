@@ -61,12 +61,12 @@ jobs:
       - name: Restore keystore and key properties
         run: |
           mkdir -p android/keys
-          echo "${{ secrets.CYRENE_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/cyrene-release.jks
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/keys/android-release.jks
           cat <<'EOF' > android/key.properties
-          storeFile=../keys/cyrene-release.jks
-          storePassword=${{ secrets.CYRENE_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.CYRENE_KEY_ALIAS }}
-          keyPassword=${{ secrets.CYRENE_KEY_PASSWORD }}
+          storeFile=../keys/android-release.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
 
       - name: Setup Java
