@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/globals.dart';
 import 'package:mi_music/core/theme/app_theme.dart';
@@ -14,6 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Windows 使用 media_kit 后端，避免 just_audio_windows 非平台线程导致崩溃
+  JustAudioMediaKit.ensureInitialized(windows: true, linux: false);
   final sharedPrefs = await SharedPreferences.getInstance();
 
   runApp(ProviderScope(overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)], child: const MyApp()));

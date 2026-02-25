@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
@@ -47,6 +48,25 @@ Future<AudioSource> createCachedAudioSource({
         // _logger.d('Using local file source: ${file.path}');
         return AudioSource.file(file.path);
       }
+    }
+
+    // Windows：为避免 LockCaching 缓存重命名时的文件占用问题，未缓存时用 URI 直播
+    final isWindows = !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    if (isWindows) {
+      Uri? artUri;
+      try {
+        final songInfo = cacheManager.getSongInfo(songName);
+        final pictureUrl = songInfo?.pictureUrl;
+        if (pictureUrl != null && pictureUrl.isNotEmpty) {
+          artUri = Uri.parse(pictureUrl);
+        }
+      } catch (e) {
+        _logger.w('获取歌曲封面失败: $e');
+      }
+      return AudioSource.uri(
+        Uri.parse(url),
+        tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration),
+      );
     }
 
     // _logger.d('Using LockCachingAudioSource: $url');

@@ -233,56 +233,79 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
     // 使用 distinct() 过滤重复状态，避免不必要的更新
     // 参考 local_player_controller.dart 的做法
 
+    // onError 防止播放器流异常未捕获导致闪退
+    void onStreamError(Object e, StackTrace st) {
+      _logger.w('播放器流错误（已忽略）: $e');
+      _logger.d('堆栈: $st');
+    }
+
     // 1. 监听播放状态变化（playing）- 立即更新状态栏
     _playerSubscriptions.add(
-      _player.playerStateStream.map((s) => s.playing).distinct().listen((playing) {
-        _logger.d('播放状态变化: $playing，立即更新状态栏');
-        _broadcastState();
-      }),
+      _player.playerStateStream.map((s) => s.playing).distinct().listen(
+            (playing) {
+              _logger.d('播放状态变化: $playing，立即更新状态栏');
+              _broadcastState();
+            },
+            onError: onStreamError,
+          ),
     );
 
     // 2. 监听处理状态变化（processingState）
     _playerSubscriptions.add(
-      _player.playerStateStream.map((s) => s.processingState).distinct().listen((_) => _broadcastState()),
+      _player.playerStateStream.map((s) => s.processingState).distinct().listen(
+            (_) => _broadcastState(),
+            onError: onStreamError,
+          ),
     );
 
     // 3. 监听索引变化（currentIndex）
-    _playerSubscriptions.add(_player.currentIndexStream.distinct().listen((_) => _broadcastState()));
+    _playerSubscriptions.add(
+      _player.currentIndexStream.distinct().listen(
+            (_) => _broadcastState(),
+            onError: onStreamError,
+          ),
+    );
 
     // 4. 位置更新：模仿对方的逻辑，使用流监听 + 节流 (Throttling)
     // 避免过于频繁的更新导致系统压力，同时保证进度条平滑
     DateTime? lastUpdateTime;
     _playerSubscriptions.add(
-      _player.positionStream.listen((position) {
-        final now = DateTime.now();
-        if (lastUpdateTime == null || now.difference(lastUpdateTime!) > const Duration(milliseconds: 800)) {
-          lastUpdateTime = now;
-          if (!_isRemoteMode && _player.playing) {
-            _broadcastState();
+      _player.positionStream.listen(
+        (position) {
+          final now = DateTime.now();
+          if (lastUpdateTime == null || now.difference(lastUpdateTime!) > const Duration(milliseconds: 800)) {
+            lastUpdateTime = now;
+            if (!_isRemoteMode && _player.playing) {
+              _broadcastState();
+            }
           }
-        }
-      }),
+        },
+        onError: onStreamError,
+      ),
     );
 
     // 监听索引变化 (针对列表播放模式)
     _playerSubscriptions.add(
-      _player.currentIndexStream.listen((index) {
-        if (_playlistSources != null && index != null) {
-          // 如果是列表模式，需要反向同步索引到外部
-          // 注意：_onIndexChanged 是外部提供的回调，用于更新外部状态
-          // 这里的 index 是播放器内部的实际索引
-          _onIndexChanged?.call(index);
-        }
-      }),
+      _player.currentIndexStream.listen(
+        (index) {
+          if (_playlistSources != null && index != null) {
+            _onIndexChanged?.call(index);
+          }
+        },
+        onError: onStreamError,
+      ),
     );
 
     // 监听播放完成，自动播放下一首
     _playerSubscriptions.add(
-      _player.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
-          _handlePlaybackCompleted();
-        }
-      }),
+      _player.playerStateStream.listen(
+        (state) {
+          if (state.processingState == ProcessingState.completed) {
+            _handlePlaybackCompleted();
+          }
+        },
+        onError: onStreamError,
+      ),
     );
 
     // 监听播放错误（通过 playerStateStream 无法直接获取错误，但可通过 playbackEventStream 获取）
@@ -387,62 +410,70 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   /// 1. 本地模式：从播放器读取真实状态并广播
   /// 2. 远程模式：禁止本地广播，状态由 updateStateFromExternal 注入
   /// 3. 确保状态栏显示与实际播放状态完全一致
+  /// 4. 切歌或 source 变更时播放器可能短暂不可用，此处捕获避免闪退
   void _broadcastState() {
     // 托管模式下，状态由外部注入，禁止本地广播覆盖
     if (_isRemoteMode) return;
 
-    // 获取当前索引：列表模式优先使用播放器内部索引，队列模式使用外部回调
-    final int currentIndex;
-    if (_playlistSources != null) {
-      // 列表模式：优先使用播放器内部索引（最准确）
-      currentIndex = _player.currentIndex ?? 0;
-    } else {
-      // 队列模式：使用外部回调获取索引
-      if (_getCurrentIndex == null) return; // 队列模式必须要有回调
-      currentIndex = _getCurrentIndex!();
+    try {
+      // 获取当前索引：列表模式优先使用播放器内部索引，队列模式使用外部回调
+      final int currentIndex;
+      if (_playlistSources != null) {
+        // 列表模式：优先使用播放器内部索引（最准确）
+        currentIndex = _player.currentIndex ?? 0;
+      } else {
+        // 队列模式：使用外部回调获取索引
+        if (_getCurrentIndex == null) return; // 队列模式必须要有回调
+        currentIndex = _getCurrentIndex!();
+      }
+      // 调试日志：确认播放按钮状态
+      final isPlaying = _player.playing;
+      final processingState = _player.processingState;
+      final position = _player.position;
+      final bufferedPosition = _player.bufferedPosition;
+      final speed = _player.speed;
+      final shuffleModeEnabled = _player.shuffleModeEnabled;
+
+      playbackState.add(
+        playbackState.value.copyWith(
+          controls: [
+            MediaControl.skipToPrevious,
+            if (isPlaying) MediaControl.pause else MediaControl.play,
+            MediaControl.skipToNext,
+            MediaControl.stop,
+          ],
+          systemActions: const {
+            MediaAction.seek,
+            MediaAction.seekForward,
+            MediaAction.seekBackward,
+            MediaAction.play,
+            MediaAction.pause,
+            MediaAction.stop,
+            MediaAction.skipToNext,
+            MediaAction.skipToPrevious,
+            MediaAction.playPause,
+          },
+          androidCompactActionIndices: const [0, 1, 2],
+          processingState: const {
+            ProcessingState.idle: AudioProcessingState.idle,
+            ProcessingState.loading: AudioProcessingState.loading,
+            ProcessingState.buffering: AudioProcessingState.buffering,
+            ProcessingState.ready: AudioProcessingState.ready,
+            ProcessingState.completed: AudioProcessingState.completed,
+          }[processingState]!,
+          playing: isPlaying,
+          updatePosition: position,
+          bufferedPosition: bufferedPosition,
+          speed: speed,
+          queueIndex: currentIndex,
+          repeatMode: _currentRepeatMode,
+          shuffleMode: shuffleModeEnabled ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
+        ),
+      );
+    } catch (e, st) {
+      _logger.w('广播状态失败（已忽略，避免闪退）: $e');
+      _logger.d('堆栈: $st');
     }
-    // 调试日志：确认播放按钮状态
-    final isPlaying = _player.playing;
-    // _logger.d(
-    //   '广播状态: \n _playlistSources: ${_playlistSources?.length}\n _player.currentIndex: ${_player.currentIndex}\n _getCurrentIndex: ${_getCurrentIndex?.call()} \n currentIndex: $currentIndex',
-    // );
-    playbackState.add(
-      playbackState.value.copyWith(
-        controls: [
-          MediaControl.skipToPrevious,
-          if (isPlaying) MediaControl.pause else MediaControl.play,
-          MediaControl.skipToNext,
-          MediaControl.stop,
-        ],
-        systemActions: const {
-          MediaAction.seek,
-          MediaAction.seekForward,
-          MediaAction.seekBackward,
-          MediaAction.play,
-          MediaAction.pause,
-          MediaAction.stop,
-          MediaAction.skipToNext,
-          MediaAction.skipToPrevious,
-          MediaAction.playPause,
-        },
-        androidCompactActionIndices: const [0, 1, 2],
-        processingState: const {
-          ProcessingState.idle: AudioProcessingState.idle,
-          ProcessingState.loading: AudioProcessingState.loading,
-          ProcessingState.buffering: AudioProcessingState.buffering,
-          ProcessingState.ready: AudioProcessingState.ready,
-          ProcessingState.completed: AudioProcessingState.completed,
-        }[_player.processingState]!,
-        playing: isPlaying,
-        updatePosition: _player.position,
-        bufferedPosition: _player.bufferedPosition,
-        speed: _player.speed,
-        queueIndex: currentIndex,
-        // 修复：直接使用内部维护的 _currentRepeatMode，因为底层 loopMode 可能被强制设为 off
-        repeatMode: _currentRepeatMode,
-        shuffleMode: _player.shuffleModeEnabled ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
-      ),
-    );
   }
 
   void _handlePlaybackCompleted() {

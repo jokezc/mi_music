@@ -35,6 +35,9 @@ dependencies:
 
   # Audio Player
   just_audio: ^0.10.5
+  # Windows：改用 media_kit 后端，避免 just_audio_windows 在非平台线程发消息导致崩溃
+  just_audio_media_kit: ^2.1.0
+  media_kit_libs_windows_audio: any
   audio_service: ^0.18.18
   audio_session: ^0.2.2
   rxdart: ^0.28.0
