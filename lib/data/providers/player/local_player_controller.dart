@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:mi_music/core/platform.dart';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
@@ -51,7 +51,7 @@ Future<AudioSource> createCachedAudioSource({
     }
 
     // Windows：为避免 LockCaching 缓存重命名时的文件占用问题，未缓存时用 URI 直播
-    final isWindows = !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    final isWindows = AppPlatform.isWindows;
     if (isWindows) {
       Uri? artUri;
       try {
@@ -137,22 +137,42 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _logger.i("App回到前台，检查并同步播放器状态");
-      // 延迟一点执行，确保 AudioService 也有时间恢复
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!_disposed && _handler != null) {
-          _syncFromHandler(_handler, fallbackState: _currentState);
+    if (state != AppLifecycleState.resumed) return;
+    _logger.i("App回到前台，检查并同步播放器状态");
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final handler = _handler;
+      if (_disposed || handler == null) return;
 
-          // 额外检查：如果 UI 显示正在播放，但播放器实际位置没变（僵死），则强制暂停
-          // 这解决了"进度条还在动但没声音"的问题（UI 根据 playing=true 自动推演进度，但底层已死）
-          if (_currentState?.isPlaying == true && !_handler.player.playing) {
+      if (AppPlatform.isWindows) {
+        // 桌面端：不读 player.currentIndex，避免 just_audio_media_kit（Windows/Linux）用 -1 访问列表导致 RangeError
+        runZonedGuarded(() async {
+          if (_disposed) return;
+          _syncFromHandlerSafe(handler, fallbackState: _currentState);
+          if (!_disposed) {
+            final playing = handler.player.playing;
+            if (_currentState?.isPlaying == true && !playing) {
+              _logger.w("检测到 UI 状态与底层不一致（UI:Playing, Player:Stopped），强制修正为暂停");
+              _updateState(_currentState!.copyWith(isPlaying: false));
+            }
+          }
+        }, (Object error, StackTrace stack) {
+          if (error is RangeError) {
+            _logger.w("App 恢复时播放器状态同步被忽略（just_audio_media_kit currentIndex 异常）: $error");
+            return;
+          }
+          _logger.e("App 恢复时同步播放器状态异常", error: error, stackTrace: stack);
+        });
+      } else {
+        // Android/iOS：保持原有逻辑，从 handler 完整同步（含 currentIndex）
+        _syncFromHandler(handler, fallbackState: _currentState);
+        if (!_disposed) {
+          if (_currentState?.isPlaying == true && !handler.player.playing) {
             _logger.w("检测到 UI 状态与底层不一致（UI:Playing, Player:Stopped），强制修正为暂停");
             _updateState(_currentState!.copyWith(isPlaying: false));
           }
         }
-      });
-    }
+      }
+    });
   }
 
   /// 初始化控制器（必须在创建后调用，确保 setRemoteMode 完成）
@@ -532,6 +552,26 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         currentSong: title,
         currentIndex: idx,
         // 明确保留 loopMode 和 shuffleMode
+        loopMode: current.loopMode,
+        shuffleMode: current.shuffleMode,
+      ),
+    );
+  }
+
+  /// 安全同步：仅同步 position/playing/duration，不读取 player.currentIndex。
+  /// 用于 App 从后台恢复时，避免触发 just_audio_media_kit（Windows/Linux）用 currentIndex=-1 访问列表导致的 RangeError。
+  void _syncFromHandlerSafe(MyAudioHandler handler, {PlayerState? fallbackState}) {
+    final current = _currentState ?? fallbackState ?? const PlayerState();
+    final playing = handler.player.playing;
+    final pos = handler.player.position;
+    final dur = handler.player.duration ?? current.duration;
+    _updateState(
+      current.copyWith(
+        isPlaying: playing,
+        position: pos,
+        duration: dur,
+        currentSong: current.currentSong,
+        currentIndex: current.currentIndex,
         loopMode: current.loopMode,
         shuffleMode: current.shuffleMode,
       ),

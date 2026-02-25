@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
+import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/globals.dart';
 import 'package:mi_music/core/theme/app_theme.dart';
@@ -13,13 +16,31 @@ import 'package:mi_music/data/providers/theme_provider.dart';
 import 'package:mi_music/router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+final _mainLogger = Logger();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Windows 使用 media_kit 后端，避免 just_audio_windows 非平台线程导致崩溃
+  // just_audio 官方仅支持 Android/iOS/macOS/Web；Windows 需通过 just_audio_media_kit 启用（见 https://pub.dev/packages/just_audio#windows）
   JustAudioMediaKit.ensureInitialized(windows: true, linux: false);
   final sharedPrefs = await SharedPreferences.getInstance();
 
-  runApp(ProviderScope(overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)], child: const MyApp()));
+  final app = ProviderScope(
+    overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)],
+    child: const MyApp(),
+  );
+
+  // 全平台包 zone：just_audio 在部分场景（如 Windows 用 media_kit 时恢复前台、切换歌单）会收到 currentIndex=-1，内部用 -1 访问列表导致 RangeError，此处统一兜底避免崩溃
+  runZonedGuarded(() {
+    runApp(app);
+  }, (Object error, StackTrace stack) {
+    if (error is RangeError &&
+        error.message.contains('Not in inclusive range') &&
+        error.message.contains('-1')) {
+      _mainLogger.w('已忽略 just_audio currentIndex=-1 导致的 RangeError（常见于切换歌单/恢复前台）');
+      return;
+    }
+    FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stack));
+  });
 }
 
 /// 初始化应用（在首屏加载时）

@@ -109,12 +109,14 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                     itemBuilder: (context, index) {
                       final song = filteredSongs[index];
                       final isSelected = _selectedSongs.contains(song);
-                      return CheckboxListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        secondary: SongCover(songName: song, size: 48),
-                        title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        value: isSelected,
-                        onChanged: (bool? value) {
+                      return SizedBox(
+                        height: 56,
+                        child: CheckboxListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                          secondary: SongCover(songName: song, size: 48),
+                          title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          value: isSelected,
+                          onChanged: (bool? value) {
                           setState(() {
                             if (value == true) {
                               _selectedSongs.add(song);
@@ -123,6 +125,7 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                             }
                           });
                         },
+                        ),
                       );
                     },
                   ),

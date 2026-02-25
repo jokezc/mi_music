@@ -626,7 +626,7 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         lastUpdated: DateTime.now(),
       );
       await cacheManager.savePlayerState(deviceKey, stateCache);
-      _logger.d('设备切换时保存播放状态到 Hive: deviceKey=$deviceKey, song=${state.currentSong}');
+      // _logger.d('设备切换时保存播放状态到 Hive: deviceKey=$deviceKey, song=${state.currentSong}');
     } catch (e, st) {
       _logger.e('保存播放状态失败: $e', error: e, stackTrace: st);
     }
@@ -753,9 +753,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         lastUpdated: DateTime.now(),
       );
       await cacheManager.savePlayerState(deviceKey, stateCache);
-      _logger.d(
-        '保存播放状态到 Hive: deviceKey=$deviceKey, song=${curState.currentSong}, playlist=${curState.playlist.length}',
-      );
+      // _logger.d(
+      //   '保存播放状态到 Hive: deviceKey=$deviceKey, song=${curState.currentSong}, playlist=${curState.playlist.length}',
+      // );
     } catch (e, st) {
       _logger.e('保存播放状态失败: $e', error: e, stackTrace: st);
     }

@@ -125,10 +125,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               itemCount: songs.length,
               itemBuilder: (context, index) {
                 final song = songs[index];
-                return ListTile(
-                  leading: SongCover(songName: song),
-                  title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: IconButton(
+                return SizedBox(
+                  height: 56,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    leading: SongCover(songName: song, size: 48),
+                    title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: IconButton(
                     icon: const Icon(Icons.play_circle_rounded),
                     color: AppColors.primary,
                     onPressed: () {
@@ -138,12 +141,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
                     },
                   ),
-                  onTap: () {
-                    ref
-                        .read(unifiedPlayerControllerProvider.notifier)
-                        .playMusic(song, playlistName: displayPlaylistName);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
-                  },
+                    onTap: () {
+                      ref
+                          .read(unifiedPlayerControllerProvider.notifier)
+                          .playMusic(song, playlistName: displayPlaylistName);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
+                    },
+                  ),
                 );
               },
             );

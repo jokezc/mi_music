@@ -198,10 +198,13 @@ class PlaylistDetailPage extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final song = songs[index];
-                      return ListTile(
-                        leading: SongCover(songName: song, size: 48),
-                        title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        trailing: Row(
+                      return SizedBox(
+                        height: 56,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                          leading: SongCover(songName: song, size: 48),
+                          title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
@@ -250,7 +253,8 @@ class PlaylistDetailPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        onTap: () => _playSong(context, ref, song),
+                          onTap: () => _playSong(context, ref, song),
+                        ),
                       );
                     }, childCount: songs.length),
                   ),

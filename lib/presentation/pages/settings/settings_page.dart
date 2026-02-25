@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/presentation/pages/settings/sections/account_section.dart';
 import 'package:mi_music/presentation/pages/settings/sections/directory_section.dart';
@@ -45,7 +46,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _openInitialSectionIfMobile() {
     if (!mounted) return;
-    if (MediaQuery.sizeOf(context).width >= 600) return;
+    if (MediaQuery.sizeOf(context).width >= Breakpoints.navRail) return;
     final index = _sectionToIndex[widget.initialSection!] ?? 0;
     if (index < 0 || index >= _categories.length) return;
     Navigator.of(context).push(
@@ -96,7 +97,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // 大屏：左右分栏布局
-        if (constraints.maxWidth >= 600) {
+        if (constraints.maxWidth >= Breakpoints.navRail) {
           return _buildDesktopLayout(context);
         }
         // 小屏：单列布局
