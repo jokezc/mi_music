@@ -50,6 +50,7 @@ app.*.map.json
 
 # Android release signing secrets (DO NOT COMMIT)
 **/*.jks
+**/*.jks.b64
 **/*.keystore
 android/key.properties
 /.trae/skills
