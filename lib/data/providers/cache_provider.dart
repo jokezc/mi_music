@@ -84,13 +84,11 @@ Future<void> syncPlaylistsToCache(Ref ref) async {
   final cacheManager = ref.watch(cacheManagerProvider);
 
   try {
-    // 获取所有歌单数据
+    // 1. 获取所有歌单数据
     final musicList = await apiClient.getMusicList();
 
-    // 清空旧缓存以确保同步删除操作
-    await cacheManager.clearCache();
-
-    // 保存所有歌单及歌曲到缓存
+    // 先清除旧的歌单结构，重新保存最新的歌单划分
+    await cacheManager.clearPlaylists();
     await cacheManager.savePlaylists(musicList.playlists);
 
     // 收集所有歌曲名称（去重）
@@ -99,49 +97,50 @@ Future<void> syncPlaylistsToCache(Ref ref) async {
       allSongs.addAll(songs);
     }
 
-    // 分批获取所有歌曲信息（包含 tags）
-    // 避免 URL 过长导致连接关闭，每次最多获取 50 首
-    if (allSongs.isNotEmpty) {
-      try {
-        final songNames = allSongs.toList();
-        const batchSize = 50; // 每批最多 50 首
-        final totalSongs = songNames.length;
-        int cachedCount = 0;
-        int failedCount = 0;
+    final songNames = allSongs.toList();
 
-        // 分批获取
+    // 2. 异步后台全量获取所有歌曲详情信息，不阻塞前台 UI 加载
+    if (songNames.isNotEmpty) {
+      _logger.i('触发后台全量拉取：共 ${songNames.length} 首歌...');
+
+      // 使用 Future.microtask 切换到后台任务，当前 Provider 直接返回完成
+      Future.microtask(() async {
+        const batchSize = 50; // GET 请求有 URL 长度限制，单批次维持 50 首比较安全
+        final totalSongs = songNames.length;
+        List<SongInfoCache> newSongCaches = [];
+        List<Future<List<MusicInfoItem>>> futures = [];
+
+        // 将任务分片
         for (int i = 0; i < songNames.length; i += batchSize) {
-          final int end = ((i + batchSize) < songNames.length) ? (i + batchSize) : songNames.length;
+          final int end = ((i + batchSize) < totalSongs) ? (i + batchSize) : totalSongs;
           final batch = songNames.sublist(i, end);
 
-          try {
-            _logger.i('正在获取歌曲信息 ${i + 1}-$end/$totalSongs...');
-            final musicInfos = await apiClient.getMusicInfos(batch, true);
-
-            // 将歌曲信息转换为缓存模型并保存
-            final List<SongInfoCache> songInfoCaches = musicInfos.map<SongInfoCache>((info) {
-              return SongInfoCache.fromApi(name: info.name, url: info.url, tags: info.tags);
-            }).toList();
-
-            await cacheManager.saveSongInfos(songInfoCaches);
-            cachedCount += songInfoCaches.length;
-          } catch (e) {
-            _logger.e("获取第 ${i + 1}-$end 首歌曲信息失败: $e");
-            // 单批失败不影响其他批次
-            failedCount += batch.length;
-          }
-
-          // 添加小延迟，避免请求过快
-          if (end < songNames.length) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
+          // 注意：此处不再使用 await，而是收集 Future 用于并发执行
+          futures.add(apiClient.getMusicInfos(batch, true));
         }
 
-        _logger.i('歌曲信息缓存完成: 成功 $cachedCount 首，失败 $failedCount 首');
-      } catch (e) {
-        // 如果批量获取歌曲信息失败，不影响歌单缓存
-        _logger.e('批量获取歌曲信息失败: $e');
-      }
+        try {
+          // 利用并发一次性拉取，比串行循环快得多
+          List<List<MusicInfoItem>> results = await Future.wait(futures);
+
+          // 平铺结果并转换为缓存对象
+          for (var infos in results) {
+            newSongCaches.addAll(
+              infos.map((info) {
+                return SongInfoCache.fromApi(name: info.name, url: info.url, tags: info.tags);
+              }),
+            );
+          }
+
+          // 3. 先清空历史信息，再用全新获取的数据直接覆盖写入
+          await cacheManager.clearSongInfos();
+          await cacheManager.saveSongInfos(newSongCaches);
+
+          _logger.i('✅ 全量歌单详情已异步覆盖完成！成功缓存 ${newSongCaches.length} 首歌的详情信息。');
+        } catch (e) {
+          _logger.e('后台异步批量获取歌曲详情时发生异常: $e');
+        }
+      });
     }
   } catch (e) {
     _logger.e('同步歌单到缓存失败: $e');

@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
-import 'package:mi_music/core/platform.dart';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/platform.dart';
 import 'package:mi_music/data/cache/music_cache.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
@@ -145,23 +145,26 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
       if (AppPlatform.isWindows) {
         // 桌面端：不读 player.currentIndex，避免 just_audio_media_kit（Windows/Linux）用 -1 访问列表导致 RangeError
-        runZonedGuarded(() async {
-          if (_disposed) return;
-          _syncFromHandlerSafe(handler, fallbackState: _currentState);
-          if (!_disposed) {
-            final playing = handler.player.playing;
-            if (_currentState?.isPlaying == true && !playing) {
-              _logger.w("检测到 UI 状态与底层不一致（UI:Playing, Player:Stopped），强制修正为暂停");
-              _updateState(_currentState!.copyWith(isPlaying: false));
+        runZonedGuarded(
+          () async {
+            if (_disposed) return;
+            _syncFromHandlerSafe(handler, fallbackState: _currentState);
+            if (!_disposed) {
+              final playing = handler.player.playing;
+              if (_currentState?.isPlaying == true && !playing) {
+                _logger.w("检测到 UI 状态与底层不一致（UI:Playing, Player:Stopped），强制修正为暂停");
+                _updateState(_currentState!.copyWith(isPlaying: false));
+              }
             }
-          }
-        }, (Object error, StackTrace stack) {
-          if (error is RangeError) {
-            _logger.w("App 恢复时播放器状态同步被忽略（just_audio_media_kit currentIndex 异常）: $error");
-            return;
-          }
-          _logger.e("App 恢复时同步播放器状态异常", error: error, stackTrace: stack);
-        });
+          },
+          (Object error, StackTrace stack) {
+            if (error is RangeError) {
+              _logger.w("App 恢复时播放器状态同步被忽略（just_audio_media_kit currentIndex 异常）: $error");
+              return;
+            }
+            _logger.e("App 恢复时同步播放器状态异常", error: error, stackTrace: stack);
+          },
+        );
       } else {
         // Android/iOS：保持原有逻辑，从 handler 完整同步（含 currentIndex）
         _syncFromHandler(handler, fallbackState: _currentState);
@@ -630,10 +633,16 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         final infos = await client.getMusicInfos([songName], false);
         final url = infos.firstOrNull?.url;
         if (url != null && url.isNotEmpty) {
+          final info = infos.first;
+          // 主动缓存获取到的基础信息
+          await cache.saveSongInfo(
+            SongInfoCache(name: info.name, url: info.url, tags: info.tags, lastUpdated: DateTime.now()),
+          );
+
           Duration? duration;
           try {
-            if (infos.first.tags.containsKey('duration')) {
-              final durVal = infos.first.tags['duration'];
+            if (info.tags.containsKey('duration')) {
+              final durVal = info.tags['duration'];
               if (durVal is int) {
                 duration = Duration(seconds: durVal);
               } else if (durVal is String) {
@@ -955,6 +964,13 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       if (!_isRequestValid(requestId)) return;
 
       if (musicInfos.isNotEmpty && musicInfos.first.url.isNotEmpty) {
+        final info = musicInfos.first;
+        // 把单曲查到的结果主动存入缓存
+        await cacheManager.saveSongInfo(
+          SongInfoCache(name: info.name, url: info.url, tags: info.tags, lastUpdated: DateTime.now()),
+        );
+        _logger.i("单曲播放时发现缺失基本信息，已主动获取并存入缓存: $songName");
+
         // 简单策略：直接调用 playPlaylist，它内部有补充逻辑
         await _playPlaylistInternal([songName], playlistName: playlistName, initialIndex: 0, requestId: requestId);
       }
@@ -1023,13 +1039,17 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
         final newInfos = await apiClient.getMusicInfos(missingSongs, false);
         if (!_isRequestValid(requestId)) return;
 
+        final List<SongInfoCache> cachesToSave = [];
         for (var info in newInfos) {
-          cachedInfos[info.name] = SongInfoCache(
-            name: info.name,
-            url: info.url,
-            tags: info.tags,
-            lastUpdated: DateTime.now(),
-          );
+          final cacheObj = SongInfoCache(name: info.name, url: info.url, tags: info.tags, lastUpdated: DateTime.now());
+          cachedInfos[info.name] = cacheObj;
+          cachesToSave.add(cacheObj);
+        }
+
+        // 补充获取到数据后，主动写入缓存，以避免下次播放/刷新UI时还是没有基本信息
+        if (cachesToSave.isNotEmpty) {
+          await cacheManager.saveSongInfos(cachesToSave);
+          _logger.i("已主动缓存了 ${cachesToSave.length} 首缺失歌曲的信息");
         }
       } catch (e) {
         _logger.e("补充获取歌曲信息失败: $e");
