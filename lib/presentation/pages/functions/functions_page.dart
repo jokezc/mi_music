@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -364,7 +363,7 @@ class _DeviceInfoCardState extends ConsumerState<_DeviceInfoCard> {
   @override
   void initState() {
     super.initState();
-    _loadLocalDeviceInfo();
+    // _loadLocalDeviceInfo();
     _loadSystemSettings();
   }
 
@@ -395,22 +394,23 @@ class _DeviceInfoCardState extends ConsumerState<_DeviceInfoCard> {
 
   Future<void> _loadLocalDeviceInfo() async {
     try {
-      final deviceInfo = DeviceInfoPlugin();
       if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
         setState(() {
-          _localDeviceName = androidInfo.model.isNotEmpty ? androidInfo.model : 'Android设备';
-          _localDeviceModel = androidInfo.model.isNotEmpty ? androidInfo.model : '-';
-          _localDeviceId = androidInfo.id.isNotEmpty ? androidInfo.id : '-';
+          _localDeviceName = 'Android设备';
+          _localDeviceModel = '-';
+          _localDeviceId = '-';
         });
       } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
         setState(() {
-          _localDeviceName = iosInfo.name.isNotEmpty ? iosInfo.name : 'iOS设备';
-          _localDeviceModel = iosInfo.model.isNotEmpty ? iosInfo.model : '-';
-          _localDeviceId = iosInfo.identifierForVendor != null && iosInfo.identifierForVendor!.isNotEmpty
-              ? iosInfo.identifierForVendor!
-              : '-';
+          _localDeviceName = 'iOS设备';
+          _localDeviceModel = '-';
+          _localDeviceId = '-';
+        });
+      } else {
+        setState(() {
+          _localDeviceName = '未知设备';
+          _localDeviceModel = '-';
+          _localDeviceId = '-';
         });
       }
     } catch (e) {

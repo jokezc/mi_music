@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 
