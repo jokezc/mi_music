@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,9 +24,6 @@ class FunctionsPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // // 设备选择卡片
-            // const _DeviceSelectorCard(),
-            // const SizedBox(height: 16),
             // // 播放控制卡片
             // const _PlayerControlCard(),
             // const SizedBox(height: 16),
@@ -389,32 +384,6 @@ class _DeviceInfoCardState extends ConsumerState<_DeviceInfoCard> {
           _isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> _loadLocalDeviceInfo() async {
-    try {
-      if (Platform.isAndroid) {
-        setState(() {
-          _localDeviceName = 'Android设备';
-          _localDeviceModel = '-';
-          _localDeviceId = '-';
-        });
-      } else if (Platform.isIOS) {
-        setState(() {
-          _localDeviceName = 'iOS设备';
-          _localDeviceModel = '-';
-          _localDeviceId = '-';
-        });
-      } else {
-        setState(() {
-          _localDeviceName = '未知设备';
-          _localDeviceModel = '-';
-          _localDeviceId = '-';
-        });
-      }
-    } catch (e) {
-      _logger.e("获取本地设备信息失败: $e");
     }
   }
 

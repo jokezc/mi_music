@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 
@@ -57,6 +58,21 @@ class PermissionUtils {
     }
   }
 
+  /// 获取 Android API Level（不依赖外部包）
+  static int _getAndroidApiLevel() {
+    if (!Platform.isAndroid) return 0;
+    try {
+      final RegExp apiRegExp = RegExp(r'API\s+(\d+)');
+      final match = apiRegExp.firstMatch(Platform.operatingSystemVersion);
+      if (match != null && match.groupCount >= 1) {
+        return int.tryParse(match.group(1) ?? '0') ?? 0;
+      }
+    } catch (e) {
+      _logger.e("解析 Android API Level 失败: $e");
+    }
+    return 0; // 解析失败或格式未知时返回0
+  }
+
   /// 检查并请求存储权限
   /// 返回 true 表示有权限，false 表示无权限
   static Future<bool> requestStoragePermission() async {
@@ -66,24 +82,21 @@ class PermissionUtils {
     }
 
     try {
-      final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
-      final sdkInt = androidInfo.version.sdkInt;
+      final sdkInt = _getAndroidApiLevel();
 
       if (sdkInt >= 33) {
         // Android 13+ (API 33+): 使用 READ_MEDIA_AUDIO
         final status = await ph.Permission.audio.request();
         return status.isGranted;
-      } else if (sdkInt >= 29) {
-        // Android 10-12 (API 29-32): 使用 WRITE_EXTERNAL_STORAGE
-        // 注意：Android 10+ 即使有权限也无法直接访问公共目录
-        // 但可以用于某些特殊场景
+      } else if (sdkInt > 0) {
+        // 解析到了旧版本 SDK (API < 33)
         final status = await ph.Permission.storage.request();
         return status.isGranted;
       } else {
-        // Android 9 及以下: 使用 WRITE_EXTERNAL_STORAGE
-        final status = await ph.Permission.storage.request();
-        return status.isGranted;
+        // 解析失败时的 fallback：组合请求以确保兼容性
+        final audioStatus = await ph.Permission.audio.request();
+        final storageStatus = await ph.Permission.storage.request();
+        return audioStatus.isGranted || storageStatus.isGranted;
       }
     } catch (e) {
       // 如果获取权限失败，返回 false
@@ -99,16 +112,19 @@ class PermissionUtils {
     }
 
     try {
-      final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
-      final sdkInt = androidInfo.version.sdkInt;
+      final sdkInt = _getAndroidApiLevel();
 
       if (sdkInt >= 33) {
         final status = await ph.Permission.audio.status;
         return status.isGranted;
-      } else {
+      } else if (sdkInt > 0) {
         final status = await ph.Permission.storage.status;
         return status.isGranted;
+      } else {
+        // 回退逻辑
+        final audioStatus = await ph.Permission.audio.status;
+        final storageStatus = await ph.Permission.storage.status;
+        return audioStatus.isGranted || storageStatus.isGranted;
       }
     } catch (e) {
       _logger.e("检查存储权限失败: $e");
@@ -121,4 +137,3 @@ class PermissionUtils {
     return await ph.openAppSettings();
   }
 }
-
