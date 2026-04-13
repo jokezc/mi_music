@@ -30,6 +30,8 @@ git push origin v1.0.4
 2. 创建 GitHub Release
 3. 上传所有构建产物到 Release
 
+正式 Release 的正文统一读取 `docs/RELEASE_NOTES.md`，因此在发版前需要先手动更新这个文件。
+
 ### 方式 2：手动触发构建
 
 1. 打开 GitHub 仓库页面
@@ -205,6 +207,8 @@ git push origin v1.0.4
 - 标签格式是否正确（需要 `v` 前缀，如 `v1.0.4`）
 - `GITHUB_TOKEN` 权限是否足够
 - 是否有同名 Release 已存在
+- `create-release` job 是否已成功 checkout 仓库源码
+- `docs/RELEASE_NOTES.md` 是否已经提交到当前发布对应的代码中
 
 ## 📝 自定义配置
 
@@ -297,7 +301,7 @@ base64 -i certificate.p12 -o certificate_base64.txt
    - 检查 Artifacts 确认构建产物
 
 3. **发布**
-   - 为 Release 添加更新日志
+   - 正式发版前先更新 `docs/RELEASE_NOTES.md`
    - 说明各平台的安装方法
    - 标注推荐下载的版本
 

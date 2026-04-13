@@ -318,6 +318,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() && github.event_name == 'workflow_dispatch' && github.event.inputs.release_mode != 'none' }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
