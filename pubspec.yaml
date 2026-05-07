@@ -15,14 +15,14 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # State Management
-  flutter_riverpod: ^3.0.3
-  riverpod_annotation: ^3.0.3
-  riverpod: ^3.0.3
+  flutter_riverpod: ^3.2.1
+  riverpod_annotation: ^4.0.2
+  riverpod: ^3.2.1
 
   # Networking
   dio: ^5.7.0
   retrofit: ^4.4.1
-  json_annotation: ^4.9.0
+  json_annotation: ^4.11.0
 
   # Persistence & Utils
   shared_preferences: ^2.3.2
@@ -55,10 +55,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Code Generation
-  build_runner: ^2.4.13
-  riverpod_generator: ^3.0.3
-  retrofit_generator: ^10.2.0
-  json_serializable: ^6.11.2
+  build_runner: ^2.14.0
+  riverpod_generator: ^4.0.3
+  retrofit_generator: ^10.2.3
+  json_serializable: ^6.13.2
 
   # App Icon Generator
   flutter_launcher_icons: ^0.13.1
