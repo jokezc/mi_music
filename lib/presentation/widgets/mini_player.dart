@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
+import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 
 /// 底部迷你播放条
@@ -70,11 +71,9 @@ class MiniPlayer extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              currentSong ?? S.notPlaying,
+                            OverflowMarqueeText(
+                              text: currentSong ?? S.notPlaying,
                               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             // 只有在远程模式下显示设备名，或者播放列表
                             /*

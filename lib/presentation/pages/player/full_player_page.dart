@@ -289,18 +289,18 @@ class _PlayerInfo extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // 只显示歌单名称，如果没有则不显示
-    final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : "";
+      final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : null;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
-          // 歌曲名称显示（超出部分显示省略号）
+          // 歌曲名称显示：大屏位置允许两行，尽量减少长标题被截断
           Text(
             currentSong ?? S.notPlaying,
             style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           // 只在有歌单名称时显示
