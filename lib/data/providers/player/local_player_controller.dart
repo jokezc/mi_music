@@ -82,6 +82,7 @@ Future<AudioSource> createCachedAudioSource({
       _logger.w('获取歌曲封面失败: $e');
     }
     // 使用 LockCachingAudioSource 自动管理下载和缓存
+    // ignore: experimental_member_use
     return LockCachingAudioSource(
       Uri.parse(url),
       cacheFile: file,

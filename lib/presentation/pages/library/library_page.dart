@@ -230,7 +230,7 @@ class _PlaylistsTab extends ConsumerWidget {
                 height: MediaQuery.of(context).size.height * 0.7, // 确保有足够高度触发下拉刷新
                 child: Column(
                   children: [
-                    if (header != null) header!,
+                    ...(header == null ? const <Widget>[] : <Widget>[header!]),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

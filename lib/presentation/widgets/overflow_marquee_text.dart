@@ -67,7 +67,8 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
       });
     }
 
-    final milliseconds = (widget.speedPer100Px.inMilliseconds * (overflowDistance / 100)).round().clamp(1200, 12000);
+    final milliseconds =
+        (widget.speedPer100Px.inMilliseconds * (overflowDistance / 100)).round().clamp(1200, 12000).toInt();
     final nextDuration = Duration(milliseconds: milliseconds);
 
     if (_controller.duration != nextDuration) {
@@ -108,7 +109,7 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
 
         final textWidth = painter.width;
         final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
-        final overflowDistance = textWidth > availableWidth ? textWidth - availableWidth : 0;
+        final overflowDistance = textWidth > availableWidth ? textWidth - availableWidth : 0.0;
 
         _syncAnimation(overflowDistance);
 
