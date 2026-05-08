@@ -12,8 +12,10 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
+import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 
 final _logger = Logger();
 
@@ -198,16 +200,22 @@ class PlaylistDetailPage extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final song = songs[index];
-                      return SizedBox(
+                      return SongRowLayout(
                         height: 56,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                          leading: SongCover(songName: song, size: 48),
-                          title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: Row(
+                        leading: SongCover(songName: song, size: 48),
+                        title: AdaptiveSongTitle(
+                          text: song,
+                          style: theme.textTheme.bodyLarge,
+                          singleLineMinFontSize: 14,
+                          wrappedMinFontSize: 12,
+                          fixedHeight: 32,
+                        ),
+                        trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
+                              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                              padding: EdgeInsets.zero,
                               icon: Icon(
                                 favoriteSet.contains(song) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                                 color: favoriteSet.contains(song) ? Colors.red : null,
@@ -216,45 +224,48 @@ class PlaylistDetailPage extends ConsumerWidget {
                               onPressed: () =>
                                   FavoriteUtils.toggleFavorite(context, ref, song, favoriteSet.contains(song)),
                             ),
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert_rounded),
-                              tooltip: '更多',
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              onSelected: (value) {
-                                if (value == 'delete') {
-                                  _deleteMusic(context, ref, song);
-                                } else if (value == 'remove') {
-                                  _removeSong(context, ref, song);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                if (isCustom)
+                            SizedBox(
+                              width: 36,
+                              child: PopupMenuButton<String>(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                tooltip: '更多',
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                onSelected: (value) {
+                                  if (value == 'delete') {
+                                    _deleteMusic(context, ref, song);
+                                  } else if (value == 'remove') {
+                                    _removeSong(context, ref, song);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  if (isCustom)
+                                    const PopupMenuItem(
+                                      value: 'remove',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                                          SizedBox(width: 8),
+                                          Text('从歌单移除'),
+                                        ],
+                                      ),
+                                    ),
                                   const PopupMenuItem(
-                                    value: 'remove',
+                                    value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                                        Icon(Icons.delete_rounded, color: Colors.red),
                                         SizedBox(width: 8),
-                                        Text('从歌单移除'),
+                                        Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
                                       ],
                                     ),
                                   ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete_rounded, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                          onTap: () => _playSong(context, ref, song),
-                        ),
+                        onTap: () => _playSong(context, ref, song),
                       );
                     }, childCount: songs.length),
                   ),

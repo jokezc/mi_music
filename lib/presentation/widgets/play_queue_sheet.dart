@@ -4,7 +4,9 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/song_utils.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
+import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 
 /// 播放队列底部抽屉
 class PlayQueueSheet extends ConsumerStatefulWidget {
@@ -15,6 +17,7 @@ class PlayQueueSheet extends ConsumerStatefulWidget {
 }
 
 class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
+  static const double _queueItemHeight = 56.0;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -31,7 +34,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
       if (!_scrollController.hasClients) return;
 
       // 计算每个列表项的大概高度（ListTile 默认高度约为 56）
-      const double itemHeight = 56.0;
+      const double itemHeight = _queueItemHeight;
       final double targetOffset = currentIndex * itemHeight;
 
       // 获取可视区域高度
@@ -163,7 +166,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
       controller: _scrollController,
       itemCount: playlist.length,
       padding: const EdgeInsets.only(bottom: 16),
-      itemExtent: 56.0, // 固定高度优化性能
+      itemExtent: _queueItemHeight, // 固定高度优化性能
       physics: const BouncingScrollPhysics(), // 弹性滚动
       itemBuilder: (context, index) {
         final song = playlist[index];
@@ -171,7 +174,8 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
             index == currentIndex ||
             (currentIndex < 0 && currentSong != null && song == currentSong && playlist.indexOf(song) == index);
 
-        return ListTile(
+        return SongRowLayout(
+          height: _queueItemHeight,
           leading: isPlaying
               ? Container(
                   width: 48,
@@ -183,63 +187,68 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                   child: const Icon(Icons.equalizer_rounded, color: Colors.white),
                 )
               : SongCover(songName: song, size: 48),
-          title: Text(
-            song,
+          title: AdaptiveSongTitle(
+            text: song,
             style: theme.textTheme.bodyLarge?.copyWith(
               fontWeight: isPlaying ? FontWeight.w600 : null,
               color: isPlaying ? AppColors.primary : null,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            singleLineMinFontSize: 14,
+            wrappedMinFontSize: 12,
+            fixedHeight: 32,
           ),
-          // subtitle: const Text('未知艺术家'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isPlaying)
                 const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(Icons.volume_up_rounded, size: 20, color: AppColors.primary),
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(Icons.volume_up_rounded, size: 18, color: AppColors.primary),
                 ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert_rounded,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                ),
-                tooltip: '更多',
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    SongUtils.deleteSong(context, ref, song);
-                  } else if (value == 'remove') {
-                    if (currentPlaylistName != null) {
-                      SongUtils.removeSongFromPlaylist(context, ref, song, currentPlaylistName);
+              SizedBox(
+                width: 36,
+                child: PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    size: 20,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                  tooltip: '更多',
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      SongUtils.deleteSong(context, ref, song);
+                    } else if (value == 'remove') {
+                      if (currentPlaylistName != null) {
+                        SongUtils.removeSongFromPlaylist(context, ref, song, currentPlaylistName);
+                      }
                     }
-                  }
-                },
-                itemBuilder: (context) => [
-                  if (isCustomPlaylist)
+                  },
+                  itemBuilder: (context) => [
+                    if (isCustomPlaylist)
+                      const PopupMenuItem(
+                        value: 'remove',
+                        child: Row(
+                          children: [
+                            Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('从歌单移除'),
+                          ],
+                        ),
+                      ),
                     const PopupMenuItem(
-                      value: 'remove',
+                      value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                          Icon(Icons.delete_rounded, color: Colors.red),
                           SizedBox(width: 8),
-                          Text('从歌单移除'),
+                          Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_rounded, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

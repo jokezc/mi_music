@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
+import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 
 class SongMultiSelectPage extends StatefulWidget {
   final String title;
@@ -109,23 +111,37 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                     itemBuilder: (context, index) {
                       final song = filteredSongs[index];
                       final isSelected = _selectedSongs.contains(song);
-                      return SizedBox(
+                      return SongRowLayout(
                         height: 56,
-                        child: CheckboxListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                          secondary: SongCover(songName: song, size: 48),
-                          title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        leading: SongCover(songName: song, size: 48),
+                        title: AdaptiveSongTitle(
+                          text: song,
+                          style: theme.textTheme.bodyLarge,
+                          singleLineMinFontSize: 14,
+                          wrappedMinFontSize: 12,
+                          fixedHeight: 32,
+                        ),
+                        trailing: Checkbox(
                           value: isSelected,
                           onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedSongs.add(song);
+                              } else {
+                                _selectedSongs.remove(song);
+                              }
+                            });
+                          },
+                        ),
+                        onTap: () {
                           setState(() {
-                            if (value == true) {
-                              _selectedSongs.add(song);
-                            } else {
+                            if (isSelected) {
                               _selectedSongs.remove(song);
+                            } else {
+                              _selectedSongs.add(song);
                             }
                           });
                         },
-                        ),
                       );
                     },
                   ),

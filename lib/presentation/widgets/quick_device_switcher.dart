@@ -10,6 +10,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 
 final _logger = Logger();
 
@@ -363,7 +364,7 @@ class _DeviceCard extends ConsumerWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: 64, // 减小高度
+          height: 80,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: backgroundColor,
@@ -402,16 +403,17 @@ class _DeviceCard extends ConsumerWidget {
                   if (isPlaying) const Icon(Icons.graphic_eq_rounded, size: 16, color: AppColors.primary),
                 ],
               ),
-              Text(
-                (currentMusic.isNotEmpty)
+              AdaptiveSongTitle(
+                text: (currentMusic.isNotEmpty)
                     ? currentMusic
                     : (isSelected ? (isPlaying ? '正在播放' : '已暂停') : (isLocal ? '本机' : '点击切换')),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                   fontSize: 11,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                singleLineMinFontSize: 10,
+                wrappedMinFontSize: 9,
+                fixedHeight: 30,
               ),
             ],
           ),

@@ -23,7 +23,8 @@ class OverflowMarqueeText extends StatefulWidget {
 
 class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  double _overflowDistance = 0;
+  int _animationToken = 0;
+  double _cycleDistance = 0;
 
   @override
   void initState() {
@@ -41,56 +42,49 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
   void didUpdateWidget(covariant OverflowMarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text || oldWidget.style != widget.style) {
+      _cycleDistance = 0;
+      _animationToken++;
       _controller.reset();
     }
   }
 
-  void _syncAnimation(double overflowDistance) {
+  void _syncAnimation({
+    required double overflowDistance,
+    required double textWidth,
+  }) {
     if (overflowDistance <= 0) {
       if (_controller.isAnimating) {
         _controller.stop();
       }
-      if (_overflowDistance != 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() => _overflowDistance = 0);
-          }
-        });
-      }
+      _cycleDistance = 0;
+      _animationToken++;
       return;
     }
 
-    if ((_overflowDistance - overflowDistance).abs() > 0.5) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _overflowDistance = overflowDistance);
-      });
-    }
+    final nextScrollDistance = textWidth + widget.gap;
+    _cycleDistance = nextScrollDistance.ceilToDouble();
 
     final milliseconds =
-        (widget.speedPer100Px.inMilliseconds * (overflowDistance / 100)).round().clamp(1200, 12000).toInt();
+        (widget.speedPer100Px.inMilliseconds * (nextScrollDistance / 100)).round().clamp(1200, 12000).toInt();
     final nextDuration = Duration(milliseconds: milliseconds);
 
     if (_controller.duration != nextDuration) {
       _controller.duration = nextDuration;
       _controller.reset();
+      _animationToken++;
     }
 
     if (!_controller.isAnimating) {
-      _loop();
+      _startLoop();
     }
   }
 
-  Future<void> _loop() async {
-    while (mounted && _overflowDistance > 0) {
-      await Future<void>.delayed(widget.pause);
-      if (!mounted || _overflowDistance <= 0) break;
-      await _controller.forward(from: 0);
-      if (!mounted || _overflowDistance <= 0) break;
-      await Future<void>.delayed(widget.pause);
-      if (!mounted || _overflowDistance <= 0) break;
-      _controller.reset();
-    }
+  Future<void> _startLoop() async {
+    final token = ++_animationToken;
+    await Future<void>.delayed(widget.pause);
+    if (!mounted || _cycleDistance <= 0 || token != _animationToken) return;
+    if (_controller.duration == null) return;
+    _controller.repeat(period: _controller.duration);
   }
 
   @override
@@ -111,28 +105,52 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
         final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
         final overflowDistance = textWidth > availableWidth ? textWidth - availableWidth : 0.0;
 
-        _syncAnimation(overflowDistance);
+        _syncAnimation(
+          overflowDistance: overflowDistance,
+          textWidth: textWidth,
+        );
 
         if (overflowDistance <= 0) {
-          return Text(widget.text, style: textStyle, maxLines: 1, overflow: TextOverflow.ellipsis);
+          return SizedBox(
+            width: availableWidth,
+            child: Text(widget.text, style: textStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+          );
         }
 
-        return ClipRect(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final dx = -_overflowDistance * Curves.easeInOut.transform(_controller.value);
-              return Transform.translate(offset: Offset(dx, 0), child: child);
-            },
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: EdgeInsets.only(right: widget.gap),
-                child: Text(
-                  widget.text,
-                  style: textStyle,
-                  maxLines: 1,
-                  softWrap: false,
+        return SizedBox(
+          width: availableWidth,
+          child: ClipRect(
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                  final rawDx = -_cycleDistance * _controller.value;
+                  final snappedDx = (rawDx * devicePixelRatio).roundToDouble() / devicePixelRatio;
+                  return Transform.translate(offset: Offset(snappedDx, 0), child: child);
+                },
+                child: OverflowBox(
+                  alignment: Alignment.centerLeft,
+                  minWidth: 0,
+                  maxWidth: double.infinity,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.text,
+                        style: textStyle,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                      SizedBox(width: widget.gap),
+                      Text(
+                        widget.text,
+                        style: textStyle,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

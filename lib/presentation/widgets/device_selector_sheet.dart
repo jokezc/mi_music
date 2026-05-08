@@ -11,6 +11,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 
 
 final _logger = Logger();
@@ -333,6 +334,7 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                   }
 
                   return ListTile(
+                    isThreeLine: true,
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -350,13 +352,14 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       ),
                     ),
                     title: Text(device.name ?? '未知设备'),
-                    subtitle: Text(
-                      subtitleText,
+                    subtitle: AdaptiveSongTitle(
+                      text: subtitleText,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      singleLineMinFontSize: 11,
+                      wrappedMinFontSize: 10,
+                      fixedHeight: 32,
                     ),
                     trailing: trailingWidget,
                     onTap: () => _handleDeviceSelection(context, ref, device: device),

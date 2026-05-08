@@ -19,6 +19,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -289,19 +290,20 @@ class _PlayerInfo extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // 只显示歌单名称，如果没有则不显示
-      final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : null;
+    final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : null;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
           // 歌曲名称显示：大屏位置允许两行，尽量减少长标题被截断
-          Text(
-            currentSong ?? S.notPlaying,
+          AdaptiveSongTitle(
+            text: currentSong ?? S.notPlaying,
             style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            singleLineMinFontSize: 23.5,
+            wrappedMinFontSize: 18,
+            fixedHeight: 64,
           ),
           // 只在有歌单名称时显示
           if (displayText != null) ...[

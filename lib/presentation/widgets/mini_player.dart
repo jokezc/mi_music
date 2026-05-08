@@ -46,7 +46,7 @@ class MiniPlayer extends ConsumerWidget {
               const _MiniPlayerProgressBar(),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     children: [
                       // 音乐图标/封面
@@ -67,29 +67,15 @@ class MiniPlayer extends ConsumerWidget {
                       const SizedBox(width: 12),
                       // 歌曲信息
                       Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            OverflowMarqueeText(
-                              text: currentSong ?? S.notPlaying,
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            // 只有在远程模式下显示设备名，或者播放列表
-                            /*
-                          if (state.config.isRemoteMode)
-                            Text(
-                              state.config.currentDevice?.name ?? '未知设备',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            */
-                          ],
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: OverflowMarqueeText(
+                            text: currentSong ?? S.notPlaying,
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            gap: 20,
+                            pause: const Duration(milliseconds: 1200),
+                            speedPer100Px: const Duration(milliseconds: 3200),
+                          ),
                         ),
                       ),
                       // 播放控制按钮
@@ -98,7 +84,9 @@ class MiniPlayer extends ConsumerWidget {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.skip_previous_rounded),
-                            iconSize: 28,
+                            iconSize: 24,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                             onPressed: () {
                               ref.read(unifiedPlayerControllerProvider.notifier).skipPrevious();
                             },
@@ -106,7 +94,9 @@ class MiniPlayer extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: Icon(isPlaying ? Icons.pause_circle_rounded : Icons.play_circle_rounded),
-                            iconSize: 40,
+                            iconSize: 36,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
                             color: AppColors.primary,
                             onPressed: () {
                               // 避免快速点击闪烁，加个简单的防抖或状态判断
@@ -119,7 +109,9 @@ class MiniPlayer extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.skip_next_rounded),
-                            iconSize: 28,
+                            iconSize: 24,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                             onPressed: () {
                               ref.read(unifiedPlayerControllerProvider.notifier).skipNext();
                             },

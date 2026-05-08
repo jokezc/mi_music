@@ -4,8 +4,10 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
+import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
+import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 
 /// 搜索页面
 class SearchPage extends ConsumerStatefulWidget {
@@ -125,13 +127,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               itemCount: songs.length,
               itemBuilder: (context, index) {
                 final song = songs[index];
-                return SizedBox(
+                return SongRowLayout(
                   height: 56,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                    leading: SongCover(songName: song, size: 48),
-                    title: Text(song, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
+                  leading: SongCover(songName: song, size: 48),
+                  title: AdaptiveSongTitle(
+                    text: song,
+                    style: theme.textTheme.bodyLarge,
+                    singleLineMinFontSize: 14,
+                    wrappedMinFontSize: 12,
+                    fixedHeight: 32,
+                  ),
+                  trailing: IconButton(
+                    constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                    padding: EdgeInsets.zero,
                     icon: const Icon(Icons.play_circle_rounded),
                     color: AppColors.primary,
                     onPressed: () {
@@ -141,13 +149,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
                     },
                   ),
-                    onTap: () {
-                      ref
-                          .read(unifiedPlayerControllerProvider.notifier)
-                          .playMusic(song, playlistName: displayPlaylistName);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
-                    },
-                  ),
+                  onTap: () {
+                    ref
+                        .read(unifiedPlayerControllerProvider.notifier)
+                        .playMusic(song, playlistName: displayPlaylistName);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
+                  },
                 );
               },
             );
