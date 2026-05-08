@@ -362,7 +362,6 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
 
       final source = _playlistSources![index];
       // 检查是否为缓存源
-      // ignore: experimental_member_use
       if (source is LockCachingAudioSource) {
         _logger.i('尝试将第 $index 首歌曲 (${source.tag?.title}) 降级为在线播放...');
 
