@@ -51,7 +51,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Get dependencies
@@ -107,7 +107,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Cache Pub packages
@@ -148,7 +148,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Enable Windows desktop
@@ -198,7 +198,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Enable Linux desktop
@@ -278,7 +278,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Enable macOS desktop
@@ -319,7 +319,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.38.5'
+          flutter-version: '3.41.9'
           cache: true
 
       - name: Get dependencies
