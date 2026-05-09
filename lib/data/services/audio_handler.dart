@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
@@ -308,14 +309,12 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
       ),
     );
 
-    // 监听播放错误（通过 playerStateStream 无法直接获取错误，但可通过 playbackEventStream 获取）
+    // 监听播放错误
     _playerSubscriptions.add(
-      _player.playbackEventStream.listen(
-        (event) {},
-        onError: (Object e, StackTrace st) {
-          final msg = e.toString();
+      _player.errorStream.listen(
+        (PlayerException e) async {
+          final msg = e.message ?? e.toString();
 
-          // 1. 忽略预期的网络中断（切歌/停止时常见）
           if (msg.contains('SocketException') ||
               msg.contains('Socket closed') ||
               msg.contains('Connection aborted') ||
@@ -324,74 +323,72 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
             return;
           }
 
-          // 2. 检测到缓存代理失败，尝试降级到在线播放
-          // "Proxy request failed: 200" 是 just_audio_background 或 LockCachingAudioSource 的典型错误
-          if (msg.contains('Proxy request failed') || msg.contains('502 Bad Gateway')) {
-            _logger.w('检测到缓存代理失败，尝试降级到在线播放: $msg');
-            _attemptFallbackForCurrentItem();
+          if (await _attemptFallbackForCurrentItem()) {
             return;
           }
 
-          _logger.e('播放器发生错误: $e');
-          // 关键修复：发生错误时，必须更新 playbackState，否则 UI 会认为还在播放
+          _logger.e('播放器发生错误: $msg');
           playbackState.add(
             playbackState.value.copyWith(
               processingState: AudioProcessingState.error,
-              playing: false, // 强制标记为停止
+              playing: false,
             ),
           );
 
-          // 尝试自动恢复或跳过
-          if (_player.playing && _playlistSources != null) {
+          if (_player.playing && _playlistSources != null && _player.hasNext) {
             _logger.i('尝试跳过错误歌曲...');
-            if (_player.hasNext) {
-              _player.seekToNext();
-            }
+            await _player.seekToNext();
           }
         },
+        onError: onStreamError,
       ),
     );
   }
 
-  /// 尝试为当前出错的歌曲降级播放（从缓存源降级为普通URL源）
-  Future<void> _attemptFallbackForCurrentItem() async {
+  /// 尝试为当前出错的歌曲重建音源。
+  /// 当前主要用于本地缓存文件损坏时删除文件并回退到网络音源。
+  Future<bool> _attemptFallbackForCurrentItem() async {
     try {
-      if (_playlistSources == null) return;
+      if (_playlistSources == null) return false;
       final index = _player.currentIndex;
-      if (index == null || index < 0 || index >= _playlistSources!.length) return;
+      if (index == null || index < 0 || index >= _playlistSources!.length) return false;
 
       final source = _playlistSources![index];
-      // 检查是否为缓存源
-      if (source is LockCachingAudioSource) {
-        _logger.i('尝试将第 $index 首歌曲 (${source.tag?.title}) 降级为在线播放...');
-
-        // 创建降级源（直接使用 URL，绕过缓存代理）
-        final fallbackSource = AudioSource.uri(
-          source.uri,
-          tag: source.tag, // 保留元数据
-        );
-
-        // 更新本地列表
-        _playlistSources![index] = fallbackSource;
-
-        // 重新加载播放列表，保持当前进度
-        // 注意：这会重建播放列表，可能会有短暂的停顿
-        final position = _player.position;
-        // 既然发生错误了，我们通常希望自动恢复播放
-        const shouldPlay = true;
-
-        // 使用 setAudioSources 替代 ConcatenatingAudioSource
-        await _player.setAudioSources(_playlistSources!, initialIndex: index, initialPosition: position);
-
-        if (shouldPlay) {
-          _player.play();
-        }
-        _logger.i('已成功降级并恢复播放');
+      if (source is! UriAudioSource || source.uri.scheme != 'file') {
+        return false;
       }
+
+      final mediaItemTag = source.tag;
+      final songId = mediaItemTag is MediaItem ? mediaItemTag.id : null;
+      if (songId == null || _audioSourceFetcher == null) {
+        return false;
+      }
+
+      _logger.w('检测到本地缓存文件播放失败，尝试删除缓存并重建音源: $songId');
+
+      try {
+        final file = File(source.uri.toFilePath());
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        _logger.w('删除损坏缓存文件失败: $e');
+      }
+
+      final replacement = await _audioSourceFetcher!.call(songId);
+      if (replacement == null) {
+        return false;
+      }
+
+      _playlistSources![index] = replacement;
+      final position = _player.position;
+      await _player.setAudioSources(_playlistSources!, initialIndex: index, initialPosition: position);
+      await _player.play();
+      _logger.i('已成功重建当前音源并恢复播放: $songId');
+      return true;
     } catch (e) {
-      _logger.e('降级重试失败: $e');
-      // 如果降级也失败了，那就真的失败了，让 error listener 处理（或者手动设置 error 状态）
-      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+      _logger.e('重建当前音源失败: $e');
+      return false;
     }
   }
 

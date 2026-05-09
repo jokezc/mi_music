@@ -52,6 +52,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final isLocalMode = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isLocalMode ?? true));
 
     return Scaffold(
+      key: const Key('library-page'),
       appBar: AppBar(
         title: const Text(S.appName),
         actions: [
@@ -263,14 +264,21 @@ class _PlaylistsTab extends ConsumerWidget {
             await ref.read(cacheRefreshControllerProvider.notifier).refresh();
           },
           child: ListView.builder(
+            key: const Key('playlist-list'),
             padding: const EdgeInsets.symmetric(vertical: 4), // 减小列表上下间距
             itemCount: visiblePlaylists.length + (header != null ? 1 : 0),
             itemBuilder: (context, index) {
               if (header != null) {
                 if (index == 0) return header!;
-                return _PlaylistTile(playlist: visiblePlaylists[index - 1]);
+                return _PlaylistTile(
+                  playlist: visiblePlaylists[index - 1],
+                  index: index - 1,
+                );
               }
-              return _PlaylistTile(playlist: visiblePlaylists[index]);
+              return _PlaylistTile(
+                playlist: visiblePlaylists[index],
+                index: index,
+              );
             },
           ),
         );
@@ -297,7 +305,9 @@ class _PlaylistsTab extends ConsumerWidget {
 
 class _PlaylistTile extends ConsumerWidget {
   final PlaylistUiModel playlist;
-  const _PlaylistTile({required this.playlist});
+  final int index;
+
+  const _PlaylistTile({required this.playlist, required this.index});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -309,9 +319,15 @@ class _PlaylistTile extends ConsumerWidget {
     final count = songsAsync.asData?.value.length ?? 0;
 
     return ListTile(
+      key: ValueKey('playlist-tile-$index'),
       visualDensity: const VisualDensity(vertical: -2), // 减小垂直间距
       leading: PlaylistCover(playlistName: name, size: 48),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        name,
+        key: ValueKey('playlist-title-$index'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       subtitle: Text(
         '$count 首',
         style: theme.textTheme.bodySmall?.copyWith(
@@ -322,6 +338,7 @@ class _PlaylistTile extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
+            key: ValueKey('playlist-play-button-$index'),
             icon: const Icon(Icons.play_circle_outline_rounded),
             color: AppColors.primary,
             onPressed: () {

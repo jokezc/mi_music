@@ -53,8 +53,9 @@ class PlaylistDetailPage extends ConsumerWidget {
     final isCustom = _isCustomPlaylist(ref);
 
     return Scaffold(
+      key: const Key('playlist-detail-page'),
       appBar: AppBar(
-        title: Text(playlistName),
+        title: Text(playlistName, key: const Key('playlist-detail-title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),
@@ -264,9 +265,11 @@ class PlaylistDetailPage extends ConsumerWidget {
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final song = songs[index];
                       return SongRowLayout(
+                        key: ValueKey('song-row-$index'),
                         height: 56,
                         leading: SongCover(songName: song, size: 48),
                         title: SongTitleText(
+                          key: ValueKey('song-title-$index'),
                           text: song,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,

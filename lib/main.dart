@@ -7,12 +7,14 @@ import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/globals.dart';
+import 'package:mi_music/core/testing/app_test_config.dart';
 import 'package:mi_music/core/theme/app_theme.dart';
 import 'package:mi_music/core/utils/permission_utils.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/theme_provider.dart';
+import 'package:mi_music/presentation/widgets/integration_test_probe.dart';
 import 'package:mi_music/router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +25,7 @@ Future<void> main() async {
   // just_audio 官方仅支持 Android/iOS/macOS/Web；Windows 需通过 just_audio_media_kit 启用（见 https://pub.dev/packages/just_audio#windows）
   JustAudioMediaKit.ensureInitialized(windows: true, linux: false);
   final sharedPrefs = await SharedPreferences.getInstance();
+  await AppTestConfig.applySharedPreferences(sharedPrefs);
 
   final app = ProviderScope(
     overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)],
@@ -59,7 +62,9 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 申请初始权限（通知、网络等）
-      PermissionUtils.requestInitialPermissions();
+      if (!AppTestConfig.enabled) {
+        PermissionUtils.requestInitialPermissions();
+      }
 
       // 延后到首帧后预热 AudioHandler，避开应用初始挂载阶段的绑定竞态。
       unawaited(_warmUpAudioHandler());
@@ -111,6 +116,22 @@ class MyApp extends ConsumerWidget {
           Locale('en', 'US'), // 英文（作为后备）
         ],
         locale: const Locale('zh', 'CN'), // 默认使用中文
+        builder: (context, child) {
+          if (!AppTestConfig.enabled) {
+            return child ?? const SizedBox.shrink();
+          }
+
+          return Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              const Positioned(
+                left: 0,
+                top: 0,
+                child: IntegrationTestProbe(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

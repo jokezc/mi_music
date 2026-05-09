@@ -25,6 +25,7 @@ class MiniPlayer extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Material(
+      key: const Key('mini-player'),
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
@@ -67,6 +68,7 @@ class MiniPlayer extends ConsumerWidget {
                       const SizedBox(width: 12),
                       // 歌曲信息
                       Expanded(
+                        key: const Key('mini-player-title-container'),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: OverflowMarqueeText(
@@ -83,6 +85,7 @@ class MiniPlayer extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
+                            key: const Key('mini-player-skip-previous-button'),
                             icon: const Icon(Icons.skip_previous_rounded),
                             iconSize: 24,
                             padding: EdgeInsets.zero,
@@ -93,6 +96,7 @@ class MiniPlayer extends ConsumerWidget {
                             tooltip: S.previous,
                           ),
                           IconButton(
+                            key: const Key('mini-player-play-pause-button'),
                             icon: Icon(isPlaying ? Icons.pause_circle_rounded : Icons.play_circle_rounded),
                             iconSize: 36,
                             padding: EdgeInsets.zero,
@@ -108,6 +112,7 @@ class MiniPlayer extends ConsumerWidget {
                             tooltip: isPlaying ? S.pause : S.play,
                           ),
                           IconButton(
+                            key: const Key('mini-player-skip-next-button'),
                             icon: const Icon(Icons.skip_next_rounded),
                             iconSize: 24,
                             padding: EdgeInsets.zero,

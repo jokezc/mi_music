@@ -56,3 +56,6 @@ android/key.properties
 /.trae/skills
 /.claude
 /.shared
+
+# Test logs (generated at runtime)
+/test_logs/

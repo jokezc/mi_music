@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
+import 'package:mi_music/core/testing/app_test_config.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
@@ -74,7 +75,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
           // 连接成功后立即检查 getSetting 与当前连接 host/port 是否一致，不一致则弹窗
           final mismatch = await checkSettingHostPortMatch(ref);
-          if (mounted && mismatch != null) {
+          if (mounted && mismatch != null && !AppTestConfig.enabled) {
             await showHostPortMismatchDialog(context, ref, mismatch);
           }
           if (mounted) context.go('/');
@@ -112,6 +113,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      key: const Key('login-page'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -149,6 +151,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 48),
                 // Server URL
                 TextFormField(
+                  key: const Key('login-server-url-field'),
                   controller: _urlController,
                   decoration: InputDecoration(
                     labelText: S.serverUrl,
@@ -169,12 +172,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 16),
                 // Username
                 TextFormField(
+                  key: const Key('login-username-field'),
                   controller: _usernameController,
                   decoration: InputDecoration(labelText: S.usernameOptional, prefixIcon: const Icon(Icons.person_rounded)),
                 ),
                 const SizedBox(height: 16),
                 // Password
                 TextFormField(
+                  key: const Key('login-password-field'),
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: S.passwordOptional,
@@ -193,6 +198,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 SizedBox(
                   height: 52,
                   child: ElevatedButton(
+                    key: const Key('login-connect-button'),
                     onPressed: _isLoading ? null : _connect,
                     child: _isLoading
                         ? const SizedBox(

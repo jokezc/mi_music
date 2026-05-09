@@ -39,9 +39,37 @@ on:
           - 'release'
 
 jobs:
+  # 静态分析 + 单元测试
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.38.5'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
   # Android 构建
   build-android:
     name: Build Android APK
+    needs: lint-and-test
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_android) }}
     steps:
@@ -109,6 +137,7 @@ jobs:
   # Windows 构建
   build-windows:
     name: Build Windows
+    needs: lint-and-test
     runs-on: windows-latest
     if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_windows) }}
     steps:
@@ -148,6 +177,7 @@ jobs:
   # Linux 构建
   build-linux:
     name: Build Linux
+    needs: lint-and-test
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_linux) }}
     steps:
@@ -237,6 +267,7 @@ jobs:
   # macOS 构建
   build-macos:
     name: Build macOS
+    needs: lint-and-test
     runs-on: macos-latest
     if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_macos) }}
     steps:
@@ -277,6 +308,7 @@ jobs:
   # iOS 构建
   build-ios:
     name: Build iOS
+    needs: lint-and-test
     runs-on: macos-latest
     if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.build_ios) }}
     steps:

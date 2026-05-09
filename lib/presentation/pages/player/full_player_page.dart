@@ -36,6 +36,7 @@ class FullPlayerPage extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      key: const Key('full-player-page'),
       backgroundColor: isDark
           ? AppColors.darkBackground
           : AppColors.lightBackground,
@@ -372,6 +373,7 @@ class _PlayerInfo extends ConsumerWidget {
         children: [
           // 歌曲名称显示：大屏位置允许两行，尽量减少长标题被截断
           PlayerSongTitle(
+            key: const Key('full-player-current-song'),
             text: currentSong ?? S.notPlaying,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
@@ -448,6 +450,7 @@ class _PlayerProgress extends ConsumerWidget {
                   : AppColors.lightDivider,
             ),
             child: Slider(
+              key: const Key('full-player-progress-slider'),
               value: duration.inMilliseconds > 0
                   ? (position.inMilliseconds / duration.inMilliseconds).clamp(
                       0.0,
@@ -470,6 +473,7 @@ class _PlayerProgress extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
+                key: const Key('full-player-position-label'),
                 _formatDuration(position),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark
@@ -478,6 +482,7 @@ class _PlayerProgress extends ConsumerWidget {
                 ),
               ),
               Text(
+                key: const Key('full-player-duration-label'),
                 _formatDuration(duration),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark
@@ -549,6 +554,7 @@ class _PlayerControls extends ConsumerWidget {
           children: [
             // 播放模式按钮（合并了循环和随机）
             IconButton(
+              key: const Key('full-player-play-mode-button'),
               icon: Icon(playModeIcon),
               iconSize: 32,
               color: isDark
@@ -564,6 +570,7 @@ class _PlayerControls extends ConsumerWidget {
 
             // 上一首
             IconButton(
+              key: const Key('full-player-skip-previous-button'),
               icon: const Icon(Icons.skip_previous_rounded),
               iconSize: 48,
               color: isDark
@@ -604,6 +611,7 @@ class _PlayerControls extends ConsumerWidget {
                 ],
               ),
               child: IconButton(
+                key: const Key('full-player-play-pause-button'),
                 icon: Icon(
                   isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   color: Colors.white,
@@ -620,6 +628,7 @@ class _PlayerControls extends ConsumerWidget {
 
             // 下一首
             IconButton(
+              key: const Key('full-player-skip-next-button'),
               icon: const Icon(Icons.skip_next_rounded),
               iconSize: 48,
               color: isDark
@@ -902,6 +911,7 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
+                  key: const Key('full-player-queue-button'),
                   icon: const Icon(Icons.queue_music_rounded),
                   color: isDark
                       ? AppColors.darkTextPrimary

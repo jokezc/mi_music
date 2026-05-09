@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
@@ -14,7 +12,7 @@ import 'package:mi_music/data/providers/player/i_player_controller.dart';
 import 'package:mi_music/data/providers/player/player_state.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:mi_music/data/services/audio_playback_cache.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 final _logger = Logger();
@@ -28,85 +26,53 @@ Future<AudioSource> createCachedAudioSource({
   Duration? duration,
 }) async {
   try {
-    // 1. 尝试使用 LockCachingAudioSource (官方推荐的边下边播方案)
-    // 之前可能因为代理问题禁用，现在作为首选尝试
-    final cacheDir = await getApplicationCacheDirectory();
-    final songsDir = Directory('${cacheDir.path}/songs');
-    if (!await songsDir.exists()) {
-      await songsDir.create(recursive: true);
-    }
-    final fileName = '${url.hashCode}.mp3';
-    final file = File('${songsDir.path}/$fileName');
+    final playbackCache = AudioPlaybackCache.instance;
+    final file = await playbackCache.getCachedFile(url);
 
     // 如果文件已完全存在，直接播放文件（省流且稳定）
-    // 需要更严谨的判断文件是否完整，比如对比文件大小
-    // 这里简单判断：如果有对应的 .complete 标记文件，或者通过 cacheManager 确认完整
-    // 暂且保留简单的文件存在判断，后续可优化
-    if (await file.exists()) {
+    if (file != null && await file.exists()) {
       // 进一步检查文件大小是否合理（例如 > 100KB），避免播放空文件
       if (await file.length() > 1024 * 100) {
-        // _logger.d('Using local file source: ${file.path}');
-        return AudioSource.file(file.path);
+        return AudioSource.file(
+          file.path,
+          tag: MediaItem(id: songName, title: songName, artUri: _resolveArtUri(cacheManager, songName), duration: duration),
+        );
       }
+      await playbackCache.remove(url);
     }
 
-    // Windows：为避免 LockCaching 缓存重命名时的文件占用问题，未缓存时用 URI 直播
-    final isWindows = AppPlatform.isWindows;
-    if (isWindows) {
-      Uri? artUri;
-      try {
-        final songInfo = cacheManager.getSongInfo(songName);
-        final pictureUrl = songInfo?.pictureUrl;
-        if (pictureUrl != null && pictureUrl.isNotEmpty) {
-          artUri = Uri.parse(pictureUrl);
-        }
-      } catch (e) {
-        _logger.w('获取歌曲封面失败: $e');
-      }
-      return AudioSource.uri(
-        Uri.parse(url),
-        tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration),
-      );
-    }
+    final artUri = _resolveArtUri(cacheManager, songName);
+    unawaited(playbackCache.warm(url));
 
-    // _logger.d('Using LockCachingAudioSource: $url');
-    // 从缓存获取封面URL
-    Uri? artUri;
-    try {
-      final songInfo = cacheManager.getSongInfo(songName);
-      final pictureUrl = songInfo?.pictureUrl;
-      if (pictureUrl != null && pictureUrl.isNotEmpty) {
-        artUri = Uri.parse(pictureUrl);
-      }
-    } catch (e) {
-      _logger.w('获取歌曲封面失败: $e');
-    }
-    // 使用 LockCachingAudioSource 自动管理下载和缓存
-    return LockCachingAudioSource(
+    // 未命中本地缓存时使用稳定的直播源，避免依赖实验性缓存代理 API。
+    return AudioSource.uri(
       Uri.parse(url),
-      cacheFile: file,
       tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration), // 附带元数据（包含封面和时长）
     );
   } catch (e) {
-    _logger.e("LockCachingAudioSource 失败，降级为在线播放: $e");
-    // 降级策略：仅在线播放
-    // 注意：运行时如果代理失败，AudioHandler 中还有二次降级策略 (_attemptFallbackForCurrentItem)
+    _logger.e("创建音频源失败，降级为在线播放: $e");
 
     // 尝试获取封面以便在降级时也能显示
-    Uri? artUri;
-    try {
-      final songInfo = cacheManager.getSongInfo(songName);
-      final pictureUrl = songInfo?.pictureUrl;
-      if (pictureUrl != null && pictureUrl.isNotEmpty) {
-        artUri = Uri.parse(pictureUrl);
-      }
-    } catch (_) {}
+    final artUri = _resolveArtUri(cacheManager, songName);
 
     return AudioSource.uri(
       Uri.parse(url),
       tag: MediaItem(id: songName, title: songName, artUri: artUri, duration: duration),
     );
   }
+}
+
+Uri? _resolveArtUri(MusicCacheManager cacheManager, String songName) {
+  try {
+    final songInfo = cacheManager.getSongInfo(songName);
+    final pictureUrl = songInfo?.pictureUrl;
+    if (pictureUrl != null && pictureUrl.isNotEmpty) {
+      return Uri.parse(pictureUrl);
+    }
+  } catch (e) {
+    _logger.w('获取歌曲封面失败: $e');
+  }
+  return null;
 }
 
 /// 本地播放控制器实现
@@ -514,7 +480,7 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
           if (!_isRequestValid(requestId)) return;
           await _syncFromHandler(handler, fallbackState: state);
         } else {
-          _updateState((_currentState ?? state).copyWith(isPlaying: false));
+          _updateState((_currentState ?? state).copyWith(isPlaying: false, position: Duration.zero));
         }
       }
     } catch (e) {
@@ -973,10 +939,13 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
         // 简单策略：直接调用 playPlaylist，它内部有补充逻辑
         await _playPlaylistInternal([songName], playlistName: playlistName, initialIndex: 0, requestId: requestId);
+      } else {
+        _updateState((_currentState ?? const PlayerState()).copyWith(isPlaying: false, position: Duration.zero));
       }
     } catch (e) {
       if (_isRequestValid(requestId)) {
         _logger.e("本地播放失败: $e");
+        _updateState((_currentState ?? const PlayerState()).copyWith(isPlaying: false));
       }
     }
   }
@@ -1096,13 +1065,21 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
 
     if (audioSources.isEmpty) {
       _logger.d('错误: 没有有效的音频源');
+      _updateState((_currentState ?? const PlayerState()).copyWith(isPlaying: false, position: Duration.zero));
       return;
+    }
+
+    final safeInitialIndex = initialIndex >= 0 && initialIndex < songNames.length ? initialIndex : 0;
+    final requestedSong = songNames.isNotEmpty ? songNames[safeInitialIndex] : null;
+    int validInitialIndex = requestedSong == null ? 0 : validSongs.indexOf(requestedSong);
+    if (validInitialIndex < 0 || validInitialIndex >= validSongs.length) {
+      validInitialIndex = 0;
     }
 
     // 计算当前歌曲的 duration
     Duration initialDuration = Duration.zero;
-    if (validSongs.isNotEmpty && initialIndex < validSongs.length) {
-      initialDuration = _getSongDuration(validSongs[initialIndex]);
+    if (validSongs.isNotEmpty && validInitialIndex < validSongs.length) {
+      initialDuration = _getSongDuration(validSongs[validInitialIndex]);
     }
 
     // 更新状态（使用 validSongs，排除无效歌曲）
@@ -1110,15 +1087,15 @@ class LocalPlayerControllerImpl with WidgetsBindingObserver implements IPlayerCo
       (_currentState ?? const PlayerState()).copyWith(
         currentPlaylistName: playlistName,
         playlist: validSongs,
-        currentIndex: initialIndex,
-        currentSong: validSongs.isNotEmpty ? validSongs[initialIndex] : null,
+        currentIndex: validInitialIndex,
+        currentSong: validSongs.isNotEmpty ? validSongs[validInitialIndex] : null,
         isPlaying: true,
         duration: initialDuration > Duration.zero ? initialDuration : null,
       ),
     );
 
     // 3. 传递给 Handler
-    await _handler?.loadPlaylist(audioSources, initialIndex);
+    await _handler?.loadPlaylist(audioSources, validInitialIndex);
   }
 
   @override
