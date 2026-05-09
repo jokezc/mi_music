@@ -4,10 +4,10 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 /// 搜索页面
 class SearchPage extends ConsumerStatefulWidget {
@@ -46,7 +46,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(displayPlaylistName == '全部' ? S.navSearch : '搜索歌单: $displayPlaylistName'),
+        title: Text(
+          displayPlaylistName == '全部'
+              ? S.navSearch
+              : '搜索歌单: $displayPlaylistName',
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -55,7 +59,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               controller: _searchController,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: displayPlaylistName == '全部' ? S.searchHint : '搜索 $displayPlaylistName 中的歌曲...',
+                hintText: displayPlaylistName == '全部'
+                    ? S.searchHint
+                    : '搜索 $displayPlaylistName 中的歌曲...',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
@@ -79,18 +85,28 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
   }
 
-  Widget _buildSearchResults(ThemeData theme, bool isDark, String displayPlaylistName) {
+  Widget _buildSearchResults(
+    ThemeData theme,
+    bool isDark,
+    String displayPlaylistName,
+  ) {
     if (_query.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+            Icon(
+              Icons.search_rounded,
+              size: 80,
+              color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+            ),
             const SizedBox(height: 16),
             Text(
               S.enterKeyword,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
           ],
@@ -100,7 +116,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     // 使用缓存搜索
     return ref
-        .watch(cachedSearchSongsProvider(_query, playlistName: displayPlaylistName))
+        .watch(
+          cachedSearchSongsProvider(_query, playlistName: displayPlaylistName),
+        )
         .when(
           skipLoadingOnRefresh: true,
           data: (songs) {
@@ -109,12 +127,20 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.music_off_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                    Icon(
+                      Icons.music_off_rounded,
+                      size: 80,
+                      color: isDark
+                          ? AppColors.darkTextHint
+                          : AppColors.lightTextHint,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       S.noResults,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -130,15 +156,18 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 return SongRowLayout(
                   height: 56,
                   leading: SongCover(songName: song, size: 48),
-                  title: AdaptiveSongTitle(
+                  title: SongTitleText(
                     text: song,
-                    style: theme.textTheme.bodyLarge,
-                    singleLineMinFontSize: 14,
-                    wrappedMinFontSize: 12,
-                    fixedHeight: 32,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      height: 1.1,
+                    ),
                   ),
                   trailing: IconButton(
-                    constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                    constraints: const BoxConstraints.tightFor(
+                      width: 36,
+                      height: 36,
+                    ),
                     padding: EdgeInsets.zero,
                     icon: const Icon(Icons.play_circle_rounded),
                     color: AppColors.primary,
@@ -146,25 +175,34 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       ref
                           .read(unifiedPlayerControllerProvider.notifier)
                           .playMusic(song, playlistName: displayPlaylistName);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${S.playing}: $song')),
+                      );
                     },
                   ),
                   onTap: () {
                     ref
                         .read(unifiedPlayerControllerProvider.notifier)
                         .playMusic(song, playlistName: displayPlaylistName);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.playing}: $song')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${S.playing}: $song')),
+                    );
                   },
                 );
               },
             );
           },
-          loading: () => ListShimmer(itemBuilder: () => const SongItemShimmer()),
+          loading: () =>
+              ListShimmer(itemBuilder: () => const SongItemShimmer()),
           error: (err, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_rounded, size: 48, color: AppColors.error),
+                const Icon(
+                  Icons.error_rounded,
+                  size: 48,
+                  color: AppColors.error,
+                ),
                 const SizedBox(height: 16),
                 Text('${S.error}: $err'),
               ],

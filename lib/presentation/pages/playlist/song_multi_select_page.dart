@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 class SongMultiSelectPage extends StatefulWidget {
   final String title;
@@ -48,7 +48,9 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
 
     final filteredSongs = _query.isEmpty
         ? widget.allSongs
-        : widget.allSongs.where((s) => s.toLowerCase().contains(_query.toLowerCase())).toList();
+        : widget.allSongs
+              .where((s) => s.toLowerCase().contains(_query.toLowerCase()))
+              .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +67,10 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
               });
             },
             child: Text(
-              _selectedSongs.length == filteredSongs.length && filteredSongs.isNotEmpty ? '取消全选' : '全选',
+              _selectedSongs.length == filteredSongs.length &&
+                      filteredSongs.isNotEmpty
+                  ? '取消全选'
+                  : '全选',
             ),
           ),
         ],
@@ -88,7 +93,9 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                         },
                       )
                     : null,
-                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               ),
               onChanged: (val) {
@@ -102,7 +109,9 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                     child: Text(
                       S.emptySongs,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   )
@@ -114,12 +123,12 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                       return SongRowLayout(
                         height: 56,
                         leading: SongCover(songName: song, size: 48),
-                        title: AdaptiveSongTitle(
+                        title: SongTitleText(
                           text: song,
-                          style: theme.textTheme.bodyLarge,
-                          singleLineMinFontSize: 14,
-                          wrappedMinFontSize: 12,
-                          fixedHeight: 32,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            height: 1.1,
+                          ),
                         ),
                         trailing: Checkbox(
                           value: isSelected,

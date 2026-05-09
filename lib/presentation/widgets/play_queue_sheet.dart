@@ -4,9 +4,9 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/song_utils.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 /// 播放队列底部抽屉
 class PlayQueueSheet extends ConsumerStatefulWidget {
@@ -38,16 +38,22 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
       final double targetOffset = currentIndex * itemHeight;
 
       // 获取可视区域高度
-      final double viewportHeight = _scrollController.position.viewportDimension;
+      final double viewportHeight =
+          _scrollController.position.viewportDimension;
 
       // 计算目标位置，使当前歌曲在可视区域中间
-      final double centeredOffset = targetOffset - (viewportHeight / 2) + (itemHeight / 2);
+      final double centeredOffset =
+          targetOffset - (viewportHeight / 2) + (itemHeight / 2);
 
       // 确保滚动位置在有效范围内
       final double maxScroll = _scrollController.position.maxScrollExtent;
       final double clampedOffset = centeredOffset.clamp(0.0, maxScroll);
 
-      _scrollController.animateTo(clampedOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _scrollController.animateTo(
+        clampedOffset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
   }
 
@@ -56,12 +62,31 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     // 只监听队列相关字段，避免 position 高频更新导致列表频繁“刷新/重建”
-    final hasValue = ref.watch(unifiedPlayerControllerProvider.select((s) => s.hasValue));
-    final playlist = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.playlist ?? const []));
-    final currentIndex = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentIndex ?? -1));
-    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
-    final isCustomPlaylist = SongUtils.isCustomPlaylist(ref, currentPlaylistName ?? '');
+    final hasValue = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.hasValue),
+    );
+    final playlist = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.playlist ?? const [],
+      ),
+    );
+    final currentIndex = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.currentIndex ?? -1,
+      ),
+    );
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final currentPlaylistName = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.currentPlaylistName,
+      ),
+    );
+    final isCustomPlaylist = SongUtils.isCustomPlaylist(
+      ref,
+      currentPlaylistName ?? '',
+    );
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
@@ -87,13 +112,20 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
               children: [
-                Text(S.playQueue, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  S.playQueue,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 if (hasValue)
                   Text(
                     '(${playlist.length})',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 const Spacer(),
@@ -149,12 +181,18 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.queue_music_rounded, size: 64, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+            Icon(
+              Icons.queue_music_rounded,
+              size: 64,
+              color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+            ),
             const SizedBox(height: 16),
             Text(
               '播放队列为空',
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
           ],
@@ -172,7 +210,10 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
         final song = playlist[index];
         final isPlaying =
             index == currentIndex ||
-            (currentIndex < 0 && currentSong != null && song == currentSong && playlist.indexOf(song) == index);
+            (currentIndex < 0 &&
+                currentSong != null &&
+                song == currentSong &&
+                playlist.indexOf(song) == index);
 
         return SongRowLayout(
           height: _queueItemHeight,
@@ -184,18 +225,19 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.equalizer_rounded, color: Colors.white),
+                  child: const Icon(
+                    Icons.equalizer_rounded,
+                    color: Colors.white,
+                  ),
                 )
               : SongCover(songName: song, size: 48),
-          title: AdaptiveSongTitle(
+          title: SongTitleText(
             text: song,
             style: theme.textTheme.bodyLarge?.copyWith(
               fontWeight: isPlaying ? FontWeight.w600 : null,
               color: isPlaying ? AppColors.primary : null,
+              height: 1.1,
             ),
-            singleLineMinFontSize: 14,
-            wrappedMinFontSize: 12,
-            fixedHeight: 32,
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -203,7 +245,11 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
               if (isPlaying)
                 const Padding(
                   padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.volume_up_rounded, size: 18, color: AppColors.primary),
+                  child: Icon(
+                    Icons.volume_up_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
                 ),
               SizedBox(
                 width: 36,
@@ -212,16 +258,25 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                   icon: Icon(
                     Icons.more_vert_rounded,
                     size: 20,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   tooltip: '更多',
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   onSelected: (value) {
                     if (value == 'delete') {
                       SongUtils.deleteSong(context, ref, song);
                     } else if (value == 'remove') {
                       if (currentPlaylistName != null) {
-                        SongUtils.removeSongFromPlaylist(context, ref, song, currentPlaylistName);
+                        SongUtils.removeSongFromPlaylist(
+                          context,
+                          ref,
+                          song,
+                          currentPlaylistName,
+                        );
                       }
                     }
                   },
@@ -231,7 +286,10 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                         value: 'remove',
                         child: Row(
                           children: [
-                            Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                            Icon(
+                              Icons.remove_circle_rounded,
+                              color: Colors.orange,
+                            ),
                             SizedBox(width: 8),
                             Text('从歌单移除'),
                           ],
@@ -253,7 +311,9 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
             ],
           ),
           onTap: () {
-            ref.read(unifiedPlayerControllerProvider.notifier).playFromQueueIndex(index);
+            ref
+                .read(unifiedPlayerControllerProvider.notifier)
+                .playFromQueueIndex(index);
           },
         );
       },

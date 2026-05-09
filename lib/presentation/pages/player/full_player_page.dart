@@ -19,7 +19,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
+import 'package:mi_music/presentation/widgets/player_song_title.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -36,7 +36,9 @@ class FullPlayerPage extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -76,7 +78,10 @@ class _PlayerBody extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _PlayerCover(size: coverSize, horizontalMargin: horizontalPadding),
+              _PlayerCover(
+                size: coverSize,
+                horizontalMargin: horizontalPadding,
+              ),
               SizedBox(height: gapL),
               _PlayerInfo(horizontalPadding: horizontalPadding),
               SizedBox(height: gapL),
@@ -99,11 +104,22 @@ class _PlayerAppBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
+    final currentDevice = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice),
+    );
     final isLocalMode = currentDevice?.type == DeviceType.local;
-    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
-    final isCustomPlaylist = SongUtils.isCustomPlaylist(ref, currentPlaylistName ?? '');
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final currentPlaylistName = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.currentPlaylistName,
+      ),
+    );
+    final isCustomPlaylist = SongUtils.isCustomPlaylist(
+      ref,
+      currentPlaylistName ?? '',
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -116,7 +132,9 @@ class _PlayerAppBar extends ConsumerWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
                 onPressed: () => Navigator.pop(context),
                 tooltip: '关闭',
               ),
@@ -127,10 +145,14 @@ class _PlayerAppBar extends ConsumerWidget {
                   // 设备切换按钮
                   IconButton(
                     icon: Icon(
-                      isLocalMode ? Icons.smartphone_rounded : Icons.speaker_rounded,
+                      isLocalMode
+                          ? Icons.smartphone_rounded
+                          : Icons.speaker_rounded,
                       color: !isLocalMode
                           ? AppColors.primary
-                          : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                          : (isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary),
                     ),
                     onPressed: () => _showDeviceSelector(context, ref),
                     tooltip: '切换设备',
@@ -138,16 +160,28 @@ class _PlayerAppBar extends ConsumerWidget {
                   // 更多菜单
                   if (currentSong != null)
                     PopupMenuButton<String>(
-                      icon: Icon(Icons.ac_unit_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                      icon: Icon(
+                        Icons.ac_unit_rounded,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
+                      ),
                       tooltip: '更多',
                       offset: const Offset(0, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       onSelected: (value) {
                         if (value == 'delete') {
                           SongUtils.deleteSong(context, ref, currentSong);
                         } else if (value == 'remove') {
                           if (currentPlaylistName != null) {
-                            SongUtils.removeSongFromPlaylist(context, ref, currentSong, currentPlaylistName);
+                            SongUtils.removeSongFromPlaylist(
+                              context,
+                              ref,
+                              currentSong,
+                              currentPlaylistName,
+                            );
                           }
                         } else if (value == 'add_to_playlist') {
                           SongUtils.addToPlaylist(context, ref, currentSong);
@@ -169,7 +203,10 @@ class _PlayerAppBar extends ConsumerWidget {
                             value: 'remove',
                             child: Row(
                               children: [
-                                Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                                Icon(
+                                  Icons.remove_circle_rounded,
+                                  color: Colors.orange,
+                                ),
                                 SizedBox(width: 8),
                                 Text('从歌单移除'),
                               ],
@@ -181,7 +218,10 @@ class _PlayerAppBar extends ConsumerWidget {
                             children: [
                               Icon(Icons.delete_rounded, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
+                              Text(
+                                '永久删除歌曲',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ],
                           ),
                         ),
@@ -197,7 +237,9 @@ class _PlayerAppBar extends ConsumerWidget {
               child: Text(
                 currentDevice!.name!,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -211,7 +253,9 @@ class _PlayerAppBar extends ConsumerWidget {
   void _showDeviceSelector(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => const DeviceSelectorSheet(),
     );
   }
@@ -226,11 +270,15 @@ class _PlayerCover extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch only isPlaying to toggle animation
-    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
 
     // 获取歌曲图片
     final cacheManager = ref.watch(cacheManagerProvider);
-    final songInfo = currentSong != null ? cacheManager.getSongInfo(currentSong) : null;
+    final songInfo = currentSong != null
+        ? cacheManager.getSongInfo(currentSong)
+        : null;
     final pictureUrl = songInfo?.pictureUrl;
 
     return Hero(
@@ -243,7 +291,11 @@ class _PlayerCover extends ConsumerWidget {
           gradient: pictureUrl == null ? AppColors.primaryGradient : null,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 40, offset: const Offset(0, 20)),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 40,
+              offset: const Offset(0, 20),
+            ),
           ],
         ),
         child: ClipRRect(
@@ -255,19 +307,33 @@ class _PlayerCover extends ConsumerWidget {
                   height: size,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-                    child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-                    child: Icon(Icons.music_note_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                    ),
+                    child: Icon(
+                      Icons.music_note_rounded,
+                      size: (size * 0.43).clamp(84.0, 120.0),
+                      color: Colors.white,
+                    ),
                   ),
                 )
               : Container(
                   width: size,
                   height: size,
                   alignment: Alignment.center,
-                  child: Icon(Icons.music_note_rounded, size: (size * 0.43).clamp(84.0, 120.0), color: Colors.white),
+                  child: Icon(
+                    Icons.music_note_rounded,
+                    size: (size * 0.43).clamp(84.0, 120.0),
+                    color: Colors.white,
+                  ),
                 ),
         ),
       ),
@@ -283,27 +349,35 @@ class _PlayerInfo extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch specific fields to avoid unnecessary rebuilds
-    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final currentPlaylistName = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentPlaylistName));
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final currentPlaylistName = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.currentPlaylistName,
+      ),
+    );
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     // 只显示歌单名称，如果没有则不显示
-    final displayText = currentPlaylistName?.isNotEmpty == true ? currentPlaylistName : null;
+    final displayText = currentPlaylistName?.isNotEmpty == true
+        ? currentPlaylistName
+        : null;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
           // 歌曲名称显示：大屏位置允许两行，尽量减少长标题被截断
-          AdaptiveSongTitle(
+          PlayerSongTitle(
             text: currentSong ?? S.notPlaying,
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-            singleLineMinFontSize: 23.5,
-            wrappedMinFontSize: 18,
-            fixedHeight: 64,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+            ),
+            height: 68,
           ),
           // 只在有歌单名称时显示
           if (displayText != null) ...[
@@ -311,7 +385,9 @@ class _PlayerInfo extends ConsumerWidget {
             Text(
               displayText,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -332,9 +408,21 @@ class _PlayerProgress extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch position and duration
-    final position = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.position ?? Duration.zero));
-    final duration = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.duration ?? Duration.zero));
-    final isLocalMode = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isLocalMode ?? true));
+    final position = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.position ?? Duration.zero,
+      ),
+    );
+    final duration = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.duration ?? Duration.zero,
+      ),
+    );
+    final isLocalMode = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.isLocalMode ?? true,
+      ),
+    );
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -349,20 +437,31 @@ class _PlayerProgress extends ConsumerWidget {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
               activeTrackColor: AppColors.primary,
-              inactiveTrackColor: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+              inactiveTrackColor: isDark
+                  ? AppColors.darkDivider
+                  : AppColors.lightDivider,
               thumbColor: AppColors.primary,
               disabledThumbColor: AppColors.primary,
               disabledActiveTrackColor: AppColors.primary,
-              disabledInactiveTrackColor: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+              disabledInactiveTrackColor: isDark
+                  ? AppColors.darkDivider
+                  : AppColors.lightDivider,
             ),
             child: Slider(
               value: duration.inMilliseconds > 0
-                  ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+                  ? (position.inMilliseconds / duration.inMilliseconds).clamp(
+                      0.0,
+                      1.0,
+                    )
                   : 0,
               onChanged: isLocalMode
                   ? (value) {
-                      final pos = Duration(milliseconds: (value * duration.inMilliseconds).toInt());
-                      ref.read(unifiedPlayerControllerProvider.notifier).seek(pos);
+                      final pos = Duration(
+                        milliseconds: (value * duration.inMilliseconds).toInt(),
+                      );
+                      ref
+                          .read(unifiedPlayerControllerProvider.notifier)
+                          .seek(pos);
                     }
                   : null,
             ),
@@ -373,13 +472,17 @@ class _PlayerProgress extends ConsumerWidget {
               Text(
                 _formatDuration(position),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               Text(
                 _formatDuration(duration),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
             ],
@@ -407,12 +510,30 @@ class _PlayerControls extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // Watch control states
-    final isPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
-    final shuffleMode = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.shuffleMode ?? false));
-    final loopMode = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.loopMode ?? LoopMode.off));
-    final currentSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final favoritesAsync = ref.watch(cachedPlaylistSongsProvider(BaseConstants.likePlaylist));
-    final isFavorite = currentSong != null && (favoritesAsync.asData?.value.contains(currentSong) ?? false);
+    final isPlaying = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.isPlaying ?? false,
+      ),
+    );
+    final shuffleMode = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.shuffleMode ?? false,
+      ),
+    );
+    final loopMode = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.loopMode ?? LoopMode.off,
+      ),
+    );
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final favoritesAsync = ref.watch(
+      cachedPlaylistSongsProvider(BaseConstants.likePlaylist),
+    );
+    final isFavorite =
+        currentSong != null &&
+        (favoritesAsync.asData?.value.contains(currentSong) ?? false);
 
     // 计算当前播放模式
     final playMode = _getPlayMode(loopMode, shuffleMode);
@@ -430,9 +551,13 @@ class _PlayerControls extends ConsumerWidget {
             IconButton(
               icon: Icon(playModeIcon),
               iconSize: 32,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               onPressed: () {
-                ref.read(unifiedPlayerControllerProvider.notifier).togglePlayMode();
+                ref
+                    .read(unifiedPlayerControllerProvider.notifier)
+                    .togglePlayMode();
               },
               tooltip: playModeTooltip,
             ),
@@ -441,9 +566,13 @@ class _PlayerControls extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.skip_previous_rounded),
               iconSize: 48,
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
               onPressed: () {
-                ref.read(unifiedPlayerControllerProvider.notifier).skipPrevious();
+                ref
+                    .read(unifiedPlayerControllerProvider.notifier)
+                    .skipPrevious();
               },
               tooltip: S.previous,
             ),
@@ -455,7 +584,10 @@ class _PlayerControls extends ConsumerWidget {
               decoration: BoxDecoration(
                 gradient: isDark
                     ? LinearGradient(
-                        colors: [AppColors.primary.withValues(alpha: 0.7), AppColors.secondary.withValues(alpha: 0.7)],
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.7),
+                          AppColors.secondary.withValues(alpha: 0.7),
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
@@ -463,17 +595,24 @@ class _PlayerControls extends ConsumerWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: isDark ? AppColors.primary.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.4),
+                    color: isDark
+                        ? AppColors.primary.withValues(alpha: 0.2)
+                        : AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: IconButton(
-                icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+                icon: Icon(
+                  isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                ),
                 iconSize: 40,
                 onPressed: () {
-                  ref.read(unifiedPlayerControllerProvider.notifier).playPause();
+                  ref
+                      .read(unifiedPlayerControllerProvider.notifier)
+                      .playPause();
                 },
                 tooltip: isPlaying ? S.pause : S.play,
               ),
@@ -483,7 +622,9 @@ class _PlayerControls extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.skip_next_rounded),
               iconSize: 48,
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
               onPressed: () {
                 ref.read(unifiedPlayerControllerProvider.notifier).skipNext();
               },
@@ -493,13 +634,24 @@ class _PlayerControls extends ConsumerWidget {
             // 收藏按钮
             IconButton(
               icon: Icon(
-                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: isFavorite ? Colors.red : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: isFavorite
+                    ? Colors.red
+                    : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
               ),
               iconSize: 32,
               onPressed: currentSong == null
                   ? null
-                  : () => FavoriteUtils.toggleFavorite(context, ref, currentSong, isFavorite),
+                  : () => FavoriteUtils.toggleFavorite(
+                      context,
+                      ref,
+                      currentSong,
+                      isFavorite,
+                    ),
               tooltip: isFavorite ? '取消收藏' : '收藏',
             ),
           ],
@@ -548,7 +700,8 @@ class _PlayerActions extends ConsumerStatefulWidget {
   ConsumerState<_PlayerActions> createState() => _PlayerActionsState();
 }
 
-class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProviderStateMixin {
+class _PlayerActionsState extends ConsumerState<_PlayerActions>
+    with TickerProviderStateMixin {
   int? _currentVolume;
   bool _isLoadingVolume = false;
   bool _isDownloading = false;
@@ -572,7 +725,10 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
       });
       // 写入缓存：下次进入页面先展示缓存值，避免从 50 跳变
       final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.setInt(SharedPrefKeys.cachedDeviceVolume(did), volumeResp.volume);
+      await prefs.setInt(
+        SharedPrefKeys.cachedDeviceVolume(did),
+        volumeResp.volume,
+      );
     } catch (e) {
       _logger.e("加载远程设备 $did 音量失败: $e");
       if (mounted) {
@@ -583,26 +739,40 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
 
   @override
   Widget build(BuildContext context) {
-    final isRemote = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isRemoteMode ?? false));
+    final isRemote = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.isRemoteMode ?? false,
+      ),
+    );
     final remoteDid = ref.watch(
-      unifiedPlayerControllerProvider.select((s) => s.value?.isRemoteMode == true ? s.value?.currentDevice?.did : null),
+      unifiedPlayerControllerProvider.select(
+        (s) =>
+            s.value?.isRemoteMode == true ? s.value?.currentDevice?.did : null,
+      ),
     );
 
     // 本地切到远程 / 远程 did 变化：在下一帧触发一次音量拉取（避免在 build 里 setState）
-    if (isRemote && remoteDid != null && remoteDid.isNotEmpty && remoteDid != _lastVolumeDid) {
+    if (isRemote &&
+        remoteDid != null &&
+        remoteDid.isNotEmpty &&
+        remoteDid != _lastVolumeDid) {
       _lastVolumeDid = remoteDid;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         // 如果这期间又切走了，避免拉错设备音量
         final latestDid = ref.read(
           unifiedPlayerControllerProvider.select(
-            (s) => s.value?.isRemoteMode == true ? s.value?.currentDevice?.did : null,
+            (s) => s.value?.isRemoteMode == true
+                ? s.value?.currentDevice?.did
+                : null,
           ),
         );
         if (latestDid == remoteDid) {
           // 先用缓存值填充 UI（不再默认 50）
           final prefs = ref.read(sharedPreferencesProvider);
-          final cached = prefs.getInt(SharedPrefKeys.cachedDeviceVolume(remoteDid));
+          final cached = prefs.getInt(
+            SharedPrefKeys.cachedDeviceVolume(remoteDid),
+          );
           if (cached != null && mounted) {
             setState(() => _currentVolume = cached.clamp(0, 100));
           }
@@ -627,9 +797,13 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                   icon: Icon(
                     Icons.volume_down_rounded,
                     size: 24,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
-                  onPressed: _isLoadingVolume ? null : () => _decreaseVolume(ref),
+                  onPressed: _isLoadingVolume
+                      ? null
+                      : () => _decreaseVolume(ref),
                   tooltip: '减小音量',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -639,10 +813,16 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                   child: SliderTheme(
                     data: SliderThemeData(
                       trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 8,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 16,
+                      ),
                       activeTrackColor: AppColors.primary,
-                      inactiveTrackColor: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                      inactiveTrackColor: isDark
+                          ? AppColors.darkDivider
+                          : AppColors.lightDivider,
                       thumbColor: AppColors.primary,
                     ),
                     child: Slider(
@@ -656,16 +836,27 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                           : (value) {
                               final volume = value.round();
                               setState(() => _currentVolume = volume);
-                              ref.read(unifiedPlayerControllerProvider.notifier).setVolume(volume);
+                              ref
+                                  .read(
+                                    unifiedPlayerControllerProvider.notifier,
+                                  )
+                                  .setVolume(volume);
                               // 立即缓存，避免下次进页面从 50 跳
                               final did = ref.read(
                                 unifiedPlayerControllerProvider.select(
-                                  (s) => s.value?.isRemoteMode == true ? s.value?.currentDevice?.did : null,
+                                  (s) => s.value?.isRemoteMode == true
+                                      ? s.value?.currentDevice?.did
+                                      : null,
                                 ),
                               );
                               if (did != null && did.isNotEmpty) {
-                                final prefs = ref.read(sharedPreferencesProvider);
-                                prefs.setInt(SharedPrefKeys.cachedDeviceVolume(did), volume);
+                                final prefs = ref.read(
+                                  sharedPreferencesProvider,
+                                );
+                                prefs.setInt(
+                                  SharedPrefKeys.cachedDeviceVolume(did),
+                                  volume,
+                                );
                               }
                             },
                     ),
@@ -674,7 +865,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                 Text(
                   '${_currentVolume ?? 50}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   textAlign: TextAlign.start,
                 ),
@@ -684,9 +877,13 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                   icon: Icon(
                     Icons.volume_up_rounded,
                     size: 24,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
-                  onPressed: _isLoadingVolume ? null : () => _increaseVolume(ref),
+                  onPressed: _isLoadingVolume
+                      ? null
+                      : () => _increaseVolume(ref),
                   tooltip: '增大音量',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -706,7 +903,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
               children: [
                 IconButton(
                   icon: const Icon(Icons.queue_music_rounded),
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
@@ -725,7 +924,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                 // 定时关机按钮（现在本地和远程模式都支持）
                 IconButton(
                   icon: const Icon(Icons.timer_rounded),
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                   onPressed: () => _showShutdownDialog(context, ref),
                   tooltip: '定时关机',
                 ),
@@ -737,12 +938,18 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
                           ),
                         )
                       : const Icon(Icons.download_rounded),
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                  onPressed: _isDownloading ? null : () => _downloadCurrentSong(context, ref),
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                  onPressed: _isDownloading
+                      ? null
+                      : () => _downloadCurrentSong(context, ref),
                   tooltip: S.download,
                 ),
               ],
@@ -807,7 +1014,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
               // 尝试访问公共 Music 目录
               // 获取外部存储根目录（通常是 /storage/emulated/0）
               final externalPath = externalDir.path.split('/Android')[0];
-              final publicMusicDir = Directory(path.join(externalPath, 'Music', 'mi_music'));
+              final publicMusicDir = Directory(
+                path.join(externalPath, 'Music', 'mi_music'),
+              );
 
               // 检查是否可以创建目录（测试权限）
               if (!await publicMusicDir.exists()) {
@@ -822,7 +1031,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
               } else {
                 // 目录已存在，尝试写入测试
                 try {
-                  final testFile = File(path.join(publicMusicDir.path, '.test'));
+                  final testFile = File(
+                    path.join(publicMusicDir.path, '.test'),
+                  );
                   await testFile.writeAsString('test');
                   await testFile.delete();
                   downloadDir = publicMusicDir;
@@ -863,7 +1074,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
               final externalDir = await getExternalStorageDirectory();
               if (externalDir != null) {
                 final externalPath = externalDir.path.split('/Android')[0];
-                final publicMusicDir = Directory(path.join(externalPath, 'Music', 'mi_music'));
+                final publicMusicDir = Directory(
+                  path.join(externalPath, 'Music', 'mi_music'),
+                );
                 if (!await publicMusicDir.exists()) {
                   await publicMusicDir.create(recursive: true);
                 }
@@ -887,7 +1100,11 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
             // 权限被拒绝，使用应用特定目录
             if (context.mounted) {
               _logger.e("未授予存储权限，文件将保存到应用目录");
-              SnackBarUtils.showMessage(context, '未授予存储权限，文件将保存到应用目录', duration: const Duration(seconds: 2));
+              SnackBarUtils.showMessage(
+                context,
+                '未授予存储权限，文件将保存到应用目录',
+                duration: const Duration(seconds: 2),
+              );
             }
             final externalDir = await getExternalStorageDirectory();
             if (externalDir != null) {
@@ -910,7 +1127,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
       }
 
       // 生成文件名（清理非法字符）
-      String safeFileName = currentSong.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(RegExp(r'\s+'), ' ');
+      String safeFileName = currentSong
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(RegExp(r'\s+'), ' ');
       if (!safeFileName.endsWith('.mp3') && !safeFileName.endsWith('.m4a')) {
         safeFileName = '$safeFileName.mp3';
       }
@@ -931,7 +1150,9 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
     } catch (e) {
       _logger.e("下载歌曲失败: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${S.downloadFailed}: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${S.downloadFailed}: $e')));
       }
     } finally {
       if (mounted) {
@@ -941,27 +1162,42 @@ class _PlayerActionsState extends ConsumerState<_PlayerActions> with TickerProvi
   }
 
   void _showShutdownDialog(BuildContext context, WidgetRef ref) {
-    final defaultOptions = [15, 30, 60, 90, 120]; // 默认选项：15分钟、30分钟、60分钟、90分钟、120分钟
+    final defaultOptions = [
+      15,
+      30,
+      60,
+      90,
+      120,
+    ]; // 默认选项：15分钟、30分钟、60分钟、90分钟、120分钟
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text('定时关机', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                '定时关机',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
             ...defaultOptions.map((minutes) {
               return ListTile(
                 leading: const Icon(Icons.timer_rounded),
                 title: Text('$minutes分钟后关机'),
                 onTap: () {
-                  ref.read(unifiedPlayerControllerProvider.notifier).sendShutdownCommand(minutes);
+                  ref
+                      .read(unifiedPlayerControllerProvider.notifier)
+                      .sendShutdownCommand(minutes);
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已设置$minutes分钟后关机')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('已设置$minutes分钟后关机')));
                 },
               );
             }),

@@ -12,10 +12,10 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 final _logger = Logger();
 
@@ -46,7 +46,9 @@ class PlaylistDetailPage extends ConsumerWidget {
     final musicsAsync = ref.watch(cachedPlaylistMusicsProvider(playlistName));
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final favoritesAsync = ref.watch(cachedPlaylistSongsProvider(BaseConstants.likePlaylist));
+    final favoritesAsync = ref.watch(
+      cachedPlaylistSongsProvider(BaseConstants.likePlaylist),
+    );
     final favoriteSet = favoritesAsync.asData?.value.toSet() ?? <String>{};
     final isCustom = _isCustomPlaylist(ref);
 
@@ -58,7 +60,9 @@ class PlaylistDetailPage extends ConsumerWidget {
             icon: const Icon(Icons.search_rounded),
             onPressed: () {
               // 跳转到搜索界面，指定搜索当前歌单
-              context.push('/search?playlist=${Uri.encodeComponent(playlistName)}');
+              context.push(
+                '/search?playlist=${Uri.encodeComponent(playlistName)}',
+              );
             },
             tooltip: '搜索歌单内容',
           ),
@@ -69,7 +73,9 @@ class PlaylistDetailPage extends ConsumerWidget {
                 icon: const Icon(Icons.ac_unit_rounded),
                 tooltip: '歌单操作',
                 offset: const Offset(0, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 onSelected: (value) {
                   switch (value) {
                     case 'add_songs':
@@ -88,37 +94,75 @@ class PlaylistDetailPage extends ConsumerWidget {
                       _clearPlaylist(context, ref);
                       break;
                     case 'play_all':
-                      ref.read(unifiedPlayerControllerProvider.notifier).playPlaylistByName(playlistName);
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('${S.playing}: $playlistName')));
+                      ref
+                          .read(unifiedPlayerControllerProvider.notifier)
+                          .playPlaylistByName(playlistName);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${S.playing}: $playlistName')),
+                      );
                       break;
                   }
                 },
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'add_songs',
-                    child: Row(children: [Icon(Icons.playlist_add_rounded), SizedBox(width: 8), Text('添加歌曲')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.playlist_add_rounded),
+                        SizedBox(width: 8),
+                        Text('添加歌曲'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'remove_songs',
-                    child: Row(children: [Icon(Icons.playlist_remove_rounded), SizedBox(width: 8), Text('移除歌曲')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.playlist_remove_rounded),
+                        SizedBox(width: 8),
+                        Text('移除歌曲'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'rename',
-                    child: Row(children: [Icon(Icons.edit_rounded), SizedBox(width: 8), Text('重命名歌单')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_rounded),
+                        SizedBox(width: 8),
+                        Text('重命名歌单'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
-                    child: Row(children: [Icon(Icons.delete_rounded), SizedBox(width: 8), Text('删除歌单')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_rounded),
+                        SizedBox(width: 8),
+                        Text('删除歌单'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'clear',
-                    child: Row(children: [Icon(Icons.cleaning_services_rounded), SizedBox(width: 8), Text('清空歌单')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.cleaning_services_rounded),
+                        SizedBox(width: 8),
+                        Text('清空歌单'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'play_all',
-                    child: Row(children: [Icon(Icons.play_arrow_rounded), SizedBox(width: 8), Text('播放全部')]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.play_arrow_rounded),
+                        SizedBox(width: 8),
+                        Text('播放全部'),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -134,12 +178,20 @@ class PlaylistDetailPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.music_off_rounded, size: 80, color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint),
+                  Icon(
+                    Icons.music_off_rounded,
+                    size: 80,
+                    color: isDark
+                        ? AppColors.darkTextHint
+                        : AppColors.lightTextHint,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     S.emptySongs,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -159,14 +211,21 @@ class PlaylistDetailPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [AppColors.primary.withValues(alpha: 0.1), Colors.transparent],
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.1),
+                          Colors.transparent,
+                        ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                     ),
                     child: Row(
                       children: [
-                        PlaylistCover(playlistName: playlistName, size: 80, borderRadius: BorderRadius.circular(12)),
+                        PlaylistCover(
+                          playlistName: playlistName,
+                          size: 80,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -174,7 +233,9 @@ class PlaylistDetailPage extends ConsumerWidget {
                             children: [
                               Text(
                                 playlistName,
-                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Row(
@@ -182,7 +243,9 @@ class PlaylistDetailPage extends ConsumerWidget {
                                   Text(
                                     '${songs.length} 首歌曲',
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
                                     ),
                                   ),
                                 ],
@@ -203,34 +266,52 @@ class PlaylistDetailPage extends ConsumerWidget {
                       return SongRowLayout(
                         height: 56,
                         leading: SongCover(songName: song, size: 48),
-                        title: AdaptiveSongTitle(
+                        title: SongTitleText(
                           text: song,
-                          style: theme.textTheme.bodyLarge,
-                          singleLineMinFontSize: 14,
-                          wrappedMinFontSize: 12,
-                          fixedHeight: 32,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            height: 1.1,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                              constraints: const BoxConstraints.tightFor(
+                                width: 36,
+                                height: 36,
+                              ),
                               padding: EdgeInsets.zero,
                               icon: Icon(
-                                favoriteSet.contains(song) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                color: favoriteSet.contains(song) ? Colors.red : null,
+                                favoriteSet.contains(song)
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color: favoriteSet.contains(song)
+                                    ? Colors.red
+                                    : null,
                               ),
-                              tooltip: favoriteSet.contains(song) ? '取消收藏' : '收藏',
-                              onPressed: () =>
-                                  FavoriteUtils.toggleFavorite(context, ref, song, favoriteSet.contains(song)),
+                              tooltip: favoriteSet.contains(song)
+                                  ? '取消收藏'
+                                  : '收藏',
+                              onPressed: () => FavoriteUtils.toggleFavorite(
+                                context,
+                                ref,
+                                song,
+                                favoriteSet.contains(song),
+                              ),
                             ),
                             SizedBox(
                               width: 36,
                               child: PopupMenuButton<String>(
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                icon: const Icon(
+                                  Icons.more_vert_rounded,
+                                  size: 20,
+                                ),
                                 tooltip: '更多',
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 onSelected: (value) {
                                   if (value == 'delete') {
                                     _deleteMusic(context, ref, song);
@@ -244,7 +325,10 @@ class PlaylistDetailPage extends ConsumerWidget {
                                       value: 'remove',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.remove_circle_rounded, color: Colors.orange),
+                                          Icon(
+                                            Icons.remove_circle_rounded,
+                                            color: Colors.orange,
+                                          ),
                                           SizedBox(width: 8),
                                           Text('从歌单移除'),
                                         ],
@@ -254,9 +338,15 @@ class PlaylistDetailPage extends ConsumerWidget {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_rounded, color: Colors.red),
+                                        Icon(
+                                          Icons.delete_rounded,
+                                          color: Colors.red,
+                                        ),
                                         SizedBox(width: 8),
-                                        Text('永久删除歌曲', style: TextStyle(color: Colors.red)),
+                                        Text(
+                                          '永久删除歌曲',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -283,7 +373,11 @@ class PlaylistDetailPage extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_rounded, size: 48, color: AppColors.error),
+                const Icon(
+                  Icons.error_rounded,
+                  size: 48,
+                  color: AppColors.error,
+                ),
                 const SizedBox(height: 16),
                 Text('${S.error}: $err'),
                 const SizedBox(height: 16),
@@ -302,17 +396,26 @@ class PlaylistDetailPage extends ConsumerWidget {
   }
 
   void _playSong(BuildContext context, WidgetRef ref, String song) {
-    ref.read(unifiedPlayerControllerProvider.notifier).playSong(song, playlistName: playlistName);
+    ref
+        .read(unifiedPlayerControllerProvider.notifier)
+        .playSong(song, playlistName: playlistName);
   }
 
-  Future<void> _deleteMusic(BuildContext context, WidgetRef ref, String song) async {
+  Future<void> _deleteMusic(
+    BuildContext context,
+    WidgetRef ref,
+    String song,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('永久删除歌曲'),
         content: Text('确定要永久删除 "$song" 吗？\n此操作将从所有歌单中移除该歌曲文件。'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(S.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(S.cancel),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -326,14 +429,20 @@ class PlaylistDetailPage extends ConsumerWidget {
       try {
         await ref.read(apiClientProvider).delMusic(MusicItem(name: song));
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('删除成功')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('删除成功')));
           // 刷新当前列表
-          ref.read(cacheRefreshControllerProvider.notifier).refreshPlaylistsOnly();
+          ref
+              .read(cacheRefreshControllerProvider.notifier)
+              .refreshPlaylistsOnly();
         }
       } catch (e) {
         _logger.e("删除歌曲失败: $e");
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('删除失败: $e')));
         }
       }
     }
@@ -344,9 +453,13 @@ class PlaylistDetailPage extends ConsumerWidget {
       // 1. 获取所有歌曲
       final allSongs = await ref.read(cachedPlaylistSongsProvider('全部').future);
       // 2. 获取当前歌单歌曲
-      final currentSongs = await ref.read(cachedPlaylistSongsProvider(playlistName).future);
+      final currentSongs = await ref.read(
+        cachedPlaylistSongsProvider(playlistName).future,
+      );
       // 3. 过滤掉已存在的
-      final available = allSongs.where((s) => !currentSongs.contains(s)).toList();
+      final available = allSongs
+          .where((s) => !currentSongs.contains(s))
+          .toList();
 
       if (!context.mounted) return;
 
@@ -356,22 +469,30 @@ class PlaylistDetailPage extends ConsumerWidget {
       );
 
       if (result != null && result.isNotEmpty) {
-        await ref.read(playlistControllerProvider.notifier).addMusicToPlaylist(playlistName, result);
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .addMusicToPlaylist(playlistName, result);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已添加 ${result.length} 首歌曲')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('已添加 ${result.length} 首歌曲')));
         }
       }
     } catch (e) {
       _logger.e("添加歌曲失败: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('添加失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('添加失败: $e')));
       }
     }
   }
 
   Future<void> _showRemoveSongs(BuildContext context, WidgetRef ref) async {
     try {
-      final currentSongs = await ref.read(cachedPlaylistSongsProvider(playlistName).future);
+      final currentSongs = await ref.read(
+        cachedPlaylistSongsProvider(playlistName).future,
+      );
       if (!context.mounted) return;
 
       final result = await context.push<List<String>>(
@@ -380,15 +501,21 @@ class PlaylistDetailPage extends ConsumerWidget {
       );
 
       if (result != null && result.isNotEmpty) {
-        await ref.read(playlistControllerProvider.notifier).removeMusicFromPlaylist(playlistName, result);
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .removeMusicFromPlaylist(playlistName, result);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已移除 ${result.length} 首歌曲')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('已移除 ${result.length} 首歌曲')));
         }
       }
     } catch (e) {
       _logger.e("移除歌曲失败: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('移除失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('移除失败: $e')));
       }
     }
   }
@@ -396,31 +523,47 @@ class PlaylistDetailPage extends ConsumerWidget {
   Future<void> _renamePlaylist(BuildContext context, WidgetRef ref) async {
     final newName = await showDialog<String>(
       context: context,
-      builder: (context) => InputDialog(title: '重命名歌单', labelText: '新名称', initialValue: playlistName),
+      builder: (context) => InputDialog(
+        title: '重命名歌单',
+        labelText: '新名称',
+        initialValue: playlistName,
+      ),
     );
 
-    if (newName != null && newName.trim().isNotEmpty && newName != playlistName) {
+    if (newName != null &&
+        newName.trim().isNotEmpty &&
+        newName != playlistName) {
       final nameToCheck = newName.trim();
       // Check for duplicates
       final playlists = ref.read(playlistUiListProvider).asData?.value ?? [];
       if (playlists.any((p) => p.name == nameToCheck)) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('歌单 "$nameToCheck" 已存在，请使用其他名称')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('歌单 "$nameToCheck" 已存在，请使用其他名称')),
+          );
         }
         return;
       }
 
       try {
-        await ref.read(playlistControllerProvider.notifier).renamePlaylist(playlistName, nameToCheck);
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .renamePlaylist(playlistName, nameToCheck);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('重命名成功: $newName')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('重命名成功: $newName')));
           // 跳转到新歌单页面 (replace)
-          context.pushReplacement('/playlist/${Uri.encodeComponent(newName.trim())}');
+          context.pushReplacement(
+            '/playlist/${Uri.encodeComponent(newName.trim())}',
+          );
         }
       } catch (e) {
         _logger.e("重命名失败: $e");
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('重命名失败: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('重命名失败: $e')));
         }
       }
     }
@@ -433,7 +576,10 @@ class PlaylistDetailPage extends ConsumerWidget {
         title: const Text('删除歌单'),
         content: Text('确定要删除歌单 "$playlistName" 吗？\n(不会删除歌曲文件)'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(S.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(S.cancel),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -445,15 +591,21 @@ class PlaylistDetailPage extends ConsumerWidget {
 
     if (confirmed == true) {
       try {
-        await ref.read(playlistControllerProvider.notifier).deletePlaylist(playlistName);
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .deletePlaylist(playlistName);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('歌单已删除')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('歌单已删除')));
           Navigator.pop(context); // 返回上一页
         }
       } catch (e) {
         _logger.e("删除歌单失败: $e");
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('删除失败: $e')));
         }
       }
     }
@@ -466,7 +618,10 @@ class PlaylistDetailPage extends ConsumerWidget {
         title: const Text('清空歌单'),
         content: Text('确定要清空歌单 "$playlistName" 吗？'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(S.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(S.cancel),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -479,29 +634,45 @@ class PlaylistDetailPage extends ConsumerWidget {
     if (confirmed == true) {
       try {
         // 调用 updatePlaylistMusic 传空数组
-        await ref.read(playlistControllerProvider.notifier).updatePlaylistMusic(playlistName, []);
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .updatePlaylistMusic(playlistName, []);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('歌单已清空')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('歌单已清空')));
         }
       } catch (e) {
         _logger.e("清空歌单失败: $e");
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('清空失败: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('清空失败: $e')));
         }
       }
     }
   }
 
-  Future<void> _removeSong(BuildContext context, WidgetRef ref, String song) async {
+  Future<void> _removeSong(
+    BuildContext context,
+    WidgetRef ref,
+    String song,
+  ) async {
     try {
-      await ref.read(playlistControllerProvider.notifier).removeMusicFromPlaylist(playlistName, [song]);
+      await ref
+          .read(playlistControllerProvider.notifier)
+          .removeMusicFromPlaylist(playlistName, [song]);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已从歌单移除: $song')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('已从歌单移除: $song')));
       }
     } catch (e) {
       _logger.e("移除歌曲失败: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('移除失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('移除失败: $e')));
       }
     }
   }

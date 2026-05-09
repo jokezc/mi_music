@@ -21,10 +21,14 @@ class OverflowMarqueeText extends StatefulWidget {
   State<OverflowMarqueeText> createState() => _OverflowMarqueeTextState();
 }
 
-class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTickerProviderStateMixin {
+class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   int _animationToken = 0;
   double _cycleDistance = 0;
+  double _lastTextWidth = 0;
+  double _lastAvailableWidth = 0;
+  bool _isOverflowing = false;
 
   @override
   void initState() {
@@ -43,38 +47,69 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text || oldWidget.style != widget.style) {
       _cycleDistance = 0;
+      _lastTextWidth = 0;
+      _lastAvailableWidth = 0;
+      _isOverflowing = false;
       _animationToken++;
       _controller.reset();
     }
   }
 
   void _syncAnimation({
-    required double overflowDistance,
+    required double availableWidth,
     required double textWidth,
   }) {
+    final overflowDistance = textWidth > availableWidth
+        ? textWidth - availableWidth
+        : 0.0;
+    final metricsChanged =
+        (textWidth - _lastTextWidth).abs() > 0.5 ||
+        (availableWidth - _lastAvailableWidth).abs() > 0.5;
+
+    if (!metricsChanged && _isOverflowing == (overflowDistance > 0)) {
+      return;
+    }
+
+    _lastTextWidth = textWidth;
+    _lastAvailableWidth = availableWidth;
+
     if (overflowDistance <= 0) {
       if (_controller.isAnimating) {
         _controller.stop();
       }
       _cycleDistance = 0;
+      _isOverflowing = false;
       _animationToken++;
+      if (_controller.value != 0) {
+        _controller.value = 0;
+      }
       return;
     }
 
     final nextScrollDistance = textWidth + widget.gap;
     _cycleDistance = nextScrollDistance.ceilToDouble();
+    _isOverflowing = true;
 
     final milliseconds =
-        (widget.speedPer100Px.inMilliseconds * (nextScrollDistance / 100)).round().clamp(1200, 12000).toInt();
+        (widget.speedPer100Px.inMilliseconds * (nextScrollDistance / 100))
+            .round()
+            .clamp(1200, 12000)
+            .toInt();
     final nextDuration = Duration(milliseconds: milliseconds);
+
+    final shouldRestart =
+        _controller.duration != nextDuration ||
+        (_controller.value != 0 && metricsChanged) ||
+        !_controller.isAnimating;
 
     if (_controller.duration != nextDuration) {
       _controller.duration = nextDuration;
-      _controller.reset();
-      _animationToken++;
     }
 
-    if (!_controller.isAnimating) {
+    if (shouldRestart) {
+      _controller.stop();
+      _controller.value = 0;
+      _animationToken++;
       _startLoop();
     }
   }
@@ -102,18 +137,27 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
         )..layout(maxWidth: double.infinity);
 
         final textWidth = painter.width;
-        final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
-        final overflowDistance = textWidth > availableWidth ? textWidth - availableWidth : 0.0;
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : textWidth;
+        final overflowDistance = textWidth > availableWidth
+            ? textWidth - availableWidth
+            : 0.0;
 
-        _syncAnimation(
-          overflowDistance: overflowDistance,
-          textWidth: textWidth,
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _syncAnimation(availableWidth: availableWidth, textWidth: textWidth);
+        });
 
         if (overflowDistance <= 0) {
           return SizedBox(
             width: availableWidth,
-            child: Text(widget.text, style: textStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              widget.text,
+              style: textStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }
 
@@ -124,10 +168,17 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText> with SingleTi
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                  final devicePixelRatio = MediaQuery.of(
+                    context,
+                  ).devicePixelRatio;
                   final rawDx = -_cycleDistance * _controller.value;
-                  final snappedDx = (rawDx * devicePixelRatio).roundToDouble() / devicePixelRatio;
-                  return Transform.translate(offset: Offset(snappedDx, 0), child: child);
+                  final snappedDx =
+                      (rawDx * devicePixelRatio).roundToDouble() /
+                      devicePixelRatio;
+                  return Transform.translate(
+                    offset: Offset(snappedDx, 0),
+                    child: child,
+                  );
                 },
                 child: OverflowBox(
                   alignment: Alignment.centerLeft,

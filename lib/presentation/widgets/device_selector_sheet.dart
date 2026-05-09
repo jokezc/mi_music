@@ -11,8 +11,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
-
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 final _logger = Logger();
 
@@ -23,7 +22,8 @@ class DeviceSelectorSheet extends ConsumerStatefulWidget {
   const DeviceSelectorSheet({super.key, this.bottomPadding = 16});
 
   @override
-  ConsumerState<DeviceSelectorSheet> createState() => _DeviceSelectorSheetState();
+  ConsumerState<DeviceSelectorSheet> createState() =>
+      _DeviceSelectorSheetState();
 }
 
 class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
@@ -58,12 +58,17 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
 
     try {
       final apiClient = ref.read(apiClientProvider);
-      final remoteDevices = devices.values.where((d) => d.type == DeviceType.remote).toList();
+      final remoteDevices = devices.values
+          .where((d) => d.type == DeviceType.remote)
+          .toList();
 
       // 并发获取所有远程设备的播放状态
       final futures = remoteDevices.map((device) async {
         try {
-          final status = await apiClient.getPlayingMusic(device.did, _cancelToken);
+          final status = await apiClient.getPlayingMusic(
+            device.did,
+            _cancelToken,
+          );
           return MapEntry(device.did, status);
         } catch (e) {
           if (e is DioException && CancelToken.isCancel(e)) {
@@ -103,11 +108,15 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
 
     if (devices.isEmpty) return;
 
-    final remoteDevices = devices.values.where((d) => d.type == DeviceType.remote).toList();
+    final remoteDevices = devices.values
+        .where((d) => d.type == DeviceType.remote)
+        .toList();
 
     if (remoteDevices.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('没有远程设备')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('没有远程设备')));
       }
       return;
     }
@@ -122,7 +131,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
       // 并发发送停止命令到所有远程设备
       final futures = remoteDevices.map((device) async {
         try {
-          await apiClient.sendCmd(DidCmd(did: device.did, cmd: PlayerCommands.stop));
+          await apiClient.sendCmd(
+            DidCmd(did: device.did, cmd: PlayerCommands.stop),
+          );
           return true;
         } catch (e) {
           _logger.e('关闭设备 ${device.did} 失败: $e');
@@ -149,7 +160,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
         } else {
           message = '已关闭 $successCount 个设备，$failCount 个设备关闭失败';
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       _logger.e('关闭所有远程设备失败: $e');
@@ -157,7 +170,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
         setState(() {
           _isClosingAllDevices = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('关闭设备失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('关闭设备失败: $e')));
       }
     }
   }
@@ -180,9 +195,17 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
     }
 
     // 获取当前设备（从播放器状态）
-    final currentDevice = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice));
-    final currentPlayerSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
-    final isPlayerPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
+    final currentDevice = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice),
+    );
+    final currentPlayerSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final isPlayerPlaying = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.isPlaying ?? false,
+      ),
+    );
     final cacheManager = ref.watch(cacheManagerProvider);
 
     return Container(
@@ -204,13 +227,18 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.speaker_group_rounded, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.speaker_group_rounded,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     S.deviceSelector,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -231,13 +259,17 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                   Icon(
                     Icons.devices_other_rounded,
                     size: 48,
-                    color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                    color: isDark
+                        ? AppColors.darkTextHint
+                        : AppColors.lightTextHint,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     S.noDevices,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -248,22 +280,43 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
               child: ListView.builder(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
-                itemCount: devices.length + (devices.isNotEmpty ? 1 : 0), // 设备数量 + 按钮（如果有设备）
+                itemCount:
+                    devices.length +
+                    (devices.isNotEmpty ? 1 : 0), // 设备数量 + 按钮（如果有设备）
                 itemBuilder: (context, index) {
                   // 如果是最后一个 item 且有设备，显示关闭按钮
                   if (index == devices.length) {
-                    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
+                    final safeAreaBottom = MediaQuery.of(
+                      context,
+                    ).padding.bottom;
                     return Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, widget.bottomPadding + safeAreaBottom),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        widget.bottomPadding + safeAreaBottom,
+                      ),
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: _isClosingAllDevices ? null : _closeAllRemoteDevices,
+                          onPressed: _isClosingAllDevices
+                              ? null
+                              : _closeAllRemoteDevices,
                           icon: _isClosingAllDevices
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Icon(Icons.stop_circle_outlined),
-                          label: Text(_isClosingAllDevices ? '正在关闭...' : '关闭所有远程设备'),
-                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                          label: Text(
+                            _isClosingAllDevices ? '正在关闭...' : '关闭所有远程设备',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
                         ),
                       ),
                     );
@@ -294,7 +347,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       isLocalPlaying = isPlayerPlaying;
                     } else {
                       // 未选中时从缓存读取
-                      final localCache = cacheManager.getPlayerState(BaseConstants.webDevice);
+                      final localCache = cacheManager.getPlayerState(
+                        BaseConstants.webDevice,
+                      );
                       displaySong = localCache?.currentSong;
                       isLocalPlaying = localCache?.isPlaying ?? false;
                     }
@@ -305,16 +360,24 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       subtitleText = displaySong;
                       if (isLocalPlaying) showEqualizer = true;
                     } else {
-                      subtitleText = device.did == BaseConstants.webDevice ? '本机' : device.did;
+                      subtitleText = device.did == BaseConstants.webDevice
+                          ? '本机'
+                          : device.did;
                     }
                   } else {
                     if (isSelected) {
-                      subtitleText = (currentPlayerSong != null && currentPlayerSong.isNotEmpty)
+                      subtitleText =
+                          (currentPlayerSong != null &&
+                              currentPlayerSong.isNotEmpty)
                           ? currentPlayerSong
-                          : (currentMusic.isNotEmpty ? currentMusic : device.did);
+                          : (currentMusic.isNotEmpty
+                                ? currentMusic
+                                : device.did);
                       isDevicePlaying = isPlayerPlaying;
                     } else {
-                      subtitleText = currentMusic.isNotEmpty ? currentMusic : device.did;
+                      subtitleText = currentMusic.isNotEmpty
+                          ? currentMusic
+                          : device.did;
                       isDevicePlaying = isPlaying;
                     }
 
@@ -326,43 +389,62 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                   if (isSelected) {
                     // 选中的设备：如果正在播放显示播放图标，否则显示勾选图标
                     trailingWidget = isDevicePlaying
-                        ? const Icon(Icons.graphic_eq_rounded, color: AppColors.primary, size: 20)
-                        : const Icon(Icons.check_rounded, color: AppColors.primary);
+                        ? const Icon(
+                            Icons.graphic_eq_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          )
+                        : const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.primary,
+                          );
                   } else if (showEqualizer) {
                     // 未选中但正在播放的设备显示播放图标
-                    trailingWidget = const Icon(Icons.graphic_eq_rounded, color: AppColors.primary, size: 20);
+                    trailingWidget = const Icon(
+                      Icons.graphic_eq_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    );
                   }
 
                   return ListTile(
-                    isThreeLine: true,
+                    visualDensity: const VisualDensity(vertical: -2),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.primary.withValues(alpha: 0.1)
-                            : (isDark ? AppColors.darkSurface : AppColors.lightDivider),
+                            : (isDark
+                                  ? AppColors.darkSurface
+                                  : AppColors.lightDivider),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        isLocalDevice ? Icons.smartphone_rounded : Icons.speaker_rounded,
+                        isLocalDevice
+                            ? Icons.smartphone_rounded
+                            : Icons.speaker_rounded,
                         color: isSelected
                             ? AppColors.primary
-                            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                            : (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary),
                         size: 24,
                       ),
                     ),
                     title: Text(device.name ?? '未知设备'),
-                    subtitle: AdaptiveSongTitle(
+                    subtitle: SongTitleText(
                       text: subtitleText,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                        color: isDark
+                            ? AppColors.darkTextHint
+                            : AppColors.lightTextHint,
+                        fontWeight: FontWeight.w500,
+                        height: 1.15,
                       ),
-                      singleLineMinFontSize: 11,
-                      wrappedMinFontSize: 10,
-                      fixedHeight: 32,
                     ),
                     trailing: trailingWidget,
-                    onTap: () => _handleDeviceSelection(context, ref, device: device),
+                    onTap: () =>
+                        _handleDeviceSelection(context, ref, device: device),
                   );
                 },
               ),
@@ -373,7 +455,11 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
   }
 
   /// 处理设备选择
-  Future<void> _handleDeviceSelection(BuildContext context, WidgetRef ref, {required Device device}) async {
+  Future<void> _handleDeviceSelection(
+    BuildContext context,
+    WidgetRef ref, {
+    required Device device,
+  }) async {
     final playerStateAsync = ref.read(unifiedPlayerControllerProvider);
     final currentDevice = playerStateAsync.value?.currentDevice;
     final playerNotifier = ref.read(unifiedPlayerControllerProvider.notifier);
@@ -400,7 +486,9 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
       _logger.e("切换设备失败: $e");
       // 错误提示需要 context，所以检查 mounted
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('切换设备失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('切换设备失败: $e')));
       }
     }
   }

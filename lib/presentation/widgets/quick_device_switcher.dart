@@ -10,7 +10,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
-import 'package:mi_music/presentation/widgets/adaptive_song_title.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 final _logger = Logger();
 
@@ -19,10 +19,12 @@ class QuickDeviceSwitcher extends ConsumerStatefulWidget {
   const QuickDeviceSwitcher({super.key});
 
   @override
-  ConsumerState<QuickDeviceSwitcher> createState() => QuickDeviceSwitcherState();
+  ConsumerState<QuickDeviceSwitcher> createState() =>
+      QuickDeviceSwitcherState();
 }
 
-class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with WidgetsBindingObserver {
+class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher>
+    with WidgetsBindingObserver {
   // 存储每个设备的播放状态
   Map<String, PlayingMusicResp?> _playingStatusMap = {};
   bool _isFetchingStatus = false;
@@ -49,15 +51,21 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
     // 此时当前页面重新变得完全可见
     final route = ModalRoute.of(context);
     if (route != null && _secondaryAnimation != route.secondaryAnimation) {
-      _secondaryAnimation?.removeStatusListener(_onSecondaryAnimationStatusChanged);
+      _secondaryAnimation?.removeStatusListener(
+        _onSecondaryAnimationStatusChanged,
+      );
       _secondaryAnimation = route.secondaryAnimation;
-      _secondaryAnimation?.addStatusListener(_onSecondaryAnimationStatusChanged);
+      _secondaryAnimation?.addStatusListener(
+        _onSecondaryAnimationStatusChanged,
+      );
     }
   }
 
   @override
   void dispose() {
-    _secondaryAnimation?.removeStatusListener(_onSecondaryAnimationStatusChanged);
+    _secondaryAnimation?.removeStatusListener(
+      _onSecondaryAnimationStatusChanged,
+    );
     WidgetsBinding.instance.removeObserver(this);
     _cancelToken?.cancel('Widget disposed');
     super.dispose();
@@ -120,12 +128,17 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
 
     try {
       final apiClient = ref.read(apiClientProvider);
-      final remoteDevices = devices.values.where((d) => d.type == DeviceType.remote).toList();
+      final remoteDevices = devices.values
+          .where((d) => d.type == DeviceType.remote)
+          .toList();
 
       final futures = remoteDevices.map((device) async {
         try {
           // 传递 cancelToken
-          final status = await apiClient.getPlayingMusic(device.did, _cancelToken);
+          final status = await apiClient.getPlayingMusic(
+            device.did,
+            _cancelToken,
+          );
           return MapEntry(device.did, status);
         } catch (e) {
           if (e is DioException && CancelToken.isCancel(e)) {
@@ -172,11 +185,15 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
 
     if (devices.isEmpty) return;
 
-    final remoteDevices = devices.values.where((d) => d.type == DeviceType.remote).toList();
+    final remoteDevices = devices.values
+        .where((d) => d.type == DeviceType.remote)
+        .toList();
 
     if (remoteDevices.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('没有远程设备')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('没有远程设备')));
       }
       return;
     }
@@ -191,7 +208,9 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
       // 并发发送停止命令到所有远程设备
       final futures = remoteDevices.map((device) async {
         try {
-          await apiClient.sendCmd(DidCmd(did: device.did, cmd: PlayerCommands.stop));
+          await apiClient.sendCmd(
+            DidCmd(did: device.did, cmd: PlayerCommands.stop),
+          );
           return true;
         } catch (e) {
           _logger.e('关闭设备 ${device.did} 失败: $e');
@@ -218,7 +237,9 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
         } else {
           message = '已关闭 $successCount 个设备，$failCount 个设备关闭失败';
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       _logger.e('关闭所有远程设备失败: $e');
@@ -226,7 +247,9 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
         setState(() {
           _isClosingAllDevices = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('关闭设备失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('关闭设备失败: $e')));
       }
     }
   }
@@ -269,7 +292,9 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
                     SizedBox(
                       width: itemWidth,
                       child: _CloseAllCard(
-                        onTap: _isClosingAllDevices ? null : _closeAllRemoteDevices,
+                        onTap: _isClosingAllDevices
+                            ? null
+                            : _closeAllRemoteDevices,
                         isLoading: _isClosingAllDevices,
                       ),
                     ),
@@ -286,7 +311,10 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
 
   Future<void> _handleDeviceSwitch(Device device) async {
     final playerNotifier = ref.read(unifiedPlayerControllerProvider.notifier);
-    final currentDevice = ref.read(unifiedPlayerControllerProvider).value?.currentDevice;
+    final currentDevice = ref
+        .read(unifiedPlayerControllerProvider)
+        .value
+        ?.currentDevice;
 
     // 如果已经是当前设备，不做操作
     if (currentDevice?.did == device.did) return;
@@ -296,7 +324,9 @@ class QuickDeviceSwitcherState extends ConsumerState<QuickDeviceSwitcher> with W
     } catch (e) {
       _logger.e("切换设备失败: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('切换设备失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('切换设备失败: $e')));
       }
     }
   }
@@ -307,7 +337,11 @@ class _DeviceCard extends ConsumerWidget {
   final PlayingMusicResp? playingStatus;
   final VoidCallback onTap;
 
-  const _DeviceCard({required this.device, this.playingStatus, required this.onTap});
+  const _DeviceCard({
+    required this.device,
+    this.playingStatus,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -315,9 +349,19 @@ class _DeviceCard extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // 获取当前播放状态和选中设备
-    final currentDeviceDid = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentDevice?.did));
-    final playerIsPlaying = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.isPlaying ?? false));
-    final playerSong = ref.watch(unifiedPlayerControllerProvider.select((s) => s.value?.currentSong));
+    final currentDeviceDid = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.currentDevice?.did,
+      ),
+    );
+    final playerIsPlaying = ref.watch(
+      unifiedPlayerControllerProvider.select(
+        (s) => s.value?.isPlaying ?? false,
+      ),
+    );
+    final playerSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
 
     final cacheManager = ref.watch(cacheManagerProvider);
     final isSelected = currentDeviceDid == device.did;
@@ -343,7 +387,9 @@ class _DeviceCard extends ConsumerWidget {
       if (isSelected) {
         // 如果是当前选中设备，优先使用 PlayerState (实时状态)
         isPlaying = playerIsPlaying;
-        currentMusic = (playerSong != null && playerSong.isNotEmpty) ? playerSong : (playingStatus?.curMusic ?? '');
+        currentMusic = (playerSong != null && playerSong.isNotEmpty)
+            ? playerSong
+            : (playingStatus?.curMusic ?? '');
       } else {
         // 其他设备使用 API 获取的状态
         isPlaying = playingStatus?.isPlaying ?? false;
@@ -373,7 +419,13 @@ class _DeviceCard extends ConsumerWidget {
             // 如果未选中，添加轻微阴影以突出卡片感
             boxShadow: isSelected
                 ? null
-                : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,7 +438,9 @@ class _DeviceCard extends ConsumerWidget {
                     size: 20,
                     color: isSelected
                         ? AppColors.primary
-                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                        : (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -400,20 +454,28 @@ class _DeviceCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isPlaying) const Icon(Icons.graphic_eq_rounded, size: 16, color: AppColors.primary),
+                  if (isPlaying)
+                    const Icon(
+                      Icons.graphic_eq_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
                 ],
               ),
-              AdaptiveSongTitle(
+              SongTitleText(
                 text: (currentMusic.isNotEmpty)
                     ? currentMusic
-                    : (isSelected ? (isPlaying ? '正在播放' : '已暂停') : (isLocal ? '本机' : '点击切换')),
+                    : (isSelected
+                          ? (isPlaying ? '正在播放' : '已暂停')
+                          : (isLocal ? '本机' : '点击切换')),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
+                  color: isDark
+                      ? AppColors.darkTextHint
+                      : AppColors.lightTextHint,
                   fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  height: 1.15,
                 ),
-                singleLineMinFontSize: 10,
-                wrappedMinFontSize: 9,
-                fixedHeight: 30,
               ),
             ],
           ),
@@ -446,19 +508,35 @@ class _CloseAllCard extends StatelessWidget {
             color: isDark
                 ? AppColors.darkSurface.withValues(alpha: 0.5)
                 : AppColors.lightSurface.withValues(alpha: 0.5),
-            border: Border.all(color: Colors.red.withValues(alpha: 0.3), width: 1.0),
+            border: Border.all(
+              color: Colors.red.withValues(alpha: 0.3),
+              width: 1.0,
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: isLoading
-              ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.stop_circle_outlined, color: Colors.red, size: 24),
+                    const Icon(
+                      Icons.stop_circle_outlined,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '一键关闭',
-                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.red, fontWeight: FontWeight.bold),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
