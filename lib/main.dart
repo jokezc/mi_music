@@ -57,19 +57,28 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    // 申请初始权限（通知、网络等）
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 申请初始权限（通知、网络等）
       PermissionUtils.requestInitialPermissions();
+
+      // 延后到首帧后预热 AudioHandler，避开应用初始挂载阶段的绑定竞态。
+      unawaited(_warmUpAudioHandler());
     });
+  }
+
+  Future<void> _warmUpAudioHandler() async {
+    try {
+      await ref.read(audioHandlerProvider.future);
+    } catch (e, st) {
+      _mainLogger.w('AudioHandler 预热失败，保留后续按需重试: $e');
+      _mainLogger.d('$st');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // 触发缓存初始化（不需要登录）
     ref.watch(initCacheProvider);
-
-    // 提前初始化 AudioHandler，避免切换设备时动态初始化导致 bind 失败
-    ref.watch(audioHandlerProvider);
 
     return widget.child;
   }

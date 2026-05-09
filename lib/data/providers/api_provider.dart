@@ -27,7 +27,9 @@ class SimpleLogInterceptor extends Interceptor {
         requestData = options.data.toString();
       }
     } else if (options.queryParameters.isNotEmpty) {
-      requestData = const JsonEncoder.withIndent('  ').convert(options.queryParameters);
+      requestData = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(options.queryParameters);
     }
 
     // 存储请求信息到 extra
@@ -41,13 +43,16 @@ class SimpleLogInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     // 获取请求信息
     final path = response.requestOptions.extra['_log_path'] as String? ?? '';
-    final requestData = response.requestOptions.extra['_log_request'] as String? ?? '';
+    final requestData =
+        response.requestOptions.extra['_log_request'] as String? ?? '';
 
     // 打印响应结果
     String responseData = '';
     if (response.data != null) {
       if (response.data is Map || response.data is List) {
-        responseData = const JsonEncoder.withIndent('  ').convert(response.data);
+        responseData = const JsonEncoder.withIndent(
+          '  ',
+        ).convert(response.data);
       } else {
         responseData = response.data.toString();
       }
@@ -55,7 +60,13 @@ class SimpleLogInterceptor extends Interceptor {
 
     // 一起打印请求和响应
     // 维护不打印的地址列表
-    final ignorePaths = ['/musiclist', '/musicinfo', '/musicinfos', '/getsetting', '/playingmusic'];
+    final ignorePaths = [
+      '/musiclist',
+      '/musicinfo',
+      '/musicinfos',
+      '/getsetting',
+      '/playingmusic',
+    ];
     final ignoreAllPaths = ['/playingmusic'];
 
     final buffer = StringBuffer();
@@ -78,13 +89,16 @@ class SimpleLogInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     // 获取请求信息
     final path = err.requestOptions.extra['_log_path'] as String? ?? '';
-    final requestData = err.requestOptions.extra['_log_request'] as String? ?? '';
+    final requestData =
+        err.requestOptions.extra['_log_request'] as String? ?? '';
 
     // 打印错误响应
     String errorData = '';
     if (err.response?.data != null) {
       if (err.response!.data is Map || err.response!.data is List) {
-        errorData = const JsonEncoder.withIndent('  ').convert(err.response!.data);
+        errorData = const JsonEncoder.withIndent(
+          '  ',
+        ).convert(err.response!.data);
       } else {
         errorData = err.response!.data.toString();
       }
@@ -109,7 +123,7 @@ class SimpleLogInterceptor extends Interceptor {
 
 /// 认证状态管理
 /// true 表示已认证，false 表示未认证（需要登录）
-@riverpod
+@Riverpod(keepAlive: true)
 class AuthState extends _$AuthState {
   @override
   bool build() => true; // 默认已认证
@@ -127,13 +141,13 @@ class AuthState extends _$AuthState {
 
 /// 认证拦截器，处理 401 未授权错误，更新认证状态
 class AuthInterceptor extends Interceptor {
-  final Ref ref;
+  final void Function() onUnauthorized;
 
   // 静态变量，用于防止多个 401 错误导致重复更新状态
   static DateTime? _lastUpdateTime;
   static const _updateDebounceDuration = Duration(milliseconds: 500);
 
-  AuthInterceptor(this.ref);
+  AuthInterceptor(this.onUnauthorized);
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
@@ -141,7 +155,8 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode == 401) {
       // 防抖处理：如果距离上次更新时间太短，则忽略
       final now = DateTime.now();
-      if (_lastUpdateTime != null && now.difference(_lastUpdateTime!) < _updateDebounceDuration) {
+      if (_lastUpdateTime != null &&
+          now.difference(_lastUpdateTime!) < _updateDebounceDuration) {
         handler.next(err);
         return;
       }
@@ -152,7 +167,7 @@ class AuthInterceptor extends Interceptor {
       // 更新认证状态，触发 router 的 redirect 逻辑
       // 注意：不需要检查当前路由，因为 router 的 redirect 已经会处理登录页的情况
       // 如果已经在登录页，redirect 不会再次跳转
-      ref.read(authStateProvider.notifier).setUnauthorized();
+      onUnauthorized();
     }
 
     handler.next(err);
@@ -161,9 +176,9 @@ class AuthInterceptor extends Interceptor {
 
 /// URL 修复拦截器，将后端返回的内网 URL 替换为当前配置的服务器地址
 class UrlFixInterceptor extends Interceptor {
-  final Ref ref;
+  final String Function() getServerUrl;
 
-  UrlFixInterceptor(this.ref);
+  UrlFixInterceptor(this.getServerUrl);
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
@@ -171,14 +186,16 @@ class UrlFixInterceptor extends Interceptor {
       final path = response.requestOptions.uri.path;
 
       // 优化：只解析一次 Server URL
-      final serverUrl = ref.read(settingsProvider).serverUrl;
+      final serverUrl = getServerUrl();
       if (serverUrl.isEmpty) {
         handler.next(response);
         return;
       }
 
       final serverUri = Uri.tryParse(serverUrl);
-      if (serverUri == null || !serverUri.hasScheme || !serverUri.hasAuthority) {
+      if (serverUri == null ||
+          !serverUri.hasScheme ||
+          !serverUri.hasAuthority) {
         handler.next(response);
         return;
       }
@@ -240,8 +257,16 @@ class UrlFixInterceptor extends Interceptor {
       // 比较 URL 中的 host 与用户设置的 serverUrl host 是否一致
       // 如果不一致（例如后端返回了内网IP 192.168.x.x，而用户设置的是域名），则进行替换
       if (uri.host != serverUri.host) {
-        _logger.d("修复 URL: $url -> ${uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString()}");
-        return uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString();
+        _logger.d(
+          "修复 URL: $url -> ${uri.replace(scheme: serverUri.scheme, host: serverUri.host, port: serverUri.port).toString()}",
+        );
+        return uri
+            .replace(
+              scheme: serverUri.scheme,
+              host: serverUri.host,
+              port: serverUri.port,
+            )
+            .toString();
       }
     } catch (e) {
       // ignore
@@ -252,14 +277,17 @@ class UrlFixInterceptor extends Interceptor {
 
 /// API 配置（从 settingsProvider 中 select 需要的字段）
 /// 只包含与 API 相关的字段：serverUrl、username、password
-@riverpod
+@Riverpod(keepAlive: true)
 ({String serverUrl, String username, String password}) apiConfig(Ref ref) {
   return ref.watch(
-    settingsProvider.select((s) => (serverUrl: s.serverUrl, username: s.username, password: s.password)),
+    settingsProvider.select(
+      (s) =>
+          (serverUrl: s.serverUrl, username: s.username, password: s.password),
+    ),
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Dio dio(Ref ref) {
   // 只 watch API 配置相关的字段，避免本地设置变化时重建
   final config = ref.watch(apiConfigProvider);
@@ -273,22 +301,31 @@ Dio dio(Ref ref) {
   );
 
   if (config.username.isNotEmpty && config.password.isNotEmpty) {
-    String basicAuth = 'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
+    String basicAuth =
+        'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
     dio.options.headers['Authorization'] = basicAuth;
   }
 
   // 先添加认证拦截器（在日志拦截器之前），确保 401 错误能被正确处理
   // 传入 ref 以便更新认证状态
-  dio.interceptors.add(AuthInterceptor(ref));
+  dio.interceptors.add(
+    AuthInterceptor(() {
+      ref.read(authStateProvider.notifier).setUnauthorized();
+    }),
+  );
   // 添加 URL 修复拦截器，确保所有 API 返回的 URL 都指向当前配置的服务器
-  dio.interceptors.add(UrlFixInterceptor(ref));
+  dio.interceptors.add(
+    UrlFixInterceptor(() => ref.read(settingsProvider).serverUrl),
+  );
   // 使用自定义的简单日志拦截器
   dio.interceptors.add(SimpleLogInterceptor());
+
+  ref.onDispose(dio.close);
 
   return dio;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 ApiClient apiClient(Ref ref) {
   final dio = ref.watch(dioProvider);
   // 只 watch API 配置相关的字段，避免本地设置变化时重建
@@ -304,10 +341,12 @@ class AuthResult {
 
   AuthResult({required this.isAuthenticated, this.version, this.errorMessage});
 
-  factory AuthResult.authenticated(String version) => AuthResult(isAuthenticated: true, version: version);
+  factory AuthResult.authenticated(String version) =>
+      AuthResult(isAuthenticated: true, version: version);
   factory AuthResult.notAuthenticated(String errorMessage) =>
       AuthResult(isAuthenticated: false, errorMessage: errorMessage);
-  factory AuthResult.error(String errorMessage) => AuthResult(isAuthenticated: false, errorMessage: errorMessage);
+  factory AuthResult.error(String errorMessage) =>
+      AuthResult(isAuthenticated: false, errorMessage: errorMessage);
 }
 
 /// 服务端 getSetting 中的 hostname/public_port 与当前连接地址不一致时的信息
@@ -315,12 +354,16 @@ class AuthResult {
 class HostPortMismatch {
   /// serverUrl 的协议，如 'https' / 'http'，快速修改时拼到 hostname 前
   final String connectionScheme;
+
   /// 用户当前连接的 host（域名或 IP）
   final String connectionHost;
+
   /// 用户当前连接的 port（若 URL 未写端口则为标准端口 80/443）
   final int connectionPort;
+
   /// 服务端配置的 hostname
   final String settingHostname;
+
   /// 服务端配置的 public_port（对外端口）
   final int settingPublicPort;
 
@@ -333,12 +376,13 @@ class HostPortMismatch {
   });
 
   /// 带协议的完整 hostname，用于快速修改保存（如 https://baidu.com）
-  String get connectionHostnameWithScheme => '$connectionScheme://$connectionHost';
+  String get connectionHostnameWithScheme =>
+      '$connectionScheme://$connectionHost';
 }
 
 /// 检查当前连接的 serverUrl 与 getSetting 返回的 hostname/public_port 是否一致。
 /// 只检测对外地址（public_port），不检测内部 port。
-Future<HostPortMismatch?> checkSettingHostPortMatch(dynamic ref) async {
+Future<HostPortMismatch?> checkSettingHostPortMatch(WidgetRef ref) async {
   final serverUrl = ref.read(settingsProvider).serverUrl;
   if (serverUrl.isEmpty) return null;
 
@@ -347,15 +391,22 @@ Future<HostPortMismatch?> checkSettingHostPortMatch(dynamic ref) async {
 
   final connectionScheme = uri.scheme;
   final connectionHost = uri.host;
-  final connectionPort = uri.hasPort ? uri.port : connectionScheme == 'https' ? 443 : 80;
+  final connectionPort = uri.hasPort
+      ? uri.port
+      : connectionScheme == 'https'
+      ? 443
+      : 80;
+  final client = ref.read(apiClientProvider);
 
   try {
-    final client = ref.read(apiClientProvider);
     final setting = await client.getSetting(false);
     final settingHostname = (setting.hostname ?? '').trim();
-    final settingPublicPort = setting.publicPort ?? (connectionScheme == 'https' ? 443 : 80);
+    final settingPublicPort =
+        setting.publicPort ?? (connectionScheme == 'https' ? 443 : 80);
     // 比较时去掉服务端 hostname 可能带的前缀协议
-    final settingHostNormalized = settingHostname.replaceFirst(RegExp(r'^https?://'), '').trim();
+    final settingHostNormalized = settingHostname
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .trim();
 
     final hostMatch = connectionHost == settingHostNormalized;
     final portMatch = connectionPort == settingPublicPort;
@@ -379,8 +430,13 @@ Future<HostPortMismatch?> checkSettingHostPortMatch(dynamic ref) async {
 ///
 /// [skipStateUpdate] 如果为 true，检测到 401 时不会更新 authStateProvider
 /// 用于登录页等场景，避免重复跳转，只返回错误信息供 UI 显示
-Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) async {
+Future<AuthResult> verifyAuth(
+  WidgetRef ref, {
+  bool skipStateUpdate = false,
+}) async {
   final config = ref.read(apiConfigProvider);
+  final apiClient = ref.read(apiClientProvider);
+  final authStateNotifier = ref.read(authStateProvider.notifier);
 
   // 如果没有配置服务器地址，直接返回错误
   if (config.serverUrl.isEmpty) {
@@ -388,7 +444,6 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
   }
 
   try {
-    final apiClient = ref.read(apiClientProvider);
     final versionResp = await apiClient.getVersion();
 
     // 成功返回版本信息，表示认证成功
@@ -402,12 +457,13 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
       // 只有在非登录页场景才更新认证状态，触发 router 的 redirect 逻辑
       // 登录页场景由 UI 自己处理错误显示，不需要跳转
       if (!skipStateUpdate) {
-        ref.read(authStateProvider.notifier).setUnauthorized();
+        authStateNotifier.setUnauthorized();
       }
 
       // 检查响应内容是否包含 "Not authenticated"
       final responseData = e.response?.data;
-      if (responseData is Map && responseData['detail'] == 'Not authenticated') {
+      if (responseData is Map &&
+          responseData['detail'] == 'Not authenticated') {
         return AuthResult.notAuthenticated('认证失败：账号或密码错误');
       }
       return AuthResult.notAuthenticated('认证失败');
@@ -415,7 +471,8 @@ Future<AuthResult> verifyAuth(WidgetRef ref, {bool skipStateUpdate = false}) asy
 
     // 其他错误
     String msg = e.message ?? '网络错误';
-    if (msg.contains("The connection errored") || msg.contains("Connection failed")) {
+    if (msg.contains("The connection errored") ||
+        msg.contains("Connection failed")) {
       msg = "无法连接到服务器，请检查网络设置或服务器地址";
     }
     return AuthResult.error(msg);

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
@@ -21,15 +22,28 @@ import 'package:mi_music/data/providers/settings_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/data/services/audio_handler.dart';
+import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'player_provider.g.dart';
 
 final _logger = Logger();
+const _audioServiceBootstrapChannel = MethodChannel(
+  'cn.jokeo.mi_music/audio_service_bootstrap',
+);
 
 /// AudioHandler 单例（延迟初始化，避免在 WidgetsFlutterBinding 前执行）
 Future<MyAudioHandler>? _audioHandlerSingleton;
+MyAudioHandler? _inAppAudioHandlerFallback;
+
+bool _isAndroidAudioServiceBindFailure(Object error) {
+  if (!Platform.isAndroid) return false;
+
+  final errorText = error.toString();
+  return errorText.contains('Unable to bind to AudioService') &&
+      errorText.contains('PlatformException');
+}
 
 Future<MyAudioHandler> _getAudioHandler() async {
   if (_audioHandlerSingleton != null) {
@@ -39,6 +53,14 @@ Future<MyAudioHandler> _getAudioHandler() async {
       // 如果之前的初始化失败了，清空单例以便重试
       _logger.e("获取 AudioHandler 单例失败: $e");
       _audioHandlerSingleton = null;
+    }
+  }
+
+  if (Platform.isAndroid) {
+    try {
+      await _audioServiceBootstrapChannel.invokeMethod('startAudioService');
+    } catch (e) {
+      _logger.w('预启动 Android AudioService 失败，继续走默认初始化: $e');
     }
   }
 
@@ -62,6 +84,16 @@ Future<MyAudioHandler> _getAudioHandler() async {
     return await _audioHandlerSingleton!;
   } catch (e) {
     _logger.e("初始化 AudioHandler 失败: $e");
+
+    if (_isAndroidAudioServiceBindFailure(e)) {
+      _logger.w(
+        '检测到 Android AudioService 原生绑定失败，降级为应用内 AudioHandler；通知栏/后台媒体控制将不可用。',
+      );
+      _inAppAudioHandlerFallback ??= MyAudioHandler();
+      _audioHandlerSingleton = Future.value(_inAppAudioHandlerFallback!);
+      return _inAppAudioHandlerFallback!;
+    }
+
     _audioHandlerSingleton = null; // 初始化失败，允许下次调用重试
     rethrow;
   }
@@ -161,9 +193,14 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     state = AsyncData(
       newState.copyWith(
         currentDevice: activeDevice,
-        playlist: newState.playlist.isNotEmpty ? newState.playlist : state.value!.playlist,
-        currentIndex: newState.currentIndex >= 0 ? newState.currentIndex : state.value!.currentIndex,
-        currentPlaylistName: newState.currentPlaylistName ?? state.value!.currentPlaylistName,
+        playlist: newState.playlist.isNotEmpty
+            ? newState.playlist
+            : state.value!.playlist,
+        currentIndex: newState.currentIndex >= 0
+            ? newState.currentIndex
+            : state.value!.currentIndex,
+        currentPlaylistName:
+            newState.currentPlaylistName ?? state.value!.currentPlaylistName,
       ),
     );
 
@@ -195,7 +232,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       return devices[deviceId]!;
     } else {
       // 获取远程设备（排除本地设备）
-      final remoteDevices = devices.values.where((d) => d.type == DeviceType.remote).toList();
+      final remoteDevices = devices.values
+          .where((d) => d.type == DeviceType.remote)
+          .toList();
       if (remoteDevices.isNotEmpty) {
         // 如果是首次登录且有远程设备，默认选择第一个远程设备
         return remoteDevices.first;
@@ -205,7 +244,11 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
           return devices[BaseConstants.webDevice]!;
         }
         // 如果列表中没有本地设备，创建一个默认的本地设备对象
-        return Device(did: BaseConstants.webDevice, type: DeviceType.local, name: '本机');
+        return Device(
+          did: BaseConstants.webDevice,
+          type: DeviceType.local,
+          name: '本机',
+        );
       }
     }
   }
@@ -224,9 +267,13 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
           try {
             // 优化：如果在排队期间用户已经切换到了更新的设备，则跳过当前这个中间状态的切换任务
             // 这避免了"A->B->C"场景下，为了处理B而浪费时间，导致C的响应变慢
-            final latestTarget = state.hasValue ? state.value?.currentDevice : null;
+            final latestTarget = state.hasValue
+                ? state.value?.currentDevice
+                : null;
             if (latestTarget != null && latestTarget.did != device.did) {
-              _logger.i("跳过过期的设备切换任务: ${device.did} -> 最新目标: ${latestTarget.did}");
+              _logger.i(
+                "跳过过期的设备切换任务: ${device.did} -> 最新目标: ${latestTarget.did}",
+              );
               return;
             }
 
@@ -254,23 +301,32 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
     final currentDevice = await _getCurrentDevice();
     _lastStableDevice = currentDevice; // 初始化稳定设备
-    _logger.i("初始化 UnifiedPlayerController 当前设备: ${jsonEncode(currentDevice.toJson())}");
+    _logger.i(
+      "初始化 UnifiedPlayerController 当前设备: ${jsonEncode(currentDevice.toJson())}",
+    );
 
     // 先尝试恢复播放状态（在初始化控制器之前）
     final restoredState = await _restorePlayerState(currentDevice);
 
     // 初始化播放控制器
-    await _initializePlayerController(currentDevice, initialState: restoredState);
+    await _initializePlayerController(
+      currentDevice,
+      initialState: restoredState,
+    );
 
     // 对于本地设备，优先从控制器获取最新状态（因为可能正在播放，或者在初始化过程中修正了状态如强制暂停）
     // 并与缓存状态合并
-    if (currentDevice.type == DeviceType.local && _playerController is LocalPlayerControllerImpl) {
+    if (currentDevice.type == DeviceType.local &&
+        _playerController is LocalPlayerControllerImpl) {
       final controllerState = await _playerController?.getState();
       if (controllerState != null) {
         // 如果控制器有当前歌曲，说明正在播放或已恢复，使用控制器状态为主
         // 注意：LocalPlayerController 初始化时已经合并了 restoredState 的信息
-        if (controllerState.currentSong != null && controllerState.currentSong!.isNotEmpty) {
-          final finalState = controllerState.copyWith(currentDevice: currentDevice);
+        if (controllerState.currentSong != null &&
+            controllerState.currentSong!.isNotEmpty) {
+          final finalState = controllerState.copyWith(
+            currentDevice: currentDevice,
+          );
           // 初始化跟踪变量
           _updatePersistenceBaseline(finalState);
           return finalState;
@@ -288,13 +344,17 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     // 从控制器获取当前状态
     final currentState = await _playerController?.getState();
     final finalState =
-        currentState?.copyWith(currentDevice: currentDevice) ?? PlayerState(currentDevice: currentDevice);
+        currentState?.copyWith(currentDevice: currentDevice) ??
+        PlayerState(currentDevice: currentDevice);
     // 初始化跟踪变量
     _updatePersistenceBaseline(finalState);
     return finalState;
   }
 
-  Future<void> _initializePlayerController(Device currentDevice, {PlayerState? initialState}) async {
+  Future<void> _initializePlayerController(
+    Device currentDevice, {
+    PlayerState? initialState,
+  }) async {
     final isLocalMode = currentDevice.type == DeviceType.local;
     final isRemoteMode = currentDevice.type == DeviceType.remote;
 
@@ -303,7 +363,11 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     if (isLocalMode) {
       // 获取或创建本地控制器
       if (_localController == null) {
-        _localController = LocalPlayerControllerImpl(handler, ref, initialState: initialState);
+        _localController = LocalPlayerControllerImpl(
+          handler,
+          ref,
+          initialState: initialState,
+        );
         // 绑定持久回调
         await _localController!.setStateUpdateCallback((newState) {
           if (_playerController == _localController) {
@@ -363,13 +427,17 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         );
 
         // 如果缓存中有歌曲信息，使用缓存状态
-        if (stateCache != null && stateCache.currentSong != null && stateCache.currentSong!.isNotEmpty) {
+        if (stateCache != null &&
+            stateCache.currentSong != null &&
+            stateCache.currentSong!.isNotEmpty) {
           final loopMode = LoopMode.values[stateCache.loopModeIndex];
 
           return PlayerState(
             currentSong: stateCache.currentSong,
             playlist: stateCache.playlist,
-            currentIndex: stateCache.currentIndex >= 0 ? stateCache.currentIndex : 0,
+            currentIndex: stateCache.currentIndex >= 0
+                ? stateCache.currentIndex
+                : 0,
             position: Duration(seconds: stateCache.positionSeconds),
             duration: Duration(seconds: stateCache.durationSeconds),
             isPlaying: stateCache.isPlaying,
@@ -399,7 +467,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         return PlayerState(currentDevice: currentDevice);
       }
       // 远程模式:设备did不是web设备,则从API获取真实状态
-      else if (did != null && did.isNotEmpty && did != BaseConstants.webDevice) {
+      else if (did != null &&
+          did.isNotEmpty &&
+          did != BaseConstants.webDevice) {
         // 远程模式：从API获取真实状态
         final apiClient = ref.read(apiClientProvider);
         final remoteStatus = await apiClient.getPlayingMusic(did, null);
@@ -407,13 +477,17 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         final currentSong = remoteStatus.curMusic;
 
         // 从当前状态获取完整信息
-        final currentState = state.value ?? PlayerState(currentDevice: currentDevice);
+        final currentState =
+            state.value ?? PlayerState(currentDevice: currentDevice);
 
         // 比对歌单，一致则保留队列，否则尝试从本地缓存加载
         List<String> playlist = currentState.playlist;
-        if (playlistName.isNotEmpty && currentState.currentPlaylistName != playlistName) {
+        if (playlistName.isNotEmpty &&
+            currentState.currentPlaylistName != playlistName) {
           try {
-            final songsResp = await ref.read(cachedPlaylistMusicsProvider(playlistName).future);
+            final songsResp = await ref.read(
+              cachedPlaylistMusicsProvider(playlistName).future,
+            );
             playlist = songsResp.musics;
           } catch (e) {
             // 保持原队列
@@ -434,7 +508,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         return currentState.copyWith(
           isPlaying: remoteStatus.isPlaying,
           currentSong: currentSong,
-          currentPlaylistName: playlistName.isNotEmpty ? playlistName : currentState.currentPlaylistName,
+          currentPlaylistName: playlistName.isNotEmpty
+              ? playlistName
+              : currentState.currentPlaylistName,
           playlist: playlist,
           currentIndex: resolvedIndex,
           position: Duration(seconds: remoteStatus.offset.toInt()),
@@ -445,7 +521,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     } catch (e) {
       _logger.e('获取设备真实状态失败: $e');
     }
-    _logger.i("同设备切换,获取设备真实状态,返回当前默认状态: ${state.value?.toJsonIgnorePlaylist()}");
+    _logger.i(
+      "同设备切换,获取设备真实状态,返回当前默认状态: ${state.value?.toJsonIgnorePlaylist()}",
+    );
     return null;
   }
 
@@ -472,7 +550,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
           final remoteStatus = await apiClient.getPlayingMusic(did, null);
           if (remoteStatus.isPlaying) {
             _logger.i('暂停远程设备: $did');
-            await apiClient.sendCmd(DidCmd(did: did, cmd: PlayerCommands.pause));
+            await apiClient.sendCmd(
+              DidCmd(did: did, cmd: PlayerCommands.pause),
+            );
           }
         }
       }
@@ -518,7 +598,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     if (prevDevice != null) {
       final prevIsLocal = prevDevice.type == DeviceType.local;
       final typeChanged = prevIsLocal != newIsLocal;
-      final shouldPause = typeChanged || (pauseCurrentDevice && previousState?.isPlaying == true);
+      final shouldPause =
+          typeChanged ||
+          (pauseCurrentDevice && previousState?.isPlaying == true);
 
       if (shouldPause) {
         // 优化：如果是从本地切换到远程，不需要单独调用 pause，因为 setRemoteMode 会强制 stop
@@ -533,7 +615,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     }
 
     // 3. 恢复新设备状态（仅本地设备）
-    final initialState = newIsLocal ? await _restorePlayerState(newDevice) : null;
+    final initialState = newIsLocal
+        ? await _restorePlayerState(newDevice)
+        : null;
     if (switchGen != _switchGen) return;
 
     // 优化：提前更新持久化跟踪变量，避免初始化控制器时的状态回调触发多余的保存
@@ -591,9 +675,21 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
             // 远程：直接发送播放命令
             final apiClient = ref.read(apiClientProvider);
             if (playlist != null && playlist.isNotEmpty) {
-              await apiClient.playMusicList(DidPlayMusicList(did: newDevice.did, listname: playlist, musicname: song));
+              await apiClient.playMusicList(
+                DidPlayMusicList(
+                  did: newDevice.did,
+                  listname: playlist,
+                  musicname: song,
+                ),
+              );
             } else {
-              await apiClient.playMusic(DidPlayMusic(did: newDevice.did, musicname: song, listname: playlist ?? ""));
+              await apiClient.playMusic(
+                DidPlayMusic(
+                  did: newDevice.did,
+                  musicname: song,
+                  listname: playlist ?? "",
+                ),
+              );
             }
           }
         } catch (e) {
@@ -605,7 +701,10 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   }
 
   /// 保存指定设备的播放状态（内部方法，用于设备切换时保存）
-  Future<void> _savePlayerStateForDevice(PlayerState state, String deviceKey) async {
+  Future<void> _savePlayerStateForDevice(
+    PlayerState state,
+    String deviceKey,
+  ) async {
     // 仅本地设备需要持久化
     if (deviceKey != BaseConstants.webDevice) return;
     try {
@@ -644,7 +743,10 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     _pendingPlaylistName = playlistName;
 
     _playSongDebounceTimer = Timer(const Duration(milliseconds: 300), () {
-      _playerController?.playSong(_pendingSongName!, playlistName: _pendingPlaylistName);
+      _playerController?.playSong(
+        _pendingSongName!,
+        playlistName: _pendingPlaylistName,
+      );
       _pendingSongName = null;
       _pendingPlaylistName = null;
     });
@@ -771,14 +873,23 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
     final loopModeChanged = _lastPersistedLoopMode != s.loopMode;
     final shuffleModeChanged = _lastPersistedShuffleMode != s.shuffleMode;
     final positionChanged =
-        _lastPersistedPositionSeconds < 0 || ((posSec - _lastPersistedPositionSeconds).abs() >= 1); // 至少1秒变化才触发，避免过于频繁
+        _lastPersistedPositionSeconds < 0 ||
+        ((posSec - _lastPersistedPositionSeconds).abs() >=
+            1); // 至少1秒变化才触发，避免过于频繁
 
     // 没有任何变化，直接返回
-    if (!songChanged && !playingChanged && !loopModeChanged && !shuffleModeChanged && !positionChanged) {
+    if (!songChanged &&
+        !playingChanged &&
+        !loopModeChanged &&
+        !shuffleModeChanged &&
+        !positionChanged) {
       return;
     }
 
-    if (songChanged || playingChanged || loopModeChanged || shuffleModeChanged) {
+    if (songChanged ||
+        playingChanged ||
+        loopModeChanged ||
+        shuffleModeChanged) {
       _logger.d(
         '触发关键状态保存: songChanged=$songChanged ($_lastPersistedSong->${s.currentSong}), '
         'playingChanged=$playingChanged ($_lastPersistedIsPlaying->${s.isPlaying}), '
@@ -859,7 +970,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
       // 从 Hive 读取
       final stateCache = cacheManager.getPlayerState(deviceKey);
 
-      if (stateCache != null && stateCache.currentSong != null && stateCache.currentSong!.isNotEmpty) {
+      if (stateCache != null &&
+          stateCache.currentSong != null &&
+          stateCache.currentSong!.isNotEmpty) {
         _logger.i(
           '从 Hive 恢复播放状态: song=${stateCache.currentSong}, playlist=${stateCache.playlist.length}, index=${stateCache.currentIndex}',
         );
@@ -868,7 +981,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
         return PlayerState(
           currentSong: stateCache.currentSong,
           playlist: stateCache.playlist,
-          currentIndex: stateCache.currentIndex >= 0 ? stateCache.currentIndex : 0,
+          currentIndex: stateCache.currentIndex >= 0
+              ? stateCache.currentIndex
+              : 0,
           position: Duration(seconds: stateCache.positionSeconds),
           duration: Duration(seconds: stateCache.durationSeconds),
           // 恢复状态时强制设为暂停，因为 AudioPlayer 初始化时肯定是不播放的
@@ -919,7 +1034,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   /// 发送命令（远程模式）
   Future<void> sendCmd(String cmd) async {
     final currentDevice = state.value?.currentDevice;
-    if (currentDevice == null || currentDevice.type != DeviceType.remote) return;
+    if (currentDevice == null || currentDevice.type != DeviceType.remote) {
+      return;
+    }
 
     final did = currentDevice.did;
     if (did.isEmpty) return;
@@ -935,7 +1052,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
   /// 播放TTS（远程模式）
   Future<void> playTts(String text) async {
     final currentDevice = state.value?.currentDevice;
-    if (currentDevice == null || currentDevice.type != DeviceType.remote) return;
+    if (currentDevice == null || currentDevice.type != DeviceType.remote) {
+      return;
+    }
 
     final did = currentDevice.did;
     if (did.isEmpty) return;
@@ -963,7 +1082,9 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
     try {
       // 从缓存读取歌单内容
-      final songsResp = await ref.read(cachedPlaylistMusicsProvider(playlistName).future);
+      final songsResp = await ref.read(
+        cachedPlaylistMusicsProvider(playlistName).future,
+      );
       final newSongs = songsResp.musics;
 
       // 重新计算索引
@@ -975,7 +1096,12 @@ class UnifiedPlayerController extends _$UnifiedPlayerController {
 
       // 更新状态
       if (state.hasValue) {
-        state = AsyncData(cur.copyWith(playlist: newSongs, currentIndex: resolvedIndex >= 0 ? resolvedIndex : 0));
+        state = AsyncData(
+          cur.copyWith(
+            playlist: newSongs,
+            currentIndex: resolvedIndex >= 0 ? resolvedIndex : 0,
+          ),
+        );
       }
     } catch (e) {
       _logger.e('刷新歌单 $playlistName 失败: $e');
