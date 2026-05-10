@@ -271,7 +271,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                         title: SongTitleText(
                           key: ValueKey('song-title-$index'),
                           text: song,
-                          style: theme.textTheme.bodyLarge?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                             height: 1.1,
                           ),

@@ -75,7 +75,6 @@ class MiniPlayer extends ConsumerWidget {
                             text: currentSong ?? S.notPlaying,
                             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                             gap: 20,
-                            pause: const Duration(milliseconds: 1200),
                             speedPer100Px: const Duration(milliseconds: 3200),
                           ),
                         ),

@@ -69,11 +69,11 @@ class _PlayerBody extends StatelessWidget {
 
         // 水平 padding 随屏宽变化（16~40）
         final horizontalPadding = (w * 0.10).clamp(16.0, 40.0);
-        // 封面大小随可用高度变化（160~280）
-        final coverSize = (h * 0.40).clamp(160.0, 280.0);
+        // 封面大小随可用高度变化（160~320）
+        final coverSize = (h * 0.46).clamp(160.0, 320.0);
         // 间距随高度缩放
-        final gapL = (h * 0.07).clamp(18.0, 48.0);
-        final gapM = (h * 0.05).clamp(12.0, 32.0);
+        final gapL = (h * 0.05).clamp(14.0, 32.0);
+        final gapM = (h * 0.035).clamp(10.0, 24.0);
 
         return Center(
           child: Column(
@@ -379,7 +379,7 @@ class _PlayerInfo extends ConsumerWidget {
               fontWeight: FontWeight.w700,
               letterSpacing: -0.4,
             ),
-            height: 68,
+            height: 44,
           ),
           // 只在有歌单名称时显示
           if (displayText != null) ...[

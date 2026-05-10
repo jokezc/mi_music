@@ -233,7 +233,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
               : SongCover(songName: song, size: 48),
           title: SongTitleText(
             text: song,
-            style: theme.textTheme.bodyLarge?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: isPlaying ? FontWeight.w600 : null,
               color: isPlaying ? AppColors.primary : null,
               height: 1.1,

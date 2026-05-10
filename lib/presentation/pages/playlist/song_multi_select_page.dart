@@ -125,7 +125,7 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                         leading: SongCover(songName: song, size: 48),
                         title: SongTitleText(
                           text: song,
-                          style: theme.textTheme.bodyLarge?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                             height: 1.1,
                           ),

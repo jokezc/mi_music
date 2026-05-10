@@ -1,20 +1,20 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
-/// 仅在文本宽度超出可用空间时自动横向滚动。
+/// 仅在文本超出可用空间时自动横向无缝滚动。
 class OverflowMarqueeText extends StatefulWidget {
   final String text;
   final TextStyle? style;
   final double gap;
-  final Duration pause;
   final Duration speedPer100Px;
 
   const OverflowMarqueeText({
     super.key,
     required this.text,
     this.style,
-    this.gap = 32,
-    this.pause = const Duration(milliseconds: 900),
-    this.speedPer100Px = const Duration(milliseconds: 2200),
+    this.gap = 20,
+    this.speedPer100Px = const Duration(milliseconds: 3200),
   });
 
   @override
@@ -23,191 +23,140 @@ class OverflowMarqueeText extends StatefulWidget {
 
 class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  int _animationToken = 0;
-  double _cycleDistance = 0;
-  double _lastTextWidth = 0;
-  double _lastAvailableWidth = 0;
-  bool _isOverflowing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  Ticker? _ticker;
+  Duration _lastElapsed = Duration.zero;
+  double _offset = 0;
+  double _cycleWidth = 0;
+  double _speed = 0;
 
   @override
   void didUpdateWidget(covariant OverflowMarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text || oldWidget.style != widget.style) {
-      _cycleDistance = 0;
-      _lastTextWidth = 0;
-      _lastAvailableWidth = 0;
-      _isOverflowing = false;
-      _animationToken++;
-      _controller.reset();
+      _killTicker();
     }
   }
 
-  void _syncAnimation({
-    required double availableWidth,
-    required double textWidth,
-  }) {
-    final overflowDistance = textWidth > availableWidth
-        ? textWidth - availableWidth
-        : 0.0;
-    final metricsChanged =
-        (textWidth - _lastTextWidth).abs() > 0.5 ||
-        (availableWidth - _lastAvailableWidth).abs() > 0.5;
-
-    if (!metricsChanged && _isOverflowing == (overflowDistance > 0)) {
-      return;
-    }
-
-    _lastTextWidth = textWidth;
-    _lastAvailableWidth = availableWidth;
-
-    if (overflowDistance <= 0) {
-      if (_controller.isAnimating) {
-        _controller.stop();
-      }
-      _cycleDistance = 0;
-      _isOverflowing = false;
-      _animationToken++;
-      if (_controller.value != 0) {
-        _controller.value = 0;
-      }
-      return;
-    }
-
-    final nextScrollDistance = textWidth + widget.gap;
-    _cycleDistance = nextScrollDistance.ceilToDouble();
-    _isOverflowing = true;
-
-    final milliseconds =
-        (widget.speedPer100Px.inMilliseconds * (nextScrollDistance / 100))
-            .round()
-            .clamp(1200, 12000)
-            .toInt();
-    final nextDuration = Duration(milliseconds: milliseconds);
-
-    final shouldRestart =
-        _controller.duration != nextDuration ||
-        (_controller.value != 0 && metricsChanged) ||
-        !_controller.isAnimating;
-
-    if (_controller.duration != nextDuration) {
-      _controller.duration = nextDuration;
-    }
-
-    if (shouldRestart) {
-      _controller.stop();
-      _controller.value = 0;
-      _animationToken++;
-      _startLoop();
-    }
+  @override
+  void dispose() {
+    _killTicker();
+    super.dispose();
   }
 
-  Future<void> _startLoop() async {
-    final token = ++_animationToken;
-    await Future<void>.delayed(widget.pause);
-    if (!mounted || _cycleDistance <= 0 || token != _animationToken) return;
-    if (_controller.duration == null) return;
-    _controller.repeat(period: _controller.duration);
+  void _killTicker() {
+    _ticker?.dispose();
+    _ticker = null;
+    _offset = 0;
+    _cycleWidth = 0;
+    _lastElapsed = Duration.zero;
+  }
+
+  void _ensureTicker(double textWidth) {
+    _cycleWidth = textWidth + widget.gap;
+    _speed = 100.0 / (widget.speedPer100Px.inMilliseconds / 1000.0);
+    if (_ticker != null) return;
+    _lastElapsed = Duration.zero;
+    _offset = 0;
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  void _onTick(Duration elapsed) {
+    if (_lastElapsed == Duration.zero) {
+      _lastElapsed = elapsed;
+      return;
+    }
+    // 页面切换时 dt 会异常大，限制上限防止跳跃
+    final dt =
+        ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 1.0 / 15);
+    _lastElapsed = elapsed;
+    if (dt <= 0 || _cycleWidth <= 0) return;
+
+    _offset = (_offset + _speed * dt) % _cycleWidth;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final defaultStyle = DefaultTextStyle.of(context).style;
-        final textStyle = widget.style ?? defaultStyle;
-        final textDirection = Directionality.of(context);
+        final textStyle = widget.style ?? DefaultTextStyle.of(context).style;
+        final textDir = Directionality.of(context);
 
         final painter = TextPainter(
           text: TextSpan(text: widget.text, style: textStyle),
           maxLines: 1,
-          textDirection: textDirection,
+          textDirection: textDir,
         )..layout(maxWidth: double.infinity);
 
         final textWidth = painter.width;
-        final availableWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : textWidth;
-        final overflowDistance = textWidth > availableWidth
-            ? textWidth - availableWidth
-            : 0.0;
+        final available =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _syncAnimation(availableWidth: availableWidth, textWidth: textWidth);
-        });
-
-        if (overflowDistance <= 0) {
+        if (textWidth <= available + 0.5) {
+          if (_ticker != null) _killTicker();
           return SizedBox(
-            width: availableWidth,
-            child: Text(
-              widget.text,
-              style: textStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            width: available,
+            child: Text(widget.text, style: textStyle,
+                maxLines: 1, overflow: TextOverflow.ellipsis),
           );
         }
 
+        _ensureTicker(textWidth);
+
         return SizedBox(
-          width: availableWidth,
-          child: ClipRect(
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  final devicePixelRatio = MediaQuery.of(
-                    context,
-                  ).devicePixelRatio;
-                  final rawDx = -_cycleDistance * _controller.value;
-                  final snappedDx =
-                      (rawDx * devicePixelRatio).roundToDouble() /
-                      devicePixelRatio;
-                  return Transform.translate(
-                    offset: Offset(snappedDx, 0),
-                    child: child,
-                  );
-                },
-                child: OverflowBox(
-                  alignment: Alignment.centerLeft,
-                  minWidth: 0,
-                  maxWidth: double.infinity,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.text,
-                        style: textStyle,
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                      SizedBox(width: widget.gap),
-                      Text(
-                        widget.text,
-                        style: textStyle,
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+          width: available,
+          height: painter.height,
+          child: CustomPaint(
+            painter: _MarqueePainter(
+              text: widget.text,
+              style: textStyle,
+              textDirection: textDir,
+              textWidth: textWidth,
+              gap: widget.gap,
+              offset: _offset,
             ),
           ),
         );
       },
     );
   }
+}
+
+class _MarqueePainter extends CustomPainter {
+  final String text;
+  final TextStyle style;
+  final ui.TextDirection textDirection;
+  final double textWidth;
+  final double gap;
+  final double offset;
+
+  _MarqueePainter({
+    required this.text,
+    required this.style,
+    required this.textDirection,
+    required this.textWidth,
+    required this.gap,
+    required this.offset,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.clipRect(Offset.zero & size);
+
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: textDirection,
+    )..layout();
+
+    final y = (size.height - tp.height) / 2;
+    final cycleWidth = textWidth + gap;
+
+    tp.paint(canvas, Offset(-offset, y));
+    tp.paint(canvas, Offset(cycleWidth - offset, y));
+  }
+
+  @override
+  bool shouldRepaint(_MarqueePainter old) =>
+      old.offset != offset || old.text != text || old.style != style;
 }
