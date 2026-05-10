@@ -22,7 +22,7 @@ class OverflowMarqueeText extends StatefulWidget {
 }
 
 class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   Ticker? _ticker;
   Duration _lastElapsed = Duration.zero;
   double _offset = 0;

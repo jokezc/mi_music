@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
-import 'package:mi_music/presentation/widgets/player_song_title.dart';
+import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -56,12 +57,22 @@ class FullPlayerPage extends StatelessWidget {
   }
 }
 
-/// 中间主体区域：不滚动，自适应缩放封面/间距，避免小屏溢出
-class _PlayerBody extends StatelessWidget {
+/// 中间主体区域：封面为主 + 模糊背景沉浸感，信息紧凑排列
+class _PlayerBody extends ConsumerWidget {
   const _PlayerBody();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 获取封面图片 URL 用于模糊背景
+    final currentSong = ref.watch(
+      unifiedPlayerControllerProvider.select((s) => s.value?.currentSong),
+    );
+    final cacheManager = ref.watch(cacheManagerProvider);
+    final songInfo = currentSong != null
+        ? cacheManager.getSongInfo(currentSong)
+        : null;
+    final pictureUrl = songInfo?.pictureUrl;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
@@ -69,28 +80,66 @@ class _PlayerBody extends StatelessWidget {
 
         // 水平 padding 随屏宽变化（16~40）
         final horizontalPadding = (w * 0.10).clamp(16.0, 40.0);
-        // 封面大小随可用高度变化（160~320）
-        final coverSize = (h * 0.46).clamp(160.0, 320.0);
-        // 间距随高度缩放
-        final gapL = (h * 0.05).clamp(14.0, 32.0);
-        final gapM = (h * 0.035).clamp(10.0, 24.0);
+        // 封面大小：占可用高度 ~52%，上限 340
+        final coverSize = (h * 0.52).clamp(160.0, 340.0);
+        // 间距：封面→信息、信息→进度条
+        final gapL = (h * 0.035).clamp(10.0, 24.0);
+        // 间距：进度条→控制按钮
+        final gapM = (h * 0.02).clamp(8.0, 16.0);
+        // 间距：歌曲名→歌单名
+        final gapS = (h * 0.01).clamp(2.0, 8.0);
 
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _PlayerCover(
-                size: coverSize,
-                horizontalMargin: horizontalPadding,
+        return Stack(
+          children: [
+            // 模糊背景：封面图片铺满，模糊 + 半透明遮罩
+            if (pictureUrl != null && pictureUrl.isNotEmpty)
+              Positioned.fill(
+                child: ClipRect(
+                  child: Stack(
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl: pictureUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Positioned.fill(
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(
+                            sigmaX: 60,
+                            sigmaY: 60,
+                          ),
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              SizedBox(height: gapL),
-              _PlayerInfo(horizontalPadding: horizontalPadding),
-              SizedBox(height: gapL),
-              _PlayerProgress(horizontalPadding: horizontalPadding),
-              SizedBox(height: gapM),
-              _PlayerControls(horizontalPadding: horizontalPadding),
-            ],
-          ),
+            // 主内容
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PlayerCover(
+                    size: coverSize,
+                    horizontalMargin: horizontalPadding,
+                  ),
+                  SizedBox(height: gapL),
+                  _PlayerInfo(
+                    horizontalPadding: horizontalPadding,
+                    gapBetweenTitleAndPlaylist: gapS,
+                  ),
+                  SizedBox(height: gapL),
+                  _PlayerProgress(horizontalPadding: horizontalPadding),
+                  SizedBox(height: gapM),
+                  _PlayerControls(horizontalPadding: horizontalPadding),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
@@ -344,8 +393,12 @@ class _PlayerCover extends ConsumerWidget {
 
 class _PlayerInfo extends ConsumerWidget {
   final double horizontalPadding;
+  final double gapBetweenTitleAndPlaylist;
 
-  const _PlayerInfo({this.horizontalPadding = 40});
+  const _PlayerInfo({
+    this.horizontalPadding = 40,
+    this.gapBetweenTitleAndPlaylist = 4,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -370,23 +423,26 @@ class _PlayerInfo extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 歌曲名称显示：大屏位置允许两行，尽量减少长标题被截断
-          PlayerSongTitle(
+          // 歌曲名称：单行跑马灯，超出自动滚动
+          OverflowMarqueeText(
             key: const Key('full-player-current-song'),
             text: currentSong ?? S.notPlaying,
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               letterSpacing: -0.4,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
             ),
-            height: 44,
           ),
-          // 只在有歌单名称时显示
+          // 歌单名紧贴歌曲名
           if (displayText != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: gapBetweenTitleAndPlaylist),
             Text(
               displayText,
-              style: theme.textTheme.bodyLarge?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: isDark
                     ? AppColors.darkTextSecondary
                     : AppColors.lightTextSecondary,
@@ -435,8 +491,8 @@ class _PlayerProgress extends ConsumerWidget {
         children: [
           SliderTheme(
             data: SliderThemeData(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
               activeTrackColor: AppColors.primary,
               inactiveTrackColor: isDark
@@ -572,7 +628,7 @@ class _PlayerControls extends ConsumerWidget {
             IconButton(
               key: const Key('full-player-skip-previous-button'),
               icon: const Icon(Icons.skip_previous_rounded),
-              iconSize: 48,
+              iconSize: 42,
               color: isDark
                   ? AppColors.darkTextPrimary
                   : AppColors.lightTextPrimary,
@@ -586,8 +642,8 @@ class _PlayerControls extends ConsumerWidget {
 
             // 播放/暂停
             Container(
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 gradient: isDark
                     ? LinearGradient(
@@ -616,7 +672,7 @@ class _PlayerControls extends ConsumerWidget {
                   isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   color: Colors.white,
                 ),
-                iconSize: 40,
+                iconSize: 36,
                 onPressed: () {
                   ref
                       .read(unifiedPlayerControllerProvider.notifier)
@@ -630,7 +686,7 @@ class _PlayerControls extends ConsumerWidget {
             IconButton(
               key: const Key('full-player-skip-next-button'),
               icon: const Icon(Icons.skip_next_rounded),
-              iconSize: 48,
+              iconSize: 42,
               color: isDark
                   ? AppColors.darkTextPrimary
                   : AppColors.lightTextPrimary,
