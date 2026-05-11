@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
@@ -41,55 +43,49 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
     final displayPlaylistName = widget.playlistName ?? '全部';
+
+    final searchField = ResponsiveContent(
+      maxWidth: Breakpoints.maxContentWidth,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: _searchController,
+        autofocus: true,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: displayPlaylistName == '全部'
+              ? S.searchHint
+              : '搜索 $displayPlaylistName 中的歌曲...',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: _query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  },
+                )
+              : null,
+        ),
+        onSubmitted: (val) {
+          setState(() => _query = val.trim());
+        },
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          displayPlaylistName == '全部'
-              ? S.navSearch
-              : '搜索歌单: $displayPlaylistName',
-        ),
+        title: Text(displayPlaylistName == '全部' ? S.navSearch : '搜索歌单: $displayPlaylistName'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: displayPlaylistName == '全部'
-                    ? S.searchHint
-                    : '搜索 $displayPlaylistName 中的歌曲...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                      )
-                    : null,
-              ),
-              onSubmitted: (val) {
-                setState(() => _query = val.trim());
-              },
-              textInputAction: TextInputAction.search,
-            ),
-          ),
+          child: searchField,
         ),
       ),
       body: _buildSearchResults(theme, isDark, displayPlaylistName),
     );
   }
 
-  Widget _buildSearchResults(
-    ThemeData theme,
-    bool isDark,
-    String displayPlaylistName,
-  ) {
+  Widget _buildSearchResults(ThemeData theme, bool isDark, String displayPlaylistName) {
     if (_query.isEmpty) {
       return Center(
         child: Column(
@@ -104,9 +100,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             Text(
               S.enterKeyword,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               ),
             ),
           ],
@@ -114,100 +108,94 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       );
     }
 
-    // 使用缓存搜索
-    return ref
-        .watch(
-          cachedSearchSongsProvider(_query, playlistName: displayPlaylistName),
-        )
-        .when(
-          skipLoadingOnRefresh: true,
-          data: (songs) {
-            if (songs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.music_off_rounded,
-                      size: 80,
-                      color: isDark
-                          ? AppColors.darkTextHint
-                          : AppColors.lightTextHint,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      S.noResults,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
-                      ),
-                    ),
-                  ],
+    return ref.watch(cachedSearchSongsProvider(_query, playlistName: displayPlaylistName)).when(
+      skipLoadingOnRefresh: true,
+      data: (songs) {
+        if (songs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.music_off_rounded,
+                  size: 80,
+                  color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                 ),
-              );
-            }
+                const SizedBox(height: 16),
+                Text(
+                  S.noResults,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                final song = songs[index];
-                return SongRowLayout(
-                  height: 56,
-                  leading: SongCover(songName: song, size: 48),
-                  title: SongTitleText(
-                    text: song,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      height: 1.1,
-                    ),
+        return ResponsiveContent(
+          maxWidth: Breakpoints.maxContentWidth,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: songs.length,
+            itemBuilder: (context, index) {
+              final song = songs[index];
+              return SongRowLayout(
+                height: 56,
+                horizontalPadding: 0,
+                leading: SongCover(songName: song, size: 48),
+                title: SongTitleText(
+                  text: song,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    height: 1.1,
                   ),
-                  trailing: IconButton(
-                    constraints: const BoxConstraints.tightFor(
-                      width: 36,
-                      height: 36,
-                    ),
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.play_circle_rounded),
-                    color: AppColors.primary,
-                    onPressed: () {
-                      ref
-                          .read(unifiedPlayerControllerProvider.notifier)
-                          .playMusic(song, playlistName: displayPlaylistName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${S.playing}: $song')),
-                      );
-                    },
-                  ),
-                  onTap: () {
-                    ref
-                        .read(unifiedPlayerControllerProvider.notifier)
-                        .playMusic(song, playlistName: displayPlaylistName);
+                ),
+                trailing: IconButton(
+                  constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.play_circle_rounded),
+                  color: AppColors.primary,
+                  onPressed: () {
+                    ref.read(unifiedPlayerControllerProvider.notifier).playMusic(
+                          song,
+                          playlistName: displayPlaylistName,
+                        );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('${S.playing}: $song')),
                     );
                   },
-                );
-              },
-            );
-          },
-          loading: () =>
-              ListShimmer(itemBuilder: () => const SongItemShimmer()),
-          error: (err, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_rounded,
-                  size: 48,
-                  color: AppColors.error,
                 ),
-                const SizedBox(height: 16),
-                Text('${S.error}: $err'),
-              ],
-            ),
+                onTap: () {
+                  ref.read(unifiedPlayerControllerProvider.notifier).playMusic(
+                        song,
+                        playlistName: displayPlaylistName,
+                      );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${S.playing}: $song')),
+                  );
+                },
+              );
+            },
           ),
         );
+      },
+      loading: () => ListShimmer(itemBuilder: () => const SongItemShimmer()),
+      error: (err, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_rounded,
+              size: 48,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 16),
+            Text('${S.error}: $err'),
+          ],
+        ),
+      ),
+    );
   }
 }

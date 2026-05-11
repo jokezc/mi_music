@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/shared_pref_keys.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
@@ -21,6 +22,7 @@ import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
 import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -41,15 +43,17 @@ class FullPlayerPage extends StatelessWidget {
           ? AppColors.darkBackground
           : AppColors.lightBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            // 顶部工具栏固定
-            const _PlayerAppBar(),
-            Expanded(child: _PlayerBody()),
-            // 底部操作栏固定显示（收藏/队列/分享等）
-            const _PlayerActions(),
-            const SizedBox(height: 12),
-          ],
+        child: ResponsiveContent(
+          maxWidth: Breakpoints.maxPlayerWidth,
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              const _PlayerAppBar(),
+              Expanded(child: _PlayerBody()),
+              const _PlayerActions(),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -552,124 +556,137 @@ class _PlayerControls extends ConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // 播放模式按钮（合并了循环和随机）
-            IconButton(
-              key: const Key('full-player-play-mode-button'),
-              icon: Icon(playModeIcon),
-              iconSize: 32,
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-              onPressed: () {
-                ref
-                    .read(unifiedPlayerControllerProvider.notifier)
-                    .togglePlayMode();
-              },
-              tooltip: playModeTooltip,
-            ),
-
-            // 上一首
-            IconButton(
-              key: const Key('full-player-skip-previous-button'),
-              icon: const Icon(Icons.skip_previous_rounded),
-              iconSize: 48,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-              onPressed: () {
-                ref
-                    .read(unifiedPlayerControllerProvider.notifier)
-                    .skipPrevious();
-              },
-              tooltip: S.previous,
-            ),
-
-            // 播放/暂停
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                gradient: isDark
-                    ? LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.7),
-                          AppColors.secondary.withValues(alpha: 0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : AppColors.primaryGradient,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? AppColors.primary.withValues(alpha: 0.2)
-                        : AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                key: const Key('full-player-play-pause-button'),
-                icon: Icon(
-                  isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: Colors.white,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // 播放模式按钮（合并了循环和随机）
+                IconButton(
+                  key: const Key('full-player-play-mode-button'),
+                  icon: Icon(playModeIcon),
+                  iconSize: 32,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                  onPressed: () {
+                    ref
+                        .read(unifiedPlayerControllerProvider.notifier)
+                        .togglePlayMode();
+                  },
+                  tooltip: playModeTooltip,
                 ),
-                iconSize: 40,
-                onPressed: () {
-                  ref
-                      .read(unifiedPlayerControllerProvider.notifier)
-                      .playPause();
-                },
-                tooltip: isPlaying ? S.pause : S.play,
-              ),
-            ),
 
-            // 下一首
-            IconButton(
-              key: const Key('full-player-skip-next-button'),
-              icon: const Icon(Icons.skip_next_rounded),
-              iconSize: 48,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-              onPressed: () {
-                ref.read(unifiedPlayerControllerProvider.notifier).skipNext();
-              },
-              tooltip: S.next,
+                // 上一首
+                IconButton(
+                  key: const Key('full-player-skip-previous-button'),
+                  icon: const Icon(Icons.skip_previous_rounded),
+                  iconSize: 48,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                  onPressed: () {
+                    ref
+                        .read(unifiedPlayerControllerProvider.notifier)
+                        .skipPrevious();
+                  },
+                  tooltip: S.previous,
+                ),
+              ],
             ),
-
-            // 收藏按钮
-            IconButton(
-              icon: Icon(
-                isFavorite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: isFavorite
-                    ? Colors.red
-                    : (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary),
-              ),
-              iconSize: 32,
-              onPressed: currentSong == null
-                  ? null
-                  : () => FavoriteUtils.toggleFavorite(
-                      context,
-                      ref,
-                      currentSong,
-                      isFavorite,
+          ),
+          SizedBox(
+            width: 88,
+            child: Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? LinearGradient(
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.7),
+                            AppColors.secondary.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? AppColors.primary.withValues(alpha: 0.2)
+                          : AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-              tooltip: isFavorite ? '取消收藏' : '收藏',
+                  ],
+                ),
+                child: IconButton(
+                  key: const Key('full-player-play-pause-button'),
+                  icon: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                  ),
+                  iconSize: 40,
+                  onPressed: () {
+                    ref
+                        .read(unifiedPlayerControllerProvider.notifier)
+                        .playPause();
+                  },
+                  tooltip: isPlaying ? S.pause : S.play,
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // 下一首
+                IconButton(
+                  key: const Key('full-player-skip-next-button'),
+                  icon: const Icon(Icons.skip_next_rounded),
+                  iconSize: 48,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                  onPressed: () {
+                    ref.read(unifiedPlayerControllerProvider.notifier).skipNext();
+                  },
+                  tooltip: S.next,
+                ),
+
+                // 收藏按钮
+                IconButton(
+                  icon: Icon(
+                    isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: isFavorite
+                        ? Colors.red
+                        : (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary),
+                  ),
+                  iconSize: 32,
+                  onPressed: currentSong == null
+                      ? null
+                      : () => FavoriteUtils.toggleFavorite(
+                          context,
+                          ref,
+                          currentSong,
+                          isFavorite,
+                        ),
+                  tooltip: isFavorite ? '取消收藏' : '收藏',
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

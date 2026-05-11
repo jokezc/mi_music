@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 final _logger = Logger();
 
@@ -20,21 +22,21 @@ class _DownloadPageState extends ConsumerState<DownloadPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text(S.download)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 下载单曲卡片
-            Card(
-              child: Padding(padding: const EdgeInsets.all(16), child: _DownloadMusicForm()),
-            ),
-            const SizedBox(height: 16),
-            // 下载歌单卡片
-            Card(
-              child: Padding(padding: const EdgeInsets.all(16), child: _DownloadPlaylistForm()),
-            ),
-          ],
+      body: ResponsiveContent(
+        maxWidth: Breakpoints.maxFormWidth,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(padding: const EdgeInsets.all(16), child: _DownloadMusicForm()),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(padding: const EdgeInsets.all(16), child: _DownloadPlaylistForm()),
+              ),
+            ],
+          ),
         ),
       ),
     );

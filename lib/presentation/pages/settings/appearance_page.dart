@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/presentation/pages/settings/sections/appearance_section.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 /// 外观设置页面
 class AppearancePage extends ConsumerWidget {
@@ -13,7 +15,10 @@ class AppearancePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(S.appearanceSettings),
       ),
-      body: const AppearanceSection(),
+      body: const ResponsiveContent(
+        maxWidth: Breakpoints.maxFormWidth,
+        child: AppearanceSection(),
+      ),
     );
   }
 }

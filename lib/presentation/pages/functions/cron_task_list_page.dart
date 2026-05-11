@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/snackbar_utils.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/cron_task_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 final _logger = Logger();
 
@@ -65,21 +67,25 @@ class CronTaskListPage extends ConsumerWidget {
                 onRefresh: () async {
                   await ref.read(cronTaskListProvider.notifier).refresh();
                 },
-                child: ListView.builder(
+                child: ResponsiveContent(
+                  maxWidth: Breakpoints.maxContentWidth,
                   padding: const EdgeInsets.all(16),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return _TaskCard(
-                      task: task,
-                      index: index,
-                      devices: devices,
-                      onTap: () {
-                        context.push('/cron-task/edit', extra: {'task': task, 'index': index});
-                      },
-                      onDelete: () => _showDeleteDialog(context, ref, index),
-                    );
-                  },
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+                      return _TaskCard(
+                        task: task,
+                        index: index,
+                        devices: devices,
+                        onTap: () {
+                          context.push('/cron-task/edit', extra: {'task': task, 'index': index});
+                        },
+                        onDelete: () => _showDeleteDialog(context, ref, index),
+                      );
+                    },
+                  ),
                 ),
               );
             },
@@ -108,21 +114,25 @@ class CronTaskListPage extends ConsumerWidget {
                     onRefresh: () async {
                       await ref.read(cronTaskListProvider.notifier).refresh();
                     },
-                    child: ListView.builder(
+                    child: ResponsiveContent(
+                      maxWidth: Breakpoints.maxContentWidth,
                       padding: const EdgeInsets.all(16),
-                      itemCount: tasks.length,
-                      itemBuilder: (context, index) {
-                        final task = tasks[index];
-                        return _TaskCard(
-                          task: task,
-                          index: index,
-                          devices: {},
-                          onTap: () {
-                            context.push('/cron-task/edit', extra: {'task': task, 'index': index});
-                          },
-                          onDelete: () => _showDeleteDialog(context, ref, index),
-                        );
-                      },
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: tasks.length,
+                        itemBuilder: (context, index) {
+                          final task = tasks[index];
+                          return _TaskCard(
+                            task: task,
+                            index: index,
+                            devices: {},
+                            onTap: () {
+                              context.push('/cron-task/edit', extra: {'task': task, 'index': index});
+                            },
+                            onDelete: () => _showDeleteDialog(context, ref, index),
+                          );
+                        },
+                      ),
                     ),
                   ),
           );

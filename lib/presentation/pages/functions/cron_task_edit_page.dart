@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/snackbar_utils.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/cron_task_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 final _logger = Logger();
 
@@ -206,11 +208,12 @@ class _CronTaskEditPageState extends ConsumerState<CronTaskEditPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.task == null ? S.addScheduledTask : S.editScheduledTask)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: ResponsiveContent(
+        maxWidth: Breakpoints.maxFormWidth,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // 快捷表达式选择
             _buildQuickExpressionSelector(),
             const SizedBox(height: 16),
@@ -329,7 +332,8 @@ class _CronTaskEditPageState extends ConsumerState<CronTaskEditPage> {
               ),
               child: const Text(S.save),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

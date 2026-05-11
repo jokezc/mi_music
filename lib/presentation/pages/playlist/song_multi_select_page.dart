@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 import 'package:mi_music/presentation/widgets/song_title_text.dart';
@@ -77,8 +79,8 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
+          ResponsiveContent(
+            maxWidth: Breakpoints.maxContentWidth,
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -115,51 +117,56 @@ class _SongMultiSelectPageState extends State<SongMultiSelectPage> {
                       ),
                     ),
                   )
-                : ListView.builder(
-                    itemCount: filteredSongs.length,
-                    itemBuilder: (context, index) {
-                      final song = filteredSongs[index];
-                      final isSelected = _selectedSongs.contains(song);
-                      return SongRowLayout(
-                        height: 56,
-                        leading: SongCover(songName: song, size: 48),
-                        title: SongTitleText(
-                          text: song,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            height: 1.1,
+                : ResponsiveContent(
+                    maxWidth: Breakpoints.maxContentWidth,
+                    padding: EdgeInsets.zero,
+                    child: ListView.builder(
+                      itemCount: filteredSongs.length,
+                      itemBuilder: (context, index) {
+                        final song = filteredSongs[index];
+                        final isSelected = _selectedSongs.contains(song);
+                        return SongRowLayout(
+                          height: 56,
+                          horizontalPadding: 16,
+                          leading: SongCover(songName: song, size: 48),
+                          title: SongTitleText(
+                            text: song,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                        trailing: Checkbox(
-                          value: isSelected,
-                          onChanged: (bool? value) {
+                          trailing: Checkbox(
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedSongs.add(song);
+                                } else {
+                                  _selectedSongs.remove(song);
+                                }
+                              });
+                            },
+                          ),
+                          onTap: () {
                             setState(() {
-                              if (value == true) {
-                                _selectedSongs.add(song);
-                              } else {
+                              if (isSelected) {
                                 _selectedSongs.remove(song);
+                              } else {
+                                _selectedSongs.add(song);
                               }
                             });
                           },
-                        ),
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedSongs.remove(song);
-                            } else {
-                              _selectedSongs.add(song);
-                            }
-                          });
-                        },
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
       ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: ResponsiveContent(
+          maxWidth: Breakpoints.maxContentWidth,
           child: ElevatedButton(
             onPressed: _selectedSongs.isEmpty
                 ? null

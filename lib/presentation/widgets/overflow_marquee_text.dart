@@ -50,11 +50,13 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
     _ticker = null;
     _offset = 0;
     _cycleWidth = 0;
+    _speed = 0;
     _lastElapsed = Duration.zero;
   }
 
   void _ensureTicker(double textWidth) {
     _cycleWidth = textWidth + widget.gap;
+    if (_cycleWidth <= 0) return;
     _speed = 100.0 / (widget.speedPer100Px.inMilliseconds / 1000.0);
     if (_ticker != null) return;
     _lastElapsed = Duration.zero;
@@ -94,6 +96,7 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
         final available =
             constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
 
+        // 用实际可用宽度重新排版，稳定判断“是否真的溢出一行”。
         final overflowPainter = TextPainter(
           text: TextSpan(text: widget.text, style: textStyle),
           maxLines: 1,

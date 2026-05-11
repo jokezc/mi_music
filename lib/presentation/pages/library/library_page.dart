@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
@@ -12,6 +13,7 @@ import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
 import 'package:mi_music/presentation/widgets/quick_device_switcher.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 import 'package:mi_music/presentation/widgets/shimmer_loading.dart';
 
 final _logger = Logger();
@@ -106,18 +108,17 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ),
       body: Column(
         children: [
-          // 首页搜索框 - 点击直接跳转搜索页
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ResponsiveContent(
+            maxWidth: Breakpoints.maxContentWidth,
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: GestureDetector(
               onTap: () {
-                // 跳转到搜索界面，指定搜索全部歌单
                 context.push('/search?playlist=${Uri.encodeComponent('全部')}');
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : AppColors.lightSurface, // 类似输入框的背景色
+                  color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                 ),
@@ -125,16 +126,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   children: [
                     Icon(
                       Icons.search_rounded,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors
-                                .lightTextSecondary, // Input decoration prefixIcon default is usually text secondary or hint
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       '搜索全部歌单中的歌曲...',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint, // Hint text color
+                        color: isDark ? AppColors.darkTextHint : AppColors.lightTextHint,
                       ),
                     ),
                   ],
@@ -263,23 +261,27 @@ class _PlaylistsTab extends ConsumerWidget {
             // 下拉刷新也使用统一的刷新逻辑
             await ref.read(cacheRefreshControllerProvider.notifier).refresh();
           },
-          child: ListView.builder(
-            key: const Key('playlist-list'),
-            padding: const EdgeInsets.symmetric(vertical: 4), // 减小列表上下间距
-            itemCount: visiblePlaylists.length + (header != null ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (header != null) {
-                if (index == 0) return header!;
+          child: ResponsiveContent(
+            maxWidth: Breakpoints.maxContentWidth,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: ListView.builder(
+              key: const Key('playlist-list'),
+              padding: EdgeInsets.zero,
+              itemCount: visiblePlaylists.length + (header != null ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (header != null) {
+                  if (index == 0) return header!;
+                  return _PlaylistTile(
+                    playlist: visiblePlaylists[index - 1],
+                    index: index - 1,
+                  );
+                }
                 return _PlaylistTile(
-                  playlist: visiblePlaylists[index - 1],
-                  index: index - 1,
+                  playlist: visiblePlaylists[index],
+                  index: index,
                 );
-              }
-              return _PlaylistTile(
-                playlist: visiblePlaylists[index],
-                index: index,
-              );
-            },
+              },
+            ),
           ),
         );
       },

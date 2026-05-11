@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/favorite_utils.dart';
@@ -13,6 +14,7 @@ import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
 import 'package:mi_music/presentation/widgets/playlist_cover.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
 import 'package:mi_music/presentation/widgets/song_row_layout.dart';
 import 'package:mi_music/presentation/widgets/song_title_text.dart';
@@ -204,166 +206,169 @@ class PlaylistDetailPage extends ConsumerWidget {
             onRefresh: () async {
               await ref.read(cacheRefreshControllerProvider.notifier).refresh();
             },
-            child: CustomScrollView(
-              slivers: [
-                // 歌单信息头
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.1),
-                          Colors.transparent,
+            child: ResponsiveContent(
+              maxWidth: Breakpoints.maxContentWidth,
+              padding: EdgeInsets.zero,
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.1),
+                            Colors.transparent,
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          PlaylistCover(
+                            playlistName: playlistName,
+                            size: 80,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  playlistName,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${songs.length} 首歌曲',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.lightTextSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        PlaylistCover(
-                          playlistName: playlistName,
-                          size: 80,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                playlistName,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
-                                    '${songs.length} 首歌曲',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: isDark
-                                          ? AppColors.darkTextSecondary
-                                          : AppColors.lightTextSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                // 歌曲列表
-                SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final song = songs[index];
-                      return SongRowLayout(
-                        key: ValueKey('song-row-$index'),
-                        height: 56,
-                        leading: SongCover(songName: song, size: 48),
-                        title: SongTitleText(
-                          key: ValueKey('song-title-$index'),
-                          text: song,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            height: 1.1,
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              constraints: const BoxConstraints.tightFor(
-                                width: 36,
-                                height: 36,
-                              ),
-                              padding: EdgeInsets.zero,
-                              icon: Icon(
-                                favoriteSet.contains(song)
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                color: favoriteSet.contains(song)
-                                    ? Colors.red
-                                    : null,
-                              ),
-                              tooltip: favoriteSet.contains(song)
-                                  ? '取消收藏'
-                                  : '收藏',
-                              onPressed: () => FavoriteUtils.toggleFavorite(
-                                context,
-                                ref,
-                                song,
-                                favoriteSet.contains(song),
-                              ),
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final song = songs[index];
+                        return SongRowLayout(
+                          key: ValueKey('song-row-$index'),
+                          height: 56,
+                          horizontalPadding: 16,
+                          leading: SongCover(songName: song, size: 48),
+                          title: SongTitleText(
+                            key: ValueKey('song-title-$index'),
+                            text: song,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              height: 1.1,
                             ),
-                            SizedBox(
-                              width: 36,
-                              child: PopupMenuButton<String>(
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                constraints: const BoxConstraints.tightFor(
+                                  width: 36,
+                                  height: 36,
+                                ),
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(
-                                  Icons.more_vert_rounded,
-                                  size: 20,
+                                icon: Icon(
+                                  favoriteSet.contains(song)
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  color: favoriteSet.contains(song)
+                                      ? Colors.red
+                                      : null,
                                 ),
-                                tooltip: '更多',
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                tooltip: favoriteSet.contains(song)
+                                    ? '取消收藏'
+                                    : '收藏',
+                                onPressed: () => FavoriteUtils.toggleFavorite(
+                                  context,
+                                  ref,
+                                  song,
+                                  favoriteSet.contains(song),
                                 ),
-                                onSelected: (value) {
-                                  if (value == 'delete') {
-                                    _deleteMusic(context, ref, song);
-                                  } else if (value == 'remove') {
-                                    _removeSong(context, ref, song);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  if (isCustom)
+                              ),
+                              SizedBox(
+                                width: 36,
+                                child: PopupMenuButton<String>(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(
+                                    Icons.more_vert_rounded,
+                                    size: 20,
+                                  ),
+                                  tooltip: '更多',
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'delete') {
+                                      _deleteMusic(context, ref, song);
+                                    } else if (value == 'remove') {
+                                      _removeSong(context, ref, song);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    if (isCustom)
+                                      const PopupMenuItem(
+                                        value: 'remove',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.remove_circle_rounded,
+                                              color: Colors.orange,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('从歌单移除'),
+                                          ],
+                                        ),
+                                      ),
                                     const PopupMenuItem(
-                                      value: 'remove',
+                                      value: 'delete',
                                       child: Row(
                                         children: [
                                           Icon(
-                                            Icons.remove_circle_rounded,
-                                            color: Colors.orange,
+                                            Icons.delete_rounded,
+                                            color: Colors.red,
                                           ),
                                           SizedBox(width: 8),
-                                          Text('从歌单移除'),
+                                          Text(
+                                            '永久删除歌曲',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ],
                                       ),
                                     ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_rounded,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          '永久删除歌曲',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        onTap: () => _playSong(context, ref, song),
-                      );
-                    }, childCount: songs.length),
+                            ],
+                          ),
+                          onTap: () => _playSong(context, ref, song),
+                        );
+                      }, childCount: songs.length),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

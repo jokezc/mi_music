@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
 import 'package:mi_music/presentation/widgets/input_dialog.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 class ManagePlaylistsPage extends ConsumerStatefulWidget {
   const ManagePlaylistsPage({super.key});
@@ -70,7 +72,11 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
           if (playlists.isEmpty) {
             return const Center(child: Text('暂无歌单'));
           }
-          return _buildList(playlists);
+          return ResponsiveContent(
+            maxWidth: Breakpoints.maxContentWidth,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: _buildList(playlists),
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
@@ -100,7 +106,7 @@ class _ManagePlaylistsPageState extends ConsumerState<ManagePlaylistsPage> {
 
         return Container(
           key: ValueKey(item.name),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: BorderRadius.circular(12),

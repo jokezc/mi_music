@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/snackbar_utils.dart';
 import 'package:mi_music/data/models/api_models.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
+import 'package:mi_music/presentation/widgets/responsive_content.dart';
 
 final _logger = Logger();
 
@@ -19,26 +21,19 @@ class FunctionsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text(S.navFunctions)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // // 播放控制卡片
-            // const _PlayerControlCard(),
-            // const SizedBox(height: 16),
-
-            // 设备信息卡片
-            const _DeviceInfoCard(),
-            const SizedBox(height: 16),
-
-            // 快捷操作卡片
-            const _QuickActionsCard(),
-            const SizedBox(height: 16),
-
-            // 设置入口卡片
-            const _SettingsCard(),
-          ],
+      body: ResponsiveContent(
+        maxWidth: Breakpoints.maxFormWidth,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _DeviceInfoCard(),
+              const SizedBox(height: 16),
+              const _QuickActionsCard(),
+              const SizedBox(height: 16),
+              const _SettingsCard(),
+            ],
+          ),
         ),
       ),
     );
