@@ -6,6 +6,7 @@ import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/testing/app_test_config.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/settings_provider.dart';
 import 'package:mi_music/presentation/widgets/setting_host_port_check_listener.dart';
 
@@ -66,6 +67,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         // 登录成功不再清理：退出时已清理过；换地址在连接页测连时清理即可
         // 认证成功，更新认证状态并显示版本信息
         ref.read(authStateProvider.notifier).setAuthorized();
+        await ref.read(cacheRefreshControllerProvider.notifier).refresh();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

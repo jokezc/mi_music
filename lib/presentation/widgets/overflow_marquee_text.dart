@@ -8,6 +8,7 @@ class OverflowMarqueeText extends StatefulWidget {
   final TextStyle? style;
   final double gap;
   final Duration speedPer100Px;
+  final TextAlign textAlign;
 
   const OverflowMarqueeText({
     super.key,
@@ -15,6 +16,7 @@ class OverflowMarqueeText extends StatefulWidget {
     this.style,
     this.gap = 20,
     this.speedPer100Px = const Duration(milliseconds: 3200),
+    this.textAlign = TextAlign.center,
   });
 
   @override
@@ -96,8 +98,16 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
           if (_ticker != null) _killTicker();
           return SizedBox(
             width: available,
-            child: Text(widget.text, style: textStyle,
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Align(
+              alignment: Alignment.center,
+              child: Text(
+                widget.text,
+                style: textStyle,
+                textAlign: widget.textAlign,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           );
         }
 

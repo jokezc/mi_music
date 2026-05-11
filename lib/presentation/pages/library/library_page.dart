@@ -316,7 +316,11 @@ class _PlaylistTile extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final songsAsync = ref.watch(cachedPlaylistSongsProvider(name));
-    final count = songsAsync.asData?.value.length ?? 0;
+    final subtitle = songsAsync.when(
+      data: (songs) => '${songs.length} 首',
+      loading: () => '加载中...',
+      error: (_, __) => '加载失败',
+    );
 
     return ListTile(
       key: ValueKey('playlist-tile-$index'),
@@ -329,7 +333,7 @@ class _PlaylistTile extends ConsumerWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        '$count 首',
+        subtitle,
         style: theme.textTheme.bodySmall?.copyWith(
           color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
         ),
