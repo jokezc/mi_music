@@ -84,17 +84,24 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
         final textStyle = widget.style ?? DefaultTextStyle.of(context).style;
         final textDir = Directionality.of(context);
 
-        final painter = TextPainter(
+        final intrinsicPainter = TextPainter(
           text: TextSpan(text: widget.text, style: textStyle),
           maxLines: 1,
           textDirection: textDir,
         )..layout(maxWidth: double.infinity);
 
-        final textWidth = painter.width;
+        final textWidth = intrinsicPainter.width;
         final available =
             constraints.maxWidth.isFinite ? constraints.maxWidth : textWidth;
 
-        if (textWidth <= available + 0.5) {
+        final overflowPainter = TextPainter(
+          text: TextSpan(text: widget.text, style: textStyle),
+          maxLines: 1,
+          ellipsis: '…',
+          textDirection: textDir,
+        )..layout(maxWidth: available);
+
+        if (!overflowPainter.didExceedMaxLines) {
           if (_ticker != null) _killTicker();
           return SizedBox(
             width: available,
@@ -115,7 +122,7 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
 
         return SizedBox(
           width: available,
-          height: painter.height,
+          height: intrinsicPainter.height,
           child: CustomPaint(
             painter: _MarqueePainter(
               text: widget.text,
