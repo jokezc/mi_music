@@ -145,7 +145,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 height: 56,
                 horizontalPadding: 0,
                 leading: SongCover(songName: song, size: 48),
-                title: SongTitleText(
+                title: SongTitleText.list(
                   text: song,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,

@@ -69,11 +69,9 @@ class MiniPlayer extends ConsumerWidget {
                       // 歌曲信息
                       Expanded(
                         key: const Key('mini-player-title-container'),
-                        child: SongTitleText(
+                        child: SongTitleText.player(
                           text: currentSong ?? S.notPlaying,
                           style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                          enableMarquee: true,
-                          textAlign: TextAlign.start,
                           gap: 20,
                           speedPer100Px: const Duration(milliseconds: 3200),
                         ),

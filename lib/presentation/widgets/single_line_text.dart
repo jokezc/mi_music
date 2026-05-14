@@ -10,6 +10,7 @@ class SingleLineText extends StatelessWidget {
   final bool enableMarquee;
   final double gap;
   final Duration speedPer100Px;
+  final OverflowMarqueeAlignment marqueeIdleAlignment;
 
   const SingleLineText({
     super.key,
@@ -19,6 +20,7 @@ class SingleLineText extends StatelessWidget {
     this.enableMarquee = false,
     this.gap = 20,
     this.speedPer100Px = const Duration(milliseconds: 3200),
+    this.marqueeIdleAlignment = OverflowMarqueeAlignment.left,
   });
 
   @override
@@ -30,6 +32,7 @@ class SingleLineText extends StatelessWidget {
         textAlign: textAlign,
         gap: gap,
         speedPer100Px: speedPer100Px,
+        idleAlignment: marqueeIdleAlignment,
       );
     }
 

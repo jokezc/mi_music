@@ -48,7 +48,7 @@ class SongTile extends StatelessWidget {
             ),
             child: const Icon(Icons.music_note_rounded, color: AppColors.primary),
           ),
-      title: SongTitleText(text: title),
+      title: SongTitleText.list(text: title),
       subtitle: subtitle != null
           ? SingleLineText(text: subtitle!)
           : null,
@@ -144,7 +144,7 @@ class PlaylistTile extends StatelessWidget {
         ),
         child: const Icon(Icons.playlist_play_rounded, color: Colors.white),
       ),
-      title: SongTitleText(text: title),
+      title: SongTitleText.list(text: title),
       subtitle: subtitleText.isNotEmpty
           ? SingleLineText(text: subtitleText)
           : null,

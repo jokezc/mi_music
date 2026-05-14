@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/single_line_text.dart';
 
 /// 歌曲标题组件。
@@ -10,6 +11,7 @@ class SongTitleText extends StatelessWidget {
   final bool enableMarquee;
   final double gap;
   final Duration speedPer100Px;
+  final OverflowMarqueeAlignment marqueeIdleAlignment;
 
   const SongTitleText({
     super.key,
@@ -19,7 +21,38 @@ class SongTitleText extends StatelessWidget {
     this.enableMarquee = false,
     this.gap = 20,
     this.speedPer100Px = const Duration(milliseconds: 3200),
+    this.marqueeIdleAlignment = OverflowMarqueeAlignment.left,
   });
+
+  const SongTitleText.player({
+    super.key,
+    required this.text,
+    this.style,
+    this.gap = 20,
+    this.speedPer100Px = const Duration(milliseconds: 3200),
+  }) : textAlign = TextAlign.start,
+       enableMarquee = true,
+       marqueeIdleAlignment = OverflowMarqueeAlignment.left;
+
+  const SongTitleText.centerPlayer({
+    super.key,
+    required this.text,
+    this.style,
+    this.gap = 20,
+    this.speedPer100Px = const Duration(milliseconds: 3200),
+  }) : textAlign = TextAlign.center,
+       enableMarquee = true,
+       marqueeIdleAlignment = OverflowMarqueeAlignment.center;
+
+  const SongTitleText.list({
+    super.key,
+    required this.text,
+    this.style,
+  }) : textAlign = TextAlign.start,
+       enableMarquee = false,
+       gap = 20,
+       speedPer100Px = const Duration(milliseconds: 3200),
+       marqueeIdleAlignment = OverflowMarqueeAlignment.left;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +63,7 @@ class SongTitleText extends StatelessWidget {
       enableMarquee: enableMarquee,
       gap: gap,
       speedPer100Px: speedPer100Px,
+      marqueeIdleAlignment: marqueeIdleAlignment,
     );
   }
 }

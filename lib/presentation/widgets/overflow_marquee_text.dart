@@ -2,6 +2,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+enum OverflowMarqueeAlignment { left, center, right }
+
 /// 仅在文本超出可用空间时自动横向无缝滚动。
 class OverflowMarqueeText extends StatefulWidget {
   final String text;
@@ -9,6 +11,7 @@ class OverflowMarqueeText extends StatefulWidget {
   final double gap;
   final Duration speedPer100Px;
   final TextAlign textAlign;
+  final OverflowMarqueeAlignment idleAlignment;
 
   const OverflowMarqueeText({
     super.key,
@@ -17,6 +20,7 @@ class OverflowMarqueeText extends StatefulWidget {
     this.gap = 20,
     this.speedPer100Px = const Duration(milliseconds: 3200),
     this.textAlign = TextAlign.center,
+    this.idleAlignment = OverflowMarqueeAlignment.left,
   });
 
   @override
@@ -109,7 +113,7 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
           return SizedBox(
             width: available,
             child: Align(
-              alignment: Alignment.center,
+              alignment: _alignmentForMarquee(widget.idleAlignment),
               child: Text(
                 widget.text,
                 style: textStyle,
@@ -139,6 +143,17 @@ class _OverflowMarqueeTextState extends State<OverflowMarqueeText>
         );
       },
     );
+  }
+
+  Alignment _alignmentForMarquee(OverflowMarqueeAlignment alignment) {
+    switch (alignment) {
+      case OverflowMarqueeAlignment.left:
+        return Alignment.centerLeft;
+      case OverflowMarqueeAlignment.center:
+        return Alignment.center;
+      case OverflowMarqueeAlignment.right:
+        return Alignment.centerRight;
+    }
   }
 }
 

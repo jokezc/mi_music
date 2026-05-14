@@ -272,7 +272,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                           height: 56,
                           horizontalPadding: 16,
                           leading: SongCover(songName: song, size: 48),
-                          title: SongTitleText(
+                          title: SongTitleText.list(
                             key: ValueKey('song-title-$index'),
                             text: song,
                             style: theme.textTheme.bodyMedium?.copyWith(

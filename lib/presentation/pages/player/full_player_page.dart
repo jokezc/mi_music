@@ -380,15 +380,13 @@ class _PlayerInfo extends ConsumerWidget {
           SizedBox(
             key: const Key('full-player-current-song'),
             height: 44,
-            child: SongTitleText(
+            child: SongTitleText.centerPlayer(
               text: currentSong ?? S.notPlaying,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.4,
                 height: 1.1,
               ),
-              enableMarquee: true,
-              textAlign: TextAlign.center,
             ),
           ),
           // 只在有歌单名称时显示
