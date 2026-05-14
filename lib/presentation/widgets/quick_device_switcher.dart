@@ -10,7 +10,7 @@ import 'package:mi_music/data/providers/api_provider.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
-import 'package:mi_music/presentation/widgets/song_title_text.dart';
+import 'package:mi_music/presentation/widgets/single_line_text.dart';
 
 final _logger = Logger();
 
@@ -462,7 +462,7 @@ class _DeviceCard extends ConsumerWidget {
                     ),
                 ],
               ),
-              SongTitleText(
+              SingleLineText(
                 text: (currentMusic.isNotEmpty)
                     ? currentMusic
                     : (isSelected

@@ -110,7 +110,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         children: [
           ResponsiveContent(
             maxWidth: Breakpoints.maxContentWidth,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: GestureDetector(
               onTap: () {
                 context.push('/search?playlist=${Uri.encodeComponent('全部')}');

@@ -20,9 +20,9 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/shared_prefs_provider.dart';
 import 'package:mi_music/presentation/widgets/device_selector_sheet.dart';
-import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/play_queue_sheet.dart';
 import 'package:mi_music/presentation/widgets/responsive_content.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -380,13 +380,14 @@ class _PlayerInfo extends ConsumerWidget {
           SizedBox(
             key: const Key('full-player-current-song'),
             height: 44,
-            child: OverflowMarqueeText(
+            child: SongTitleText(
               text: currentSong ?? S.notPlaying,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.4,
                 height: 1.1,
               ),
+              enableMarquee: true,
               textAlign: TextAlign.center,
             ),
           ),

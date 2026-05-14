@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
-import 'package:mi_music/presentation/widgets/overflow_marquee_text.dart';
 import 'package:mi_music/presentation/widgets/song_cover.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 /// 底部迷你播放条
 class MiniPlayer extends ConsumerWidget {
@@ -69,14 +69,13 @@ class MiniPlayer extends ConsumerWidget {
                       // 歌曲信息
                       Expanded(
                         key: const Key('mini-player-title-container'),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: OverflowMarqueeText(
-                            text: currentSong ?? S.notPlaying,
-                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                            gap: 20,
-                            speedPer100Px: const Duration(milliseconds: 3200),
-                          ),
+                        child: SongTitleText(
+                          text: currentSong ?? S.notPlaying,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          enableMarquee: true,
+                          textAlign: TextAlign.start,
+                          gap: 20,
+                          speedPer100Px: const Duration(milliseconds: 3200),
                         ),
                       ),
                       // 播放控制按钮

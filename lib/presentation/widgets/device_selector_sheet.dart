@@ -11,7 +11,7 @@ import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/system_provider.dart';
 import 'package:mi_music/core/constants/base_constants.dart';
-import 'package:mi_music/presentation/widgets/song_title_text.dart';
+import 'package:mi_music/presentation/widgets/single_line_text.dart';
 
 final _logger = Logger();
 
@@ -432,7 +432,7 @@ class _DeviceSelectorSheetState extends ConsumerState<DeviceSelectorSheet> {
                       ),
                     ),
                     title: Text(device.name ?? '未知设备'),
-                    subtitle: SongTitleText(
+                    subtitle: SingleLineText(
                       text: subtitleText,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isDark

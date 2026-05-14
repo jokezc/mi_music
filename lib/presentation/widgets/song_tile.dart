@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
+import 'package:mi_music/presentation/widgets/single_line_text.dart';
+import 'package:mi_music/presentation/widgets/song_title_text.dart';
 
 /// 通用歌曲列表项组件
 class SongTile extends StatelessWidget {
@@ -46,9 +48,9 @@ class SongTile extends StatelessWidget {
             ),
             child: const Icon(Icons.music_note_rounded, color: AppColors.primary),
           ),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: SongTitleText(text: title),
       subtitle: subtitle != null
-          ? Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis)
+          ? SingleLineText(text: subtitle!)
           : null,
       trailing: onPlay != null
           ? IconButton(
@@ -142,9 +144,9 @@ class PlaylistTile extends StatelessWidget {
         ),
         child: const Icon(Icons.playlist_play_rounded, color: Colors.white),
       ),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: SongTitleText(text: title),
       subtitle: subtitleText.isNotEmpty
-          ? Text(subtitleText, maxLines: 1, overflow: TextOverflow.ellipsis)
+          ? SingleLineText(text: subtitleText)
           : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
