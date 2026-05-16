@@ -7,8 +7,7 @@ import 'package:mi_music/core/constants/breakpoints.dart';
 import 'package:mi_music/core/constants/strings_zh.dart';
 import 'package:mi_music/core/theme/app_colors.dart';
 import 'package:mi_music/core/utils/favorite_utils.dart';
-import 'package:mi_music/data/models/api_models.dart';
-import 'package:mi_music/data/providers/api_provider.dart';
+import 'package:mi_music/core/utils/song_utils.dart';
 import 'package:mi_music/data/providers/cache_provider.dart';
 import 'package:mi_music/data/providers/player/player_provider.dart';
 import 'package:mi_music/data/providers/playlist_provider.dart';
@@ -27,21 +26,6 @@ class PlaylistDetailPage extends ConsumerWidget {
 
   final String playlistName;
 
-  bool _isCustomPlaylist(WidgetRef ref) {
-    // 收藏歌单也是自定义歌单（可编辑）
-    if (playlistName == BaseConstants.likePlaylist) return true;
-
-    // 优先通过 PlaylistUiModel 判断类型，更准确
-    final playlists = ref.read(playlistUiListProvider).asData?.value ?? [];
-    try {
-      final playlist = playlists.firstWhere((p) => p.name == playlistName);
-      return playlist.type == PlaylistType.custom;
-    } catch (_) {
-      // 降级使用名称判断
-      return !BaseConstants.systemPlaylistNames.contains(playlistName);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 使用缓存的 provider，优先从缓存获取，缓存不存在时从 API 获取
@@ -52,7 +36,9 @@ class PlaylistDetailPage extends ConsumerWidget {
       cachedPlaylistSongsProvider(BaseConstants.likePlaylist),
     );
     final favoriteSet = favoritesAsync.asData?.value.toSet() ?? <String>{};
-    final isCustom = _isCustomPlaylist(ref);
+    final canModifySongs = SongUtils.canModifyPlaylistSongs(ref, playlistName);
+    final canManagePlaylist = SongUtils.canManagePlaylist(ref, playlistName);
+    final showPlaylistMenu = canModifySongs || canManagePlaylist;
 
     return Scaffold(
       key: const Key('playlist-detail-page'),
@@ -69,7 +55,7 @@ class PlaylistDetailPage extends ConsumerWidget {
             },
             tooltip: '搜索歌单内容',
           ),
-          if (isCustom)
+          if (showPlaylistMenu)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: PopupMenuButton<String>(
@@ -107,56 +93,61 @@ class PlaylistDetailPage extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'add_songs',
-                    child: Row(
-                      children: [
-                        Icon(Icons.playlist_add_rounded),
-                        SizedBox(width: 8),
-                        Text('添加歌曲'),
-                      ],
+                  if (canModifySongs)
+                    const PopupMenuItem(
+                      value: 'add_songs',
+                      child: Row(
+                        children: [
+                          Icon(Icons.playlist_add_rounded),
+                          SizedBox(width: 8),
+                          Text('添加歌曲'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'remove_songs',
-                    child: Row(
-                      children: [
-                        Icon(Icons.playlist_remove_rounded),
-                        SizedBox(width: 8),
-                        Text('移除歌曲'),
-                      ],
+                  if (canModifySongs)
+                    const PopupMenuItem(
+                      value: 'remove_songs',
+                      child: Row(
+                        children: [
+                          Icon(Icons.playlist_remove_rounded),
+                          SizedBox(width: 8),
+                          Text('移除歌曲'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'rename',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_rounded),
-                        SizedBox(width: 8),
-                        Text('重命名歌单'),
-                      ],
+                  if (canManagePlaylist)
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_rounded),
+                          SizedBox(width: 8),
+                          Text('重命名歌单'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_rounded),
-                        SizedBox(width: 8),
-                        Text('删除歌单'),
-                      ],
+                  if (canManagePlaylist)
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_rounded),
+                          SizedBox(width: 8),
+                          Text('删除歌单'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'clear',
-                    child: Row(
-                      children: [
-                        Icon(Icons.cleaning_services_rounded),
-                        SizedBox(width: 8),
-                        Text('清空歌单'),
-                      ],
+                  if (canModifySongs)
+                    const PopupMenuItem(
+                      value: 'clear',
+                      child: Row(
+                        children: [
+                          Icon(Icons.cleaning_services_rounded),
+                          SizedBox(width: 8),
+                          Text('清空歌单'),
+                        ],
+                      ),
                     ),
-                  ),
                   const PopupMenuItem(
                     value: 'play_all',
                     child: Row(
@@ -327,7 +318,7 @@ class PlaylistDetailPage extends ConsumerWidget {
                                     }
                                   },
                                   itemBuilder: (context) => [
-                                    if (isCustom)
+                                    if (canModifySongs)
                                       const PopupMenuItem(
                                         value: 'remove',
                                         child: Row(
@@ -414,46 +405,7 @@ class PlaylistDetailPage extends ConsumerWidget {
     WidgetRef ref,
     String song,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('永久删除歌曲'),
-        content: Text('确定要永久删除 "$song" 吗？\n此操作将从所有歌单中移除该歌曲文件。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(S.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text(S.confirm),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await ref.read(apiClientProvider).delMusic(MusicItem(name: song));
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('删除成功')));
-          // 刷新当前列表
-          ref
-              .read(cacheRefreshControllerProvider.notifier)
-              .refreshPlaylistsOnly();
-        }
-      } catch (e) {
-        _logger.e("删除歌曲失败: $e");
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('删除失败: $e')));
-        }
-      }
-    }
+    await SongUtils.deleteSong(context, ref, song);
   }
 
   Future<void> _showAddSongs(BuildContext context, WidgetRef ref) async {

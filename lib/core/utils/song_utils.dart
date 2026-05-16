@@ -16,21 +16,25 @@ final _logger = Logger();
 class SongUtils {
   SongUtils._();
 
-  /// 判断是否为自定义歌单
+  /// 是否为服务端定义的“自定义歌单”
   static bool isCustomPlaylist(WidgetRef ref, String playlistName) {
     if (playlistName.isEmpty) return false;
-    // 收藏歌单也是自定义歌单（可编辑）
-    if (playlistName == BaseConstants.likePlaylist) return true;
+    final customPlaylistResp = ref.watch(playlistNamesProvider);
+    final customNames = customPlaylistResp.asData?.value.names;
+    return customNames?.contains(playlistName) ?? false;
+  }
 
-    // 优先通过 PlaylistUiModel 判断类型，更准确
-    final playlists = ref.read(playlistUiListProvider).asData?.value ?? [];
-    try {
-      final playlist = playlists.firstWhere((p) => p.name == playlistName);
-      return playlist.type == PlaylistType.custom;
-    } catch (_) {
-      // 降级使用名称判断
-      return !BaseConstants.systemPlaylistNames.contains(playlistName);
-    }
+  /// 是否允许修改歌单内容（增删歌曲、清空）
+  static bool canModifyPlaylistSongs(WidgetRef ref, String playlistName) {
+    if (playlistName.isEmpty) return false;
+    if (playlistName == BaseConstants.likePlaylist) return true;
+    return isCustomPlaylist(ref, playlistName);
+  }
+
+  /// 是否允许管理歌单本身（重命名、删除歌单）
+  static bool canManagePlaylist(WidgetRef ref, String playlistName) {
+    if (playlistName.isEmpty) return false;
+    return isCustomPlaylist(ref, playlistName);
   }
 
   /// 处理当前播放的歌曲（如果是当前播放，则切换下一首）

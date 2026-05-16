@@ -83,7 +83,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
         (s) => s.value?.currentPlaylistName,
       ),
     );
-    final isCustomPlaylist = SongUtils.isCustomPlaylist(
+    final canModifyPlaylistSongs = SongUtils.canModifyPlaylistSongs(
       ref,
       currentPlaylistName ?? '',
     );
@@ -155,7 +155,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                     currentSong,
                     theme,
                     isDark,
-                    isCustomPlaylist,
+                    canModifyPlaylistSongs,
                     currentPlaylistName,
                   )
                 : const Center(child: CircularProgressIndicator()),
@@ -173,7 +173,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
     String? currentSong,
     ThemeData theme,
     bool isDark,
-    bool isCustomPlaylist,
+    bool canModifyPlaylistSongs,
     String? currentPlaylistName,
   ) {
     if (playlist.isEmpty) {
@@ -281,7 +281,7 @@ class _PlayQueueSheetState extends ConsumerState<PlayQueueSheet> {
                     }
                   },
                   itemBuilder: (context) => [
-                    if (isCustomPlaylist)
+                    if (canModifyPlaylistSongs)
                       const PopupMenuItem(
                         value: 'remove',
                         child: Row(
